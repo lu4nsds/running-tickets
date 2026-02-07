@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Enums\Currency;
 use Illuminate\Database\Seeder;
 use App\Models\TicketType;
 use App\Models\Event;
@@ -15,50 +16,64 @@ class TicketTypeSeeder extends Seeder
             return;
         }
 
-        $event = Event::where('slug', 'corrida-dev-5k')->first();
+        $events = Event::all();
 
-        if (!$event) {
-            return;
-        }
+        foreach ($events as $event) {
+            // Determinar preços baseado no tipo de evento
+            $basePrice = 6000; // R$ 60,00 padrão
+            
+            if (str_contains($event->title, 'Maratona')) {
+                $basePrice = 12000; // R$ 120,00
+            } elseif (str_contains($event->title, '10K')) {
+                $basePrice = 7500; // R$ 75,00
+            } elseif (str_contains($event->title, 'Trail')) {
+                $basePrice = 9500; // R$ 95,00
+            }
 
-        $tickets = [
-            [
-                'name' => '5K - Kit Completo',
-                'description' => 'Inscrição com camisa, número e medalha',
-                'price_cents' => 8900, // R$ 89,00
-                'quota' => 300,
-                'attributes' => [
-                    'kit' => 'camisa + medalha',
-                ],
-            ],
-            [
-                'name' => '5K - Sem Camisa',
-                'description' => 'Inscrição sem camisa',
-                'price_cents' => 5900, // R$ 59,00
-                'quota' => 200,
-                'attributes' => [
-                    'kit' => 'medalha',
-                ],
-            ],
-        ];
-
-        foreach ($tickets as $ticket) {
-            TicketType::firstOrCreate(
+            $tickets = [
                 [
-                    'event_id' => $event->id,
-                    'name' => $ticket['name'],
+                    'name' => 'Kit Completo',
+                    'description' => 'Inscrição com camisa, número e medalha',
+                    'price_cents' => $basePrice + 3000,
+                    'quota' => 300,
+                    'attributes' => ['kit' => 'camisa + medalha + número'],
                 ],
                 [
-                    'description' => $ticket['description'],
-                    'price_cents' => $ticket['price_cents'],
-                    'currency' => 'BRL',
-                    'quota' => $ticket['quota'],
-                    'start_sale' => now()->subDays(1),
-                    'end_sale' => now()->addDays(20),
-                    'attributes' => $ticket['attributes'],
-                    'active' => true,
-                ]
-            );
+                    'name' => 'Kit Básico',
+                    'description' => 'Inscrição com número e medalha (sem camisa)',
+                    'price_cents' => $basePrice,
+                    'quota' => 200,
+                    'attributes' => ['kit' => 'medalha + número'],
+                ],
+                [
+                    'name' => 'VIP',
+                    'description' => 'Inscrição VIP com benefícios exclusivos',
+                    'price_cents' => $basePrice + 6000,
+                    'quota' => 50,
+                    'attributes' => ['kit' => 'camisa premium + medalha especial + mochila + brindes'],
+                ],
+            ];
+
+            foreach ($tickets as $ticket) {
+                TicketType::firstOrCreate(
+                    [
+                        'event_id' => $event->id,
+                        'name' => $ticket['name'],
+                    ],
+                    [
+                        'description' => $ticket['description'],
+                        'price_cents' => $ticket['price_cents'],
+                        'currency' => Currency::BRL->value,
+                        'quota' => $ticket['quota'],
+                        'start_sale' => now()->subDays(5),
+                        'end_sale' => $event->date_start->subDays(3),
+                        'attributes' => $ticket['attributes'],
+                        'active' => true,
+                    ]
+                );
+            }
         }
+
+        $this->command->info('✅ Tipos de ingressos criados!');
     }
 }

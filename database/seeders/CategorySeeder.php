@@ -15,52 +15,34 @@ class CategorySeeder extends Seeder
             return;
         }
 
-        $event = Event::where('slug', 'corrida-dev-5k')->first();
+        $events = Event::all();
 
-        if (!$event) {
-            return;
-        }
-
-        $categories = [
-            [
-                'name' => 'Masculino Geral',
-                'gender' => 'M',
-                'min_age' => null,
-                'max_age' => null,
-            ],
-            [
-                'name' => 'Feminino Geral',
-                'gender' => 'F',
-                'min_age' => null,
-                'max_age' => null,
-            ],
-            [
-                'name' => 'Masculino 18-29',
-                'gender' => 'M',
-                'min_age' => 18,
-                'max_age' => 29,
-            ],
-            [
-                'name' => 'Feminino 18-29',
-                'gender' => 'F',
-                'min_age' => 18,
-                'max_age' => 29,
-            ],
+        $categoryTemplates = [
+            ['name' => 'Masculino Geral', 'gender' => 'M', 'min_age' => null, 'max_age' => null],
+            ['name' => 'Feminino Geral', 'gender' => 'F', 'min_age' => null, 'max_age' => null],
+            ['name' => 'Masculino 18-29', 'gender' => 'M', 'min_age' => 18, 'max_age' => 29],
+            ['name' => 'Feminino 18-29', 'gender' => 'F', 'min_age' => 18, 'max_age' => 29],
+            ['name' => 'Masculino 30-39', 'gender' => 'M', 'min_age' => 30, 'max_age' => 39],
+            ['name' => 'Feminino 30-39', 'gender' => 'F', 'min_age' => 30, 'max_age' => 39],
         ];
 
-        foreach ($categories as $category) {
-            Category::firstOrCreate(
-                [
-                    'event_id' => $event->id,
-                    'name' => $category['name'],
-                ],
-                [
-                    'gender' => $category['gender'],
-                    'min_age' => $category['min_age'],
-                    'max_age' => $category['max_age'],
-                    'active' => true,
-                ]
-            );
+        foreach ($events as $event) {
+            foreach ($categoryTemplates as $category) {
+                Category::firstOrCreate(
+                    [
+                        'event_id' => $event->id,
+                        'name' => $category['name'],
+                    ],
+                    [
+                        'gender' => $category['gender'],
+                        'min_age' => $category['min_age'],
+                        'max_age' => $category['max_age'],
+                        'active' => true,
+                    ]
+                );
+            }
         }
+
+        $this->command->info('✅ Categorias criadas!');
     }
 }

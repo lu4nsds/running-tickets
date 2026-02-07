@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\Admin;
 
+use App\Enums\OrganizerRole;
 use App\Http\Controllers\Controller;
 use App\Models\Organizer;
 use App\Models\User;
@@ -42,7 +43,7 @@ class OrganizerUserController extends Controller
     {
         $request->validate([
             'email' => 'required|email|max:255',
-            'role' => ['required', Rule::in(['admin', 'staff'])],
+            'role' => ['required', Rule::in(OrganizerRole::values())],
         ]);
 
         // Busca usuário existente
@@ -94,7 +95,7 @@ class OrganizerUserController extends Controller
     public function update(Request $request, Organizer $organizer, User $user): JsonResponse
     {
         $validated = $request->validate([
-            'role' => ['required', Rule::in(['admin', 'staff'])],
+            'role' => ['required', Rule::in(OrganizerRole::values())],
         ]);
 
         // Verifica se usuário pertence ao organizador

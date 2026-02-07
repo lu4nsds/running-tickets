@@ -39,8 +39,7 @@ const router = createRouter({
                 {
                     path: "events",
                     name: "organizer-events",
-                    component: () =>
-                        import("@/views/organizer/DashboardView.vue"),
+                    component: () => import("@/views/organizer/EventsView.vue"),
                 },
             ],
         },

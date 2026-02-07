@@ -234,15 +234,15 @@
                     <h3 class="text-lg font-semibold text-white">
                         Visão Geral dos Eventos
                     </h3>
-                    <a
-                        href="#"
+                    <button
+                        @click="$router.push('/organizer/events')"
                         class="text-primary text-sm hover:text-primary/80 transition-colors flex items-center gap-1"
                     >
                         Ver Todos
                         <span class="material-symbols-outlined text-[16px]">
                             arrow_forward
                         </span>
-                    </a>
+                    </button>
                 </div>
 
                 <!-- Table -->
@@ -261,6 +261,11 @@
                                     class="pb-3 text-xs font-semibold text-text-muted uppercase tracking-wider"
                                 >
                                     Data
+                                </th>
+                                <th
+                                    class="pb-3 text-xs font-semibold text-text-muted uppercase tracking-wider"
+                                >
+                                    Status
                                 </th>
                                 <th
                                     class="pb-3 text-xs font-semibold text-text-muted uppercase tracking-wider"
@@ -302,6 +307,18 @@
                                 </td>
                                 <td class="py-4 text-text-secondary text-sm">
                                     {{ formatDate(event.date) }}
+                                </td>
+                                <td class="py-4">
+                                    <span
+                                        :class="[
+                                            'px-2 py-1 rounded-md text-xs font-semibold uppercase tracking-wide',
+                                            getStatusClass(
+                                                getVisualStatus(event),
+                                            ),
+                                        ]"
+                                    >
+                                        {{ getVisualStatus(event) }}
+                                    </span>
                                 </td>
                                 <td class="py-4">
                                     <div class="flex items-center gap-2">
@@ -358,7 +375,11 @@
 import { ref, computed, onMounted } from "vue";
 import { useAuthStore } from "@/stores/auth";
 import api from "@/api/axios";
+import { API_ENDPOINTS } from "@/constants/apiEndpoints";
+import { useEventStatus } from "@/composables/useEventStatus";
 import VueApexCharts from "vue3-apexcharts";
+
+const { getVisualStatus, getStatusClass } = useEventStatus();
 
 const authStore = useAuthStore();
 
@@ -590,7 +611,7 @@ const ticketTypesChartSeries = ref([
 const fetchDashboardData = async () => {
     isLoading.value = true;
     try {
-        const response = await api.get("/organizer/dashboard");
+        const response = await api.get(API_ENDPOINTS.ORGANIZER.DASHBOARD);
         console.log("Dashboard API Response:", response.data);
         dashboardData.value = response.data;
 

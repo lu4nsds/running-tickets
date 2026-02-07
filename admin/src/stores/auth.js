@@ -1,11 +1,14 @@
 import { defineStore } from "pinia";
 import { ref, computed } from "vue";
 import api from "@/api/axios";
+import { USER_ROLE, ORGANIZER_ROLE } from "@/constants/roles";
+import { API_ENDPOINTS } from "@/constants/apiEndpoints";
+import { STORAGE_KEYS } from "@/constants/storageKeys";
 
 export const useAuthStore = defineStore("auth", () => {
     // State
     const user = ref(null);
-    const token = ref(localStorage.getItem("auth_token") || null);
+    const token = ref(localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN) || null);
     const isLoading = ref(false);
     const error = ref(null);
 
@@ -14,7 +17,9 @@ export const useAuthStore = defineStore("auth", () => {
 
     const isSuperAdmin = computed(() => {
         if (!user.value?.roles) return false;
-        return user.value.roles.some((role) => role.slug === "super_admin");
+        return user.value.roles.some(
+            (role) => role.slug === USER_ROLE.SUPER_ADMIN,
+        );
     });
 
     const hasOrganizers = computed(() => {
@@ -28,7 +33,7 @@ export const useAuthStore = defineStore("auth", () => {
         const organizer = user.value.organizers.find(
             (org) => org.id === organizerId,
         );
-        return organizer?.pivot?.role === "admin";
+        return organizer?.pivot?.role === ORGANIZER_ROLE.ADMIN;
     };
 
     const isOrganizerStaff = (organizerId) => {
@@ -36,7 +41,7 @@ export const useAuthStore = defineStore("auth", () => {
         const organizer = user.value.organizers.find(
             (org) => org.id === organizerId,
         );
-        return organizer?.pivot?.role === "staff";
+        return organizer?.pivot?.role === ORGANIZER_ROLE.STAFF;
     };
 
     // Actions
@@ -45,12 +50,15 @@ export const useAuthStore = defineStore("auth", () => {
         error.value = null;
 
         try {
-            const response = await api.post("/auth/login", { email, password });
+            const response = await api.post(API_ENDPOINTS.AUTH.LOGIN, {
+                email,
+                password,
+            });
             const { access_token, user: userData } = response.data;
 
             token.value = access_token;
             user.value = userData;
-            localStorage.setItem("auth_token", access_token);
+            localStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, access_token);
 
             return { success: true };
         } catch (err) {
@@ -63,13 +71,13 @@ export const useAuthStore = defineStore("auth", () => {
 
     const logout = async () => {
         try {
-            await api.post("/auth/logout");
+            await api.post(API_ENDPOINTS.AUTH.LOGOUT);
         } catch (err) {
             console.error("Erro ao fazer logout:", err);
         } finally {
             token.value = null;
             user.value = null;
-            localStorage.removeItem("auth_token");
+            localStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
         }
     };
 
@@ -77,7 +85,7 @@ export const useAuthStore = defineStore("auth", () => {
         if (!token.value) return false;
 
         try {
-            const response = await api.get("/auth/me");
+            const response = await api.get(API_ENDPOINTS.AUTH.ME);
             user.value = response.data;
             return true;
         } catch (err) {

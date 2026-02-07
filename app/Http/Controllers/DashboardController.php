@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\OrderStatus;
 use App\Models\Event;
 use App\Models\Order;
 use Illuminate\Http\Request;
@@ -24,15 +25,15 @@ class DashboardController extends Controller
             $events = Event::where('organizer_id', $organizerId)
                 ->withCount([
                     'orders as total_orders' => function ($query) {
-                        $query->whereIn('status', ['pending', 'paid']);
+                        $query->whereIn('status', [OrderStatus::PENDING->value, OrderStatus::PAID->value]);
                     },
                     'orders as paid_orders' => function ($query) {
-                        $query->where('status', 'paid');
+                        $query->where('status', OrderStatus::PAID->value);
                     }
                 ])
                 ->withSum([
                     'orders as total_revenue' => function ($query) {
-                        $query->where('status', 'paid');
+                        $query->where('status', OrderStatus::PAID->value);
                     }
                 ], 'total_cents')
                 ->get();
@@ -59,13 +60,16 @@ class DashboardController extends Controller
                     ->join('orders', 'order_items.order_id', '=', 'orders.id')
                     ->join('ticket_types', 'order_items.ticket_type_id', '=', 'ticket_types.id')
                     ->where('ticket_types.event_id', $event->id)
-                    ->where('orders.status', 'paid')
+                    ->where('orders.status', OrderStatus::PAID->value)
                     ->count();
 
                 return [
                     'id' => $event->id,
                     'name' => $event->title,
                     'date' => $event->date_start,
+                    'date_start' => $event->date_start,
+                    'date_end' => $event->date_end,
+                    'status' => $event->status->value,
                     'revenue' => ($event->total_revenue ?? 0) / 100,
                     'orders' => $event->paid_orders,
                     'tickets_sold' => $ticketsSold,
@@ -80,7 +84,7 @@ class DashboardController extends Controller
             // Análise temporal (últimos 7 dias)
             $salesByDay = Order::join('events', 'orders.event_id', '=', 'events.id')
                 ->where('events.organizer_id', $organizerId)
-                ->where('orders.status', 'paid')
+                ->where('orders.status', OrderStatus::PAID->value)
                 ->where('orders.updated_at', '>=', now()->subDays(7))
                 ->select(
                     DB::raw('DATE(orders.updated_at) as date'),
@@ -97,7 +101,7 @@ class DashboardController extends Controller
                 ->join('order_items', 'ticket_types.id', '=', 'order_items.ticket_type_id')
                 ->join('orders', 'order_items.order_id', '=', 'orders.id')
                 ->where('events.organizer_id', $organizerId)
-                ->where('orders.status', 'paid')
+                ->where('orders.status', OrderStatus::PAID->value)
                 ->select(
                     'ticket_types.name',
                     DB::raw('COUNT(order_items.id) as quantity_sold'),
@@ -165,7 +169,7 @@ class DashboardController extends Controller
                 ->leftJoin('order_items', function ($join) {
                     $join->on('ticket_types.id', '=', 'order_items.ticket_type_id')
                         ->join('orders', 'order_items.order_id', '=', 'orders.id')
-                        ->where('orders.status', '=', 'paid');
+                        ->where('orders.status', '=', OrderStatus::PAID->value);
                 })
                 ->select(
                     'ticket_types.id',
@@ -187,7 +191,7 @@ class DashboardController extends Controller
 
             // Velocidade de vendas (últimos 7 dias)
             $salesVelocity = Order::where('event_id', $event->id)
-                ->where('status', 'paid')
+                ->where('status', OrderStatus::PAID->value)
                 ->where('updated_at', '>=', now()->subDays(7))
                 ->select(
                     DB::raw('DATE(updated_at) as date'),
@@ -226,7 +230,7 @@ class DashboardController extends Controller
 
             // Demografia (usuários vs guests)
             $demographics = Order::where('event_id', $event->id)
-                ->where('status', 'paid')
+                ->where('status', OrderStatus::PAID->value)
                 ->selectRaw('
                     SUM(CASE WHEN user_id IS NOT NULL THEN 1 ELSE 0 END) as registered_users,
                     SUM(CASE WHEN user_id IS NULL THEN 1 ELSE 0 END) as guests

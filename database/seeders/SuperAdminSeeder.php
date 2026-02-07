@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Enums\UserRole;
 use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
@@ -22,7 +23,7 @@ class SuperAdminSeeder extends Seeder
             ]
         );
 
-        $superAdmin->assignRole('super_admin');
+        $superAdmin->assignRole(UserRole::SUPER_ADMIN->value);
 
         $this->command->info('✅ Super Admin criado!');
         $this->command->info('📧 Email: admin@runningtickets.com');

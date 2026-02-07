@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\EventStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -20,6 +21,7 @@ class Event extends Model
         'date_end',
         'max_participants',
         'banner_url',
+        'status',
         'meta',
     ];
 
@@ -27,6 +29,7 @@ class Event extends Model
         'meta' => 'array',
         'date_start' => 'datetime',
         'date_end' => 'datetime',
+        'status' => EventStatus::class,
     ];
 
     /**

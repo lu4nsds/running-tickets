@@ -3,6 +3,8 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Enums\OrganizerRole;
+use App\Enums\UserRole;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -116,7 +118,7 @@ class User extends Authenticatable
      */
     public function isSuperAdmin(): bool
     {
-        return $this->hasRole('super_admin');
+        return $this->hasRole(UserRole::SUPER_ADMIN->value);
     }
 
     /**
@@ -135,7 +137,7 @@ class User extends Authenticatable
     {
         return $this->organizers()
             ->where('organizer_id', $organizerId)
-            ->wherePivot('role', 'admin')
+            ->wherePivot('role', OrganizerRole::ADMIN->value)
             ->exists();
     }
 
@@ -146,7 +148,7 @@ class User extends Authenticatable
     {
         return $this->organizers()
             ->where('organizer_id', $organizerId)
-            ->wherePivot('role', 'staff')
+            ->wherePivot('role', OrganizerRole::STAFF->value)
             ->exists();
     }
 }

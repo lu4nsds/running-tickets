@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Enums\UserRole;
 use App\Models\Role;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
@@ -16,12 +17,12 @@ class RoleSeeder extends Seeder
         $roles = [
             [
                 'name' => 'Super Administrador',
-                'slug' => 'super_admin',
+                'slug' => UserRole::SUPER_ADMIN->value,
                 'description' => 'Acesso total à plataforma. Gerencia todos os organizadores e eventos.',
             ],
             [
                 'name' => 'Usuário',
-                'slug' => 'user',
+                'slug' => UserRole::USER->value,
                 'description' => 'Usuário comum do sistema. Pode comprar ingressos e gerenciar suas inscrições.',
             ],
         ];

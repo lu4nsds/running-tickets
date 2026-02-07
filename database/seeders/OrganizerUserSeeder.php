@@ -2,6 +2,8 @@
 
 namespace Database\Seeders;
 
+use App\Enums\OrganizerRole;
+use App\Enums\UserRole;
 use App\Models\Organizer;
 use App\Models\User;
 use Illuminate\Database\Seeder;
@@ -35,12 +37,12 @@ class OrganizerUserSeeder extends Seeder
 
         // Atribuir role 'user' (role padrão)
         if (!$joao->roles()->exists()) {
-            $joao->assignRole('user');
+            $joao->assignRole(UserRole::USER->value);
         }
 
         // Vincular ao organizador como admin (remove vínculos anteriores)
         $joao->organizers()->sync([]);
-        $joao->organizers()->attach($organizer->id, ['role' => 'admin']);
+        $joao->organizers()->attach($organizer->id, ['role' => OrganizerRole::ADMIN->value]);
 
         // Cria usuário Maria como staff do organizador
         $maria = User::firstOrCreate(
@@ -52,12 +54,12 @@ class OrganizerUserSeeder extends Seeder
         );
 
         if (!$maria->roles()->exists()) {
-            $maria->assignRole('user');
+            $maria->assignRole(UserRole::USER->value);
         }
 
         // Vincular ao organizador como staff (remove vínculos anteriores)
         $maria->organizers()->sync([]);
-        $maria->organizers()->attach($organizer->id, ['role' => 'staff']);
+        $maria->organizers()->attach($organizer->id, ['role' => OrganizerRole::STAFF->value]);
 
         $this->command->info('✅ Usuários do organizador criados!');
         $this->command->info('');

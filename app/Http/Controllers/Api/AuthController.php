@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Enums\UserRole;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -28,7 +29,7 @@ class AuthController extends Controller
         ]);
 
         // Atribuir role padrão 'user'
-        $user->assignRole('user');
+        $user->assignRole(UserRole::USER->value);
 
         $token = $user->createToken('auth_token')->plainTextToken;
 
