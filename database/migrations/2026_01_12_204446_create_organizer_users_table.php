@@ -29,7 +29,10 @@ return new class extends Migration
 
             // Um usuário não pode ter dois vínculos iguais
             $table->unique(['organizer_id', 'user_id']);
-        }); 
+            
+            // Um usuário só pode pertencer a 1 organizador
+            $table->unique('user_id');
+        });
     }
 
     public function down(): void

@@ -34,14 +34,14 @@ class DashboardController extends Controller
                     'orders as total_revenue' => function ($query) {
                         $query->where('status', 'paid');
                     }
-                ], 'total')
+                ], 'total_cents')
                 ->get();
 
             // Resumo geral
             $summary = [
                 'total_events' => $events->count(),
-                'active_events' => $events->where('is_active', true)->count(),
-                'total_revenue' => $events->sum('total_revenue'),
+                'active_events' => $events->count(),
+                'total_revenue' => $events->sum('total_revenue') / 100,
                 'total_paid_orders' => $events->sum('paid_orders'),
                 'total_pending_orders' => $events->sum(fn($e) => $e->total_orders - $e->paid_orders),
             ];
@@ -51,21 +51,22 @@ class DashboardController extends Controller
                 // Buscar capacidade total do evento
                 $totalCapacity = DB::table('ticket_types')
                     ->where('event_id', $event->id)
-                    ->sum('quantity');
+                    ->sum('quota');
 
                 // Buscar tickets vendidos
                 $ticketsSold = DB::table('tickets')
                     ->join('order_items', 'tickets.order_item_id', '=', 'order_items.id')
                     ->join('orders', 'order_items.order_id', '=', 'orders.id')
-                    ->where('order_items.event_id', $event->id)
+                    ->join('ticket_types', 'order_items.ticket_type_id', '=', 'ticket_types.id')
+                    ->where('ticket_types.event_id', $event->id)
                     ->where('orders.status', 'paid')
                     ->count();
 
                 return [
                     'id' => $event->id,
-                    'name' => $event->name,
-                    'date' => $event->event_date,
-                    'revenue' => $event->total_revenue ?? 0,
+                    'name' => $event->title,
+                    'date' => $event->date_start,
+                    'revenue' => ($event->total_revenue ?? 0) / 100,
                     'orders' => $event->paid_orders,
                     'tickets_sold' => $ticketsSold,
                     'capacity' => $totalCapacity,
@@ -84,16 +85,34 @@ class DashboardController extends Controller
                 ->select(
                     DB::raw('DATE(orders.updated_at) as date'),
                     DB::raw('COUNT(*) as orders_count'),
-                    DB::raw('SUM(orders.total) as revenue')
+                    DB::raw('SUM(orders.total_cents) / 100 as revenue')
                 )
                 ->groupBy('date')
                 ->orderBy('date')
+                ->get();
+
+            // Vendas por tipo de ticket
+            $ticketTypesSales = DB::table('ticket_types')
+                ->join('events', 'ticket_types.event_id', '=', 'events.id')
+                ->join('order_items', 'ticket_types.id', '=', 'order_items.ticket_type_id')
+                ->join('orders', 'order_items.order_id', '=', 'orders.id')
+                ->where('events.organizer_id', $organizerId)
+                ->where('orders.status', 'paid')
+                ->select(
+                    'ticket_types.name',
+                    DB::raw('COUNT(order_items.id) as quantity_sold'),
+                    DB::raw('SUM(ticket_types.price_cents) / 100 as total_revenue')
+                )
+                ->groupBy('ticket_types.name')
+                ->orderByDesc('quantity_sold')
+                ->limit(10)
                 ->get();
 
             return [
                 'summary' => $summary,
                 'top_events' => $topEvents,
                 'sales_trend' => $salesByDay,
+                'ticket_types_sales' => $ticketTypesSales,
             ];
         });
     }
@@ -121,8 +140,8 @@ class DashboardController extends Controller
                     SUM(CASE WHEN status = "paid" THEN 1 ELSE 0 END) as paid_orders,
                     SUM(CASE WHEN status = "pending" THEN 1 ELSE 0 END) as pending_orders,
                     SUM(CASE WHEN status = "cancelled" THEN 1 ELSE 0 END) as cancelled_orders,
-                    SUM(CASE WHEN status = "paid" THEN total ELSE 0 END) as total_revenue,
-                    SUM(CASE WHEN status = "pending" THEN total ELSE 0 END) as pending_revenue
+                    SUM(CASE WHEN status = "paid" THEN total_cents ELSE 0 END) / 100 as total_revenue,
+                    SUM(CASE WHEN status = "pending" THEN total_cents ELSE 0 END) / 100 as pending_revenue
                 ')
                 ->first();
 
@@ -151,12 +170,12 @@ class DashboardController extends Controller
                 ->select(
                     'ticket_types.id',
                     'ticket_types.name',
-                    'ticket_types.price',
-                    'ticket_types.quantity as total_quantity',
+                    'ticket_types.price_cents',
+                    'ticket_types.quota as total_quantity',
                     DB::raw('COALESCE(COUNT(order_items.id), 0) as sold'),
-                    DB::raw('COALESCE(SUM(order_items.subtotal), 0) as revenue')
+                    DB::raw('COALESCE(SUM(ticket_types.price_cents), 0) / 100 as revenue')
                 )
-                ->groupBy('ticket_types.id', 'ticket_types.name', 'ticket_types.price', 'ticket_types.quantity')
+                ->groupBy('ticket_types.id', 'ticket_types.name', 'ticket_types.price_cents', 'ticket_types.quota')
                 ->get()
                 ->map(function ($type) {
                     $type->available = $type->total_quantity - $type->sold;
@@ -173,14 +192,14 @@ class DashboardController extends Controller
                 ->select(
                     DB::raw('DATE(updated_at) as date'),
                     DB::raw('COUNT(*) as orders'),
-                    DB::raw('SUM(total) as revenue')
+                    DB::raw('SUM(total_cents) / 100 as revenue')
                 )
                 ->groupBy('date')
                 ->orderBy('date')
                 ->get();
 
             // Projeção de vendas (se ainda houver tempo até o evento)
-            $daysUntilEvent = now()->diffInDays($event->event_date, false);
+            $daysUntilEvent = now()->diffInDays($event->date_start, false);
             $projection = null;
             
             if ($daysUntilEvent > 0 && $summary->paid_orders > 0) {
@@ -200,7 +219,7 @@ class DashboardController extends Controller
                         'ticket_type' => $type->name,
                         'current_sold' => $type->sold,
                         'projected_sold' => round($projectedSales),
-                        'projected_revenue' => round($projectedSales * $type->price, 2),
+                        'projected_revenue' => round($projectedSales * ($type->price_cents / 100), 2),
                     ];
                 });
             }
@@ -217,9 +236,9 @@ class DashboardController extends Controller
             return [
                 'event' => [
                     'id' => $event->id,
-                    'name' => $event->name,
-                    'date' => $event->event_date,
-                    'location' => $event->location,
+                    'name' => $event->title,
+                    'date' => $event->date_start,
+                    'location' => $event->city . ' - ' . $event->venue,
                     'days_until_event' => max($daysUntilEvent, 0),
                 ],
                 'summary' => [

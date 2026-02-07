@@ -99,7 +99,7 @@
             - ./admin:/app
             - /app/node_modules
         ports:
-            - "3001:5173"
+            - "3001:5174"
         networks:
             - running-tickets-network
         environment:

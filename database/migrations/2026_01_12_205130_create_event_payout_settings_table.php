@@ -20,6 +20,11 @@ return new class extends Migration
             $table->string('method');
             // pix | bank_account | gateway
 
+            // Modo de repasse
+            $table->enum('payout_mode', ['direct', 'platform'])
+                  ->default('direct')
+                  ->comment('direct: organizer MP account, platform: platform MP account with manual repasse');
+
             // Provedor específico
             $table->string('provider')->nullable();
             // pix | banco_do_brasil | stripe | pagarme
