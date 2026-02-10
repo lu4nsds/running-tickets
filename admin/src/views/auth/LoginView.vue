@@ -149,14 +149,18 @@
                         :disabled="isLoading"
                         class="w-full py-4 bg-primary text-background-dark font-bold text-base rounded-lg hover:brightness-110 active:scale-[0.98] transition-all shadow-primary-strong flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                        <span v-if="!isLoading">Entrar</span>
-                        <span v-else>Entrando...</span>
-                        <span
-                            v-if="!isLoading"
-                            class="material-symbols-outlined font-bold text-[20px]"
-                        >
-                            arrow_forward
-                        </span>
+                        <template v-if="!isLoading">
+                            <span>Entrar</span>
+                            <span
+                                class="material-symbols-outlined font-bold text-[20px]"
+                            >
+                                arrow_forward
+                            </span>
+                        </template>
+                        <template v-else>
+                            <LoadingSpinner size="sm" color="dark" />
+                            <span>Entrando...</span>
+                        </template>
                     </button>
                 </form>
             </div>
@@ -257,6 +261,7 @@ import { ref } from "vue";
 import { useRouter } from "vue-router";
 import { useAuthStore } from "@/stores/auth";
 import Modal from "@/components/ui/Modal.vue";
+import LoadingSpinner from "@/components/ui/LoadingSpinner.vue";
 
 const router = useRouter();
 const authStore = useAuthStore();

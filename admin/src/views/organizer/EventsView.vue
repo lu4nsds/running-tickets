@@ -58,15 +58,20 @@
             </button>
         </div>
 
-        <!-- Loading State -->
-        <div v-if="isLoading" class="flex items-center justify-center py-20">
-            <div class="text-center">
-                <div
-                    class="inline-block w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mb-4"
-                ></div>
-                <p class="text-text-muted">Carregando eventos...</p>
-            </div>
+        <!-- Loading State with Skeletons -->
+        <div
+            v-if="isLoading"
+            class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
+        >
+            <SkeletonCard v-for="i in 8" :key="i" type="event" />
         </div>
+
+        <ErrorState
+            v-else-if="error"
+            title="Erro ao carregar eventos"
+            :message="error"
+            @retry="() => fetchEvents()"
+        />
 
         <!-- Events Grid -->
         <div v-else-if="events.length > 0" class="space-y-6">
@@ -278,11 +283,14 @@ import api from "@/api/axios";
 import { EVENT_STATUS_OPTIONS } from "@/constants/eventStatus";
 import { API_ENDPOINTS } from "@/constants/apiEndpoints";
 import { useEventStatus } from "@/composables/useEventStatus";
+import { useLoading } from "@/composables/useLoading";
+import LoadingState from "@/components/ui/LoadingState.vue";
+import ErrorState from "@/components/ui/ErrorState.vue";
+import SkeletonCard from "@/components/ui/SkeletonCard.vue";
 
 const router = useRouter();
 const { getVisualStatus, getStatusClass } = useEventStatus();
-
-const isLoading = ref(true);
+const { isLoading, error, withLoading } = useLoading(true);
 const events = ref([]);
 const filters = ref({
     search: "",
@@ -332,8 +340,7 @@ const visiblePages = computed(() => {
 
 // Methods
 const fetchEvents = async (page = 1) => {
-    isLoading.value = true;
-    try {
+    await withLoading(async () => {
         const params = {
             page,
             per_page: 20,
@@ -362,11 +369,7 @@ const fetchEvents = async (page = 1) => {
             prev: response.data.links.prev,
             next: response.data.links.next,
         };
-    } catch (error) {
-        console.error("Erro ao buscar eventos:", error);
-    } finally {
-        isLoading.value = false;
-    }
+    });
 };
 
 let searchTimeout;

@@ -30,10 +30,16 @@ class EventResource extends JsonResource
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
             
-            // Relacionamentos opcionais
-            'organizer' => new OrganizerResource($this->whenLoaded('organizer')),
-            'categories' => $this->whenLoaded('categories'),
-            'ticket_types' => $this->whenLoaded('ticketTypes'),
+            // Relacionamentos
+            'organizer' => $this->whenLoaded('organizer', function () {
+                return new OrganizerResource($this->organizer);
+            }),
+            'categories' => $this->whenLoaded('categories', function () {
+                return $this->categories;
+            }),
+            'ticket_types' => $this->whenLoaded('ticketTypes', function () {
+                return $this->ticketTypes;
+            }),
         ];
     }
 }

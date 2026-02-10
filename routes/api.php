@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\Admin\OrganizerController as AdminOrganizerControll
 use App\Http\Controllers\Api\Admin\EventController as AdminEventController;
 use App\Http\Controllers\Api\Admin\CategoryController as AdminCategoryController;
 use App\Http\Controllers\Api\Admin\TicketTypeController as AdminTicketTypeController;
+use App\Http\Controllers\Api\Admin\PayoutController as AdminPayoutController;
 use App\Http\Controllers\Api\Organizer\EventController as OrganizerEventController;
 use App\Http\Controllers\Api\Organizer\PayoutController;
 use App\Http\Controllers\Api\Organizer\CategoryController as OrganizerCategoryController;
@@ -75,6 +76,9 @@ Route::middleware('auth:sanctum')->group(function () {
         // CRUD de Eventos
         Route::apiResource('events', AdminEventController::class);
         
+        // Configuração de modo de pagamento (admin only)
+        Route::put('/events/{event}/payout-mode', [AdminPayoutController::class, 'setPayoutMode']);
+        
         // CRUD de Categorias (nested em eventos)
         Route::apiResource('events.categories', AdminCategoryController::class);
         
@@ -93,8 +97,10 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/events/{event}', [OrganizerEventController::class, 'show']);
         
         // Configurações de pagamento
+        Route::get('/payment-settings', [PayoutController::class, 'index']);
         Route::get('/events/{event}/payout', [PayoutController::class, 'show']);
         Route::put('/events/{event}/payout', [PayoutController::class, 'update']);
+        Route::post('/events/{event}/payout/validate', [PayoutController::class, 'validateCredentials']);
         
         // Visualizar categorias (read-only)
         Route::get('/events/{event}/categories', [OrganizerCategoryController::class, 'index']);

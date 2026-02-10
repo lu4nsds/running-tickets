@@ -7,6 +7,8 @@ use App\Http\Requests\StoreEventRequest;
 use App\Http\Requests\UpdateEventRequest;
 use App\Http\Resources\EventResource;
 use App\Models\Event;
+use App\Models\EventPayoutSetting;
+use App\Services\MercadoPagoService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
@@ -42,6 +44,10 @@ class EventController extends Controller
     {
         $data = $request->validated();
         
+        // Remover payout_mode dos dados do evento
+        $payoutMode = $data['payout_mode'] ?? null;
+        unset($data['payout_mode']);
+        
         // Gerar slug se não fornecido
         if (empty($data['slug'])) {
             $data['slug'] = Str::slug($data['title']);
@@ -49,7 +55,53 @@ class EventController extends Controller
         
         $event = Event::create($data);
 
+        // Se payout_mode foi fornecido, criar configuração de pagamento
+        if ($payoutMode) {
+            $this->createPayoutSetting($event, $payoutMode);
+        }
+
         return new EventResource($event->load('organizer'));
+    }
+
+    /**
+     * Criar configuração de pagamento para o evento
+     */
+    private function createPayoutSetting(Event $event, string $payoutMode): void
+    {
+        if ($payoutMode === 'platform') {
+            // Modo Platform: usar credenciais da plataforma
+            try {
+                $platformCredentials = MercadoPagoService::getPlatformCredentials();
+                
+                EventPayoutSetting::create([
+                    'event_id' => $event->id,
+                    'method' => 'mercadopago',
+                    'payout_mode' => 'platform',
+                    'provider' => 'Mercado Pago',
+                    'details' => $platformCredentials,
+                    'active' => true,
+                ]);
+
+                // Ativar evento automaticamente
+                $event->update(['status' => 'ativo']);
+            } catch (\Exception $e) {
+                // Se falhar, não bloqueia criação do evento
+                \Log::warning('Erro ao configurar payout platform na criação do evento', [
+                    'event_id' => $event->id,
+                    'error' => $e->getMessage()
+                ]);
+            }
+        } else {
+            // Modo Direct: criar setting vazio, organizador adiciona credenciais depois
+            EventPayoutSetting::create([
+                'event_id' => $event->id,
+                'method' => 'mercadopago',
+                'payout_mode' => 'direct',
+                'provider' => 'Mercado Pago',
+                'details' => [],
+                'active' => true,
+            ]);
+        }
     }
 
     /**

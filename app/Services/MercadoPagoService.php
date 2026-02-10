@@ -7,9 +7,72 @@ use App\Models\Order;
 use MercadoPago\MercadoPagoConfig;
 use MercadoPago\Client\Preference\PreferenceClient;
 use MercadoPago\Exceptions\MPApiException;
+use Illuminate\Support\Facades\Http;
 
 class MercadoPagoService
 {
+    /**
+     * Valida credenciais do Mercado Pago via API
+     */
+    public function validateCredentials(string $accessToken): array
+    {
+        try {
+            $response = Http::withHeaders([
+                'Authorization' => 'Bearer ' . $accessToken,
+                'Accept' => 'application/json',
+            ])->get('https://api.mercadopago.com/users/me');
+
+            if ($response->successful()) {
+                $data = $response->json();
+                
+                return [
+                    'valid' => true,
+                    'account_info' => [
+                        'id' => $data['id'] ?? null,
+                        'email' => $data['email'] ?? null,
+                        'nickname' => $data['nickname'] ?? null,
+                        'first_name' => $data['first_name'] ?? null,
+                    ],
+                    'error' => null,
+                ];
+            }
+
+            return [
+                'valid' => false,
+                'account_info' => null,
+                'error' => 'Credenciais inválidas ou expiradas.',
+            ];
+
+        } catch (\Exception $e) {
+            \Log::error('Erro ao validar credenciais do Mercado Pago', [
+                'message' => $e->getMessage(),
+            ]);
+
+            return [
+                'valid' => false,
+                'account_info' => null,
+                'error' => 'Erro ao validar credenciais: ' . $e->getMessage(),
+            ];
+        }
+    }
+
+    /**
+     * Retorna as credenciais da plataforma configuradas no .env
+     */
+    public static function getPlatformCredentials(): array
+    {
+        $accessToken = config('mercadopago.platform_access_token');
+        $publicKey = config('mercadopago.platform_public_key');
+
+        if (empty($accessToken) || empty($publicKey)) {
+            throw new \Exception('Credenciais da plataforma não configuradas no .env');
+        }
+
+        return [
+            'access_token' => $accessToken,
+            'public_key' => $publicKey,
+        ];
+    }
     /**
      * Cria uma preferência de pagamento no Mercado Pago
      */

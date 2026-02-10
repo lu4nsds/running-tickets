@@ -27,15 +27,38 @@
             </div>
         </div>
 
-        <!-- Loading State -->
-        <div v-if="isLoading" class="flex items-center justify-center py-20">
-            <div class="text-center">
-                <div
-                    class="inline-block w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mb-4"
-                ></div>
-                <p class="text-text-muted">Carregando dados...</p>
+        <!-- Loading State with Skeletons -->
+        <div v-if="isLoading" class="space-y-6">
+            <!-- Skeleton Metrics Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <SkeletonCard v-for="i in 3" :key="i" type="metric-card" />
+            </div>
+
+            <!-- Skeleton Charts -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <SkeletonCard type="chart" />
+                <SkeletonCard type="chart" />
+            </div>
+
+            <!-- Skeleton Table -->
+            <div
+                class="bg-card-bg border border-surface-elevated rounded-xl p-6"
+            >
+                <div class="animate-pulse space-y-4">
+                    <div class="h-6 bg-surface rounded w-1/3 mb-6"></div>
+                    <div v-for="i in 5" :key="i">
+                        <SkeletonCard type="table-row" />
+                    </div>
+                </div>
             </div>
         </div>
+
+        <ErrorState
+            v-else-if="error"
+            title="Erro ao carregar dashboard"
+            :message="error"
+            @retry="fetchDashboardData"
+        />
 
         <!-- Dashboard Content -->
         <div v-else class="space-y-6">
@@ -377,13 +400,16 @@ import { useAuthStore } from "@/stores/auth";
 import api from "@/api/axios";
 import { API_ENDPOINTS } from "@/constants/apiEndpoints";
 import { useEventStatus } from "@/composables/useEventStatus";
+import { useLoading } from "@/composables/useLoading";
+import LoadingState from "@/components/ui/LoadingState.vue";
+import ErrorState from "@/components/ui/ErrorState.vue";
+import SkeletonCard from "@/components/ui/SkeletonCard.vue";
 import VueApexCharts from "vue3-apexcharts";
 
 const { getVisualStatus, getStatusClass } = useEventStatus();
+const { isLoading, error, withLoading } = useLoading(true);
 
 const authStore = useAuthStore();
-
-const isLoading = ref(true);
 const dashboardData = ref({
     summary: {},
     top_events: [],
@@ -609,8 +635,7 @@ const ticketTypesChartSeries = ref([
 
 // Methods
 const fetchDashboardData = async () => {
-    isLoading.value = true;
-    try {
+    await withLoading(async () => {
         const response = await api.get(API_ENDPOINTS.ORGANIZER.DASHBOARD);
         console.log("Dashboard API Response:", response.data);
         dashboardData.value = response.data;
@@ -644,11 +669,7 @@ const fetchDashboardData = async () => {
                     parseFloat(item.total_revenue || 0),
                 );
         }
-    } catch (error) {
-        console.error("Erro ao buscar dados do dashboard:", error);
-    } finally {
-        isLoading.value = false;
-    }
+    });
 };
 
 const formatCurrency = (value) => {

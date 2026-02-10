@@ -94,7 +94,7 @@ const menuItems = computed(() => {
             { path: "/admin/events", icon: "event", label: "Eventos" },
         ];
     } else {
-        return [
+        const items = [
             {
                 path: "/organizer/dashboard",
                 icon: "dashboard",
@@ -102,6 +102,18 @@ const menuItems = computed(() => {
             },
             { path: "/organizer/events", icon: "event", label: "Eventos" },
         ];
+
+        // Adiciona configurações de pagamento apenas para ADMIN
+        const firstOrganizer = authStore.userOrganizers[0];
+        if (firstOrganizer && authStore.isOrganizerAdmin(firstOrganizer.id)) {
+            items.push({
+                path: "/organizer/payment-settings",
+                icon: "account_balance",
+                label: "Configurações de Pagamento",
+            });
+        }
+
+        return items;
     }
 });
 

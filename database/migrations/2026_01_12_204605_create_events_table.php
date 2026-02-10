@@ -30,7 +30,7 @@ return new class extends Migration
             $table->integer('max_participants')->nullable();
 
             $table->string('banner_url')->nullable();
-            $table->string('status')->default('ativo');
+            $table->string('status')->default('inativo');
 
             // Dados flexíveis (regulamento, links, mapas, etc.)
             $table->json('meta')->nullable();

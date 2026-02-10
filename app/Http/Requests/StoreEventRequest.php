@@ -33,8 +33,8 @@ class StoreEventRequest extends FormRequest
             'date_end' => 'required|date|after_or_equal:date_start',
             'max_participants' => 'nullable|integer|min:1',
             'banner_url' => 'nullable|url',
-            'status' => 'nullable|in:draft,published,cancelled',
             'meta' => 'nullable|array',
+            'payout_mode' => 'nullable|in:direct,platform',
         ];
     }
 

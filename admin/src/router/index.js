@@ -41,6 +41,30 @@ const router = createRouter({
                     name: "organizer-events",
                     component: () => import("@/views/organizer/EventsView.vue"),
                 },
+                {
+                    path: "events/:id",
+                    name: "organizer-event-detail",
+                    component: () =>
+                        import("@/views/organizer/EventDetailView.vue"),
+                },
+                {
+                    path: "events/:id/dashboard",
+                    name: "organizer-event-dashboard",
+                    component: () =>
+                        import("@/views/organizer/EventDashboardView.vue"),
+                },
+                {
+                    path: "payment-settings",
+                    name: "organizer-payment-settings",
+                    component: () =>
+                        import("@/views/organizer/PaymentSettingsView.vue"),
+                },
+                {
+                    path: "events/:id/payout/config",
+                    name: "organizer-event-payout-config",
+                    component: () =>
+                        import("@/views/organizer/PayoutConfigView.vue"),
+                },
             ],
         },
         // Rotas Admin

@@ -165,7 +165,7 @@ class DashboardController extends Controller
 
             // Performance por tipo de ingresso
             $ticketTypes = DB::table('ticket_types')
-                ->where('event_id', $event->id)
+                ->where('ticket_types.event_id', $event->id)
                 ->leftJoin('order_items', function ($join) {
                     $join->on('ticket_types.id', '=', 'order_items.ticket_type_id')
                         ->join('orders', 'order_items.order_id', '=', 'orders.id')
@@ -203,7 +203,7 @@ class DashboardController extends Controller
                 ->get();
 
             // Projeção de vendas (se ainda houver tempo até o evento)
-            $daysUntilEvent = now()->diffInDays($event->date_start, false);
+            $daysUntilEvent = (int) now()->diffInDays($event->date_start, false);
             $projection = null;
             
             if ($daysUntilEvent > 0 && $summary->paid_orders > 0) {
@@ -228,14 +228,64 @@ class DashboardController extends Controller
                 });
             }
 
-            // Demografia (usuários vs guests)
-            $demographics = Order::where('event_id', $event->id)
-                ->where('status', OrderStatus::PAID->value)
-                ->selectRaw('
-                    SUM(CASE WHEN user_id IS NOT NULL THEN 1 ELSE 0 END) as registered_users,
-                    SUM(CASE WHEN user_id IS NULL THEN 1 ELSE 0 END) as guests
-                ')
-                ->first();
+            // Demografia por gênero (baseado nas categorias dos tickets vendidos)
+            $genderDemographics = DB::table('tickets')
+                ->join('order_items', 'tickets.order_item_id', '=', 'order_items.id')
+                ->join('orders', 'order_items.order_id', '=', 'orders.id')
+                ->join('categories', 'order_items.category_id', '=', 'categories.id')
+                ->where('orders.event_id', $event->id)
+                ->where('orders.status', OrderStatus::PAID->value)
+                ->select(
+                    'categories.gender',
+                    DB::raw('COUNT(*) as total')
+                )
+                ->groupBy('categories.gender')
+                ->get();
+
+            $totalTickets = $genderDemographics->sum('total');
+            $demographics = [
+                'male' => 0,
+                'female' => 0,
+                'other' => 0,
+                'male_percentage' => 0,
+                'female_percentage' => 0,
+                'other_percentage' => 0,
+            ];
+
+            foreach ($genderDemographics as $demo) {
+                $count = $demo->total;
+                $percentage = $totalTickets > 0 ? round(($count / $totalTickets) * 100, 2) : 0;
+                
+                switch ($demo->gender) {
+                    case 'M':
+                        $demographics['male'] = $count;
+                        $demographics['male_percentage'] = $percentage;
+                        break;
+                    case 'F':
+                        $demographics['female'] = $count;
+                        $demographics['female_percentage'] = $percentage;
+                        break;
+                    case 'U':
+                        $demographics['other'] = $count;
+                        $demographics['other_percentage'] = $percentage;
+                        break;
+                }
+            }
+
+            // Vendas por categoria
+            $salesByCategory = DB::table('tickets')
+                ->join('order_items', 'tickets.order_item_id', '=', 'order_items.id')
+                ->join('orders', 'order_items.order_id', '=', 'orders.id')
+                ->join('categories', 'order_items.category_id', '=', 'categories.id')
+                ->where('orders.event_id', $event->id)
+                ->where('orders.status', OrderStatus::PAID->value)
+                ->select(
+                    'categories.name',
+                    DB::raw('COUNT(*) as tickets_sold')
+                )
+                ->groupBy('categories.id', 'categories.name')
+                ->orderByDesc('tickets_sold')
+                ->get();
 
             return [
                 'event' => [
@@ -255,13 +305,8 @@ class DashboardController extends Controller
                 'conversion_funnel' => $conversionFunnel,
                 'ticket_types' => $ticketTypes,
                 'sales_velocity' => $salesVelocity,
-                'demographics' => [
-                    'registered_users' => $demographics->registered_users,
-                    'guests' => $demographics->guests,
-                    'registered_percentage' => $summary->paid_orders > 0 
-                        ? round(($demographics->registered_users / $summary->paid_orders) * 100, 2) 
-                        : 0,
-                ],
+                'demographics' => $demographics,
+                'sales_by_category' => $salesByCategory,
                 'projection' => $projection,
             ];
         });
