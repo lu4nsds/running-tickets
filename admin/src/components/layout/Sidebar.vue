@@ -103,9 +103,8 @@ const menuItems = computed(() => {
             { path: "/organizer/events", icon: "event", label: "Eventos" },
         ];
 
-        // Adiciona configurações de pagamento apenas para ADMIN
-        const firstOrganizer = authStore.userOrganizers[0];
-        if (firstOrganizer && authStore.isOrganizerAdmin(firstOrganizer.id)) {
+        // Adiciona configurações de pagamento apenas para ADMIN (não STAFF)
+        if (authStore.canEditPaymentSettings) {
             items.push({
                 path: "/organizer/payment-settings",
                 icon: "account_balance",

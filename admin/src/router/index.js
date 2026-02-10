@@ -58,12 +58,30 @@ const router = createRouter({
                     name: "organizer-payment-settings",
                     component: () =>
                         import("@/views/organizer/PaymentSettingsView.vue"),
+                    beforeEnter: (to, from, next) => {
+                        const authStore = useAuthStore();
+                        // Apenas admin do organizador pode acessar
+                        if (!authStore.canEditPaymentSettings) {
+                            next({ name: "organizer-dashboard" });
+                            return;
+                        }
+                        next();
+                    },
                 },
                 {
                     path: "events/:id/payout/config",
                     name: "organizer-event-payout-config",
                     component: () =>
                         import("@/views/organizer/PayoutConfigView.vue"),
+                    beforeEnter: (to, from, next) => {
+                        const authStore = useAuthStore();
+                        // Apenas admin do organizador pode acessar
+                        if (!authStore.canEditPaymentSettings) {
+                            next({ name: "organizer-dashboard" });
+                            return;
+                        }
+                        next();
+                    },
                 },
             ],
         },

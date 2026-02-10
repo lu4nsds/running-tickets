@@ -28,6 +28,35 @@ export const useAuthStore = defineStore("auth", () => {
 
     const userOrganizers = computed(() => user.value?.organizers || []);
 
+    // Organizador atual (primeiro da lista)
+    const currentOrganizer = computed(() => {
+        return user.value?.organizers?.[0] || null;
+    });
+
+    const currentOrganizerId = computed(
+        () => currentOrganizer.value?.id || null,
+    );
+
+    const currentOrganizerRole = computed(() => {
+        return currentOrganizer.value?.pivot?.role || null;
+    });
+
+    // Verifica se o usuário é admin do organizador atual
+    const isCurrentOrganizerAdmin = computed(() => {
+        return currentOrganizerRole.value === ORGANIZER_ROLE.ADMIN;
+    });
+
+    // Verifica se o usuário é staff do organizador atual
+    const isCurrentOrganizerStaff = computed(() => {
+        return currentOrganizerRole.value === ORGANIZER_ROLE.STAFF;
+    });
+
+    // Permissão para editar configurações de pagamento
+    const canEditPaymentSettings = computed(() => {
+        return isSuperAdmin.value || isCurrentOrganizerAdmin.value;
+    });
+
+    // Métodos com organizerId específico
     const isOrganizerAdmin = (organizerId) => {
         if (!user.value?.organizers) return false;
         const organizer = user.value.organizers.find(
@@ -112,6 +141,12 @@ export const useAuthStore = defineStore("auth", () => {
         isSuperAdmin,
         hasOrganizers,
         userOrganizers,
+        currentOrganizer,
+        currentOrganizerId,
+        currentOrganizerRole,
+        isCurrentOrganizerAdmin,
+        isCurrentOrganizerStaff,
+        canEditPaymentSettings,
         isOrganizerAdmin,
         isOrganizerStaff,
         // Actions

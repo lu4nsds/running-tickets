@@ -1,6 +1,13 @@
 ﻿<template>
     <div class="space-y-6">
-        <div v-if="isLoading" class="space-y-4">
+        <!-- Proteção: Apenas Admin pode editar -->
+        <ErrorState
+            v-if="!authStore.canEditPaymentSettings"
+            title="Acesso Negado"
+            message="Apenas administradores do organizador podem configurar pagamentos. Entre em contato com o administrador."
+        />
+
+        <div v-else-if="isLoading" class="space-y-4">
             <SkeletonCard v-for="i in 2" :key="i" type="info-section" />
         </div>
 

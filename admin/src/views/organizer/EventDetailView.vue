@@ -468,7 +468,8 @@
                     <router-link
                         v-if="
                             payoutSettings &&
-                            payoutSettings.payout_mode !== 'platform'
+                            payoutSettings.payout_mode !== 'platform' &&
+                            authStore.canEditPaymentSettings
                         "
                         :to="`/organizer/events/${event.id}/payout/config`"
                         class="text-primary hover:underline text-sm flex items-center gap-1"
@@ -608,6 +609,7 @@
                         Nenhuma configuração de pagamento cadastrada.
                     </p>
                     <router-link
+                        v-if="authStore.canEditPaymentSettings"
                         :to="`/organizer/events/${event.id}/payout/config`"
                         class="inline-flex items-center gap-2 px-4 py-2 bg-primary hover:brightness-110 text-background-dark font-semibold rounded-lg transition-all"
                     >
@@ -616,6 +618,10 @@
                         >
                         Configurar Pagamento
                     </router-link>
+                    <p v-else class="text-text-muted text-sm">
+                        Entre em contato com o administrador do organizador para
+                        configurar.
+                    </p>
                 </div>
             </div>
         </div>
