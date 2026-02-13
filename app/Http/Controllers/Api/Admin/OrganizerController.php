@@ -27,7 +27,7 @@ class OrganizerController extends Controller
             )
             ->withCount('events')
             ->orderBy('created_at', 'desc')
-            ->paginate($request->per_page ?? 20);
+            ->paginate($request->per_page ?? 6);
 
         return OrganizerResource::collection($organizers);
     }

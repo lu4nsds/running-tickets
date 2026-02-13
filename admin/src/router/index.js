@@ -99,7 +99,7 @@ const router = createRouter({
                 {
                     path: "organizers",
                     name: "admin-organizers",
-                    component: () => import("@/views/admin/DashboardView.vue"),
+                    component: () => import("@/views/admin/OrganizersView.vue"),
                 },
                 {
                     path: "events",
