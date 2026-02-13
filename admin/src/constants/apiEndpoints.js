@@ -27,6 +27,8 @@ export const API_ENDPOINTS = {
     },
     ADMIN: {
         DASHBOARD: "/admin/dashboard",
+        ORGANIZER_DASHBOARD: (organizerId) =>
+            `/admin/organizers/${organizerId}/dashboard`,
         EVENT: {
             SET_PAYOUT_MODE: (eventId) =>
                 `/admin/events/${eventId}/payout-mode`,

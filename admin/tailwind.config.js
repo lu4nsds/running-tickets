@@ -8,6 +8,8 @@ export default {
                 primary: "#00E676",
                 "background-dark": "#0F1114",
                 "card-bg": "#1A1D23",
+                "card-dark": "#1A1D23",
+                "border-dark": "#2d333b",
                 surface: "#252930",
                 "surface-elevated": "#2D3139",
                 "input-bg": "#1E2128",

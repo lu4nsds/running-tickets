@@ -19,86 +19,102 @@ class EventSeeder extends Seeder
             return;
         }
 
-        $organizer = Organizer::where('email', 'organizador@dev.local')->first();
+        $organizers = Organizer::all();
 
-        if (!$organizer) {
+        if ($organizers->isEmpty()) {
+            $this->command->error('❌ Nenhum organizador encontrado! Execute OrganizerSeeder primeiro.');
             return;
         }
 
-        $events = [
+        $eventTemplates = [
             [
-                'slug' => 'corrida-dev-5k',
-                'title' => 'Corrida Dev 5K',
-                'description' => 'Evento de corrida para ambiente de desenvolvimento',
-                'city' => 'Natal',
-                'venue' => 'Parque das Dunas',
-                'date_start' => now()->addDays(30),
-                'date_end' => now()->addDays(30)->addHours(3),
+                'suffix' => '5k',
+                'title_template' => 'Corrida {city} 5K',
+                'description' => 'Corrida de 5km pela cidade',
+                'distance' => '5km',
+                'duration_hours' => 3,
                 'max_participants' => 500,
-                'status' => EventStatus::INATIVO->value, // Será ativado após config platform
-                'meta' => ['distance' => '5km', 'kit' => 'camisa + medalha'],
-                'payout_mode' => 'platform', // Pagamento pela plataforma
             ],
             [
-                'slug' => 'meia-maratona-litoral',
-                'title' => 'Meia Maratona do Litoral',
-                'description' => 'Meia maratona pela orla de Natal',
-                'city' => 'Natal',
-                'venue' => 'Via Costeira',
-                'date_start' => now()->addDays(45),
-                'date_end' => now()->addDays(45)->addHours(4),
-                'max_participants' => 1000,
-                'status' => EventStatus::INATIVO->value, // Sem credenciais ainda
-                'meta' => ['distance' => '21km', 'kit' => 'camisa + medalha + hidratação'],
-                'payout_mode' => 'direct', // Direct sem credenciais (organizador precisa configurar)
-            ],
-            [
-                'slug' => 'corrida-das-dunas-10k',
-                'title' => 'Corrida das Dunas 10K',
-                'description' => 'Corrida de 10km pelas dunas de Genipabu',
-                'city' => 'Natal',
-                'venue' => 'Genipabu',
-                'date_start' => now()->addDays(60),
-                'date_end' => now()->addDays(60)->addHours(3),
+                'suffix' => '10k',
+                'title_template' => 'Corrida das Dunas {city} 10K',
+                'description' => 'Corrida de 10km',
+                'distance' => '10km',
+                'duration_hours' => 4,
                 'max_participants' => 700,
-                'status' => EventStatus::INATIVO->value, // Será ativado após config platform
-                'meta' => ['distance' => '10km', 'kit' => 'camisa + medalha'],
-                'payout_mode' => 'platform', // Pagamento pela plataforma
             ],
             [
-                'slug' => 'trail-run-montanhas',
-                'title' => 'Trail Run Montanhas RN',
-                'description' => 'Trail running pelas serras do RN',
-                'city' => 'Martins',
-                'venue' => 'Serra de Martins',
-                'date_start' => now()->addDays(75),
-                'date_end' => now()->addDays(75)->addHours(5),
+                'suffix' => 'meia-maratona',
+                'title_template' => 'Meia Maratona {city}',
+                'description' => 'Meia maratona de 21km',
+                'distance' => '21km',
+                'duration_hours' => 5,
+                'max_participants' => 1000,
+            ],
+            [
+                'suffix' => 'trail',
+                'title_template' => 'Trail Run {city}',
+                'description' => 'Trail running',
+                'distance' => '15km',
+                'duration_hours' => 5,
                 'max_participants' => 300,
-                'status' => EventStatus::INATIVO->value, // Sem credenciais ainda
-                'meta' => ['distance' => '15km', 'kit' => 'camisa + medalha + mochila'],
-                'payout_mode' => 'direct', // Direct sem credenciais (organizador precisa configurar)
             ],
         ];
 
-        foreach ($events as $eventData) {
-            // Extrair payout_mode e credenciais antes de criar o evento
-            $payoutMode = $eventData['payout_mode'] ?? null;
-            $mpCredentials = $eventData['mp_credentials'] ?? null;
-            unset($eventData['payout_mode'], $eventData['mp_credentials']);
+        $cities = [
+            ['name' => 'Natal', 'venues' => ['Parque das Dunas', 'Via Costeira', 'Ponta Negra']],
+            ['name' => 'Mossoró', 'venues' => ['Centro', 'Abolição', 'Ilha de Santa Luzia']],
+            ['name' => 'Parnamirim', 'venues' => ['Cotovelo', 'Pirangi', 'Centro']],
+            ['name' => 'João Pessoa', 'venues' => ['Cabo Branco', 'Tambaú', 'Manaíra']],
+            ['name' => 'Recife', 'venues' => ['Boa Viagem', 'Recife Antigo', 'Parque Dona Lindu']],
+        ];
 
-            // Criar ou recuperar evento
-            $event = Event::firstOrCreate(
-                ['slug' => $eventData['slug']],
-                array_merge(['organizer_id' => $organizer->id], $eventData)
-            );
+        $eventCount = 0;
 
-            // Criar configuração de pagamento se não existir
-            if ($payoutMode && !$event->payoutSetting) {
-                $this->createPayoutSetting($event, $payoutMode, $mpCredentials);
+        // Criar 3-4 eventos para cada organizador
+        foreach ($organizers as $organizer) {
+            $numEvents = rand(3, 4);
+            
+            for ($i = 0; $i < $numEvents; $i++) {
+                $template = $eventTemplates[array_rand($eventTemplates)];
+                $city = $cities[array_rand($cities)];
+                $venue = $city['venues'][array_rand($city['venues'])];
+                
+                $daysInFuture = rand(15, 120);
+                $payoutMode = rand(0, 10) < 7 ? 'platform' : 'direct'; // 70% platform, 30% direct
+                
+                $slug = Str::slug($template['title_template'] . ' ' . $city['name'] . ' ' . $daysInFuture);
+                $title = str_replace('{city}', $city['name'], $template['title_template']);
+                
+                $event = Event::firstOrCreate(
+                    ['slug' => $slug],
+                    [
+                        'organizer_id' => $organizer->id,
+                        'title' => $title,
+                        'description' => $template['description'],
+                        'city' => $city['name'],
+                        'venue' => $venue,
+                        'date_start' => now()->addDays($daysInFuture),
+                        'date_end' => now()->addDays($daysInFuture)->addHours($template['duration_hours']),
+                        'max_participants' => $template['max_participants'],
+                        'status' => EventStatus::INATIVO->value,
+                        'meta' => [
+                            'distance' => $template['distance'],
+                            'kit' => 'camisa + medalha',
+                        ],
+                    ]
+                );
+
+                // Criar configuração de pagamento
+                if (!$event->payoutSetting) {
+                    $this->createPayoutSetting($event, $payoutMode, null);
+                }
+                
+                $eventCount++;
             }
         }
 
-        $this->command->info('✅ Eventos criados com configurações de pagamento!');
+        $this->command->info("✅ {$eventCount} eventos criados!");
     }
 
     /**

@@ -25,13 +25,14 @@ class OrderSeeder extends Seeder
             return;
         }
 
-        $organizer = Organizer::where('email', 'organizador@dev.local')->first();
-        
-        if (!$organizer) {
+        $events = Event::with('organizer')->get();
+
+        if ($events->isEmpty()) {
+            $this->command->error('❌ Nenhum evento encontrado! Execute EventSeeder primeiro.');
             return;
         }
 
-        $events = Event::where('organizer_id', $organizer->id)->get();
+        $totalOrders = 0;
 
         foreach ($events as $event) {
             $ticketTypes = TicketType::where('event_id', $event->id)->get();
@@ -41,17 +42,23 @@ class OrderSeeder extends Seeder
                 continue;
             }
 
-            // Criar 30 pedidos pagos para cada evento
-            for ($i = 1; $i <= 30; $i++) {
+            // Criar entre 40-80 pedidos pagos para cada evento (distribuídos nos últimos 30 dias)
+            $numPaidOrders = rand(40, 80);
+            
+            for ($i = 1; $i <= $numPaidOrders; $i++) {
                 $ticketType = $ticketTypes->random();
                 $category = $categories->random();
                 $quantity = rand(1, 3); // 1 a 3 ingressos por pedido
 
                 $totalCents = $ticketType->price_cents * $quantity;
+                
+                // Distribuir pedidos nos últimos 30 dias com pico nos primeiros 7 dias
+                $daysAgo = $this->getRandomDaysAgo();
+                $createdAt = now()->subDays($daysAgo);
 
                 $order = Order::create([
                     'event_id' => $event->id,
-                    'organizer_id' => $organizer->id,
+                    'organizer_id' => $event->organizer_id,
                     'reference' => 'ORD-' . strtoupper(Str::random(10)),
                     'user_id' => null, // Guest
                     'total_cents' => $totalCents,
@@ -63,8 +70,8 @@ class OrderSeeder extends Seeder
                         'ip' => '192.168.1.' . rand(1, 255),
                         'user_agent' => 'Mozilla/5.0',
                     ],
-                    'created_at' => now()->subDays(rand(0, 7)),
-                    'updated_at' => now()->subDays(rand(0, 7)),
+                    'created_at' => $createdAt,
+                    'updated_at' => $createdAt,
                 ]);
 
                 // Criar order items e tickets
@@ -89,22 +96,27 @@ class OrderSeeder extends Seeder
                         'code' => Str::uuid(),
                         'qr_path' => null,
                         'status' => TicketStatus::ACTIVE->value,
-                        'issued_at' => now(),
+                        'issued_at' => $createdAt,
                     ]);
                 }
+                
+                $totalOrders++;
             }
 
-            // Criar 10 pedidos pendentes
-            for ($i = 1; $i <= 10; $i++) {
+            // Criar entre 5-15 pedidos pendentes
+            $numPendingOrders = rand(5, 15);
+            
+            for ($i = 1; $i <= $numPendingOrders; $i++) {
                 $ticketType = $ticketTypes->random();
                 $category = $categories->random();
                 $quantity = rand(1, 2);
 
                 $totalCents = $ticketType->price_cents * $quantity;
+                $createdAt = now()->subDays(rand(0, 5));
 
                 $order = Order::create([
                     'event_id' => $event->id,
-                    'organizer_id' => $organizer->id,
+                    'organizer_id' => $event->organizer_id,
                     'reference' => 'ORD-' . strtoupper(Str::random(10)),
                     'user_id' => null,
                     'total_cents' => $totalCents,
@@ -115,8 +127,8 @@ class OrderSeeder extends Seeder
                     'metadata' => [
                         'ip' => '192.168.1.' . rand(1, 255),
                     ],
-                    'created_at' => now()->subDays(rand(0, 3)),
-                    'updated_at' => now()->subDays(rand(0, 3)),
+                    'created_at' => $createdAt,
+                    'updated_at' => $createdAt,
                 ]);
 
                 // Criar order items (sem tickets pois não foi pago)
@@ -135,9 +147,81 @@ class OrderSeeder extends Seeder
                         ],
                     ]);
                 }
+                
+                $totalOrders++;
+            }
+            
+            // Criar alguns pedidos cancelados (10-20% dos pagos)
+            $numCancelledOrders = rand(5, 10);
+            
+            for ($i = 1; $i <= $numCancelledOrders; $i++) {
+                $ticketType = $ticketTypes->random();
+                $category = $categories->random();
+                $quantity = rand(1, 2);
+
+                $totalCents = $ticketType->price_cents * $quantity;
+                $createdAt = now()->subDays(rand(1, 20));
+
+                $order = Order::create([
+                    'event_id' => $event->id,
+                    'organizer_id' => $event->organizer_id,
+                    'reference' => 'ORD-' . strtoupper(Str::random(10)),
+                    'user_id' => null,
+                    'total_cents' => $totalCents,
+                    'currency' => Currency::BRL->value,
+                    'status' => OrderStatus::CANCELLED->value,
+                    'payment_gateway' => null,
+                    'payment_id' => null,
+                    'metadata' => [
+                        'ip' => '192.168.1.' . rand(1, 255),
+                        'cancelled_reason' => 'Solicitação do cliente',
+                    ],
+                    'created_at' => $createdAt,
+                    'updated_at' => $createdAt,
+                ]);
+
+                // Criar order items
+                for ($j = 0; $j < $quantity; $j++) {
+                    OrderItem::create([
+                        'order_id' => $order->id,
+                        'ticket_type_id' => $ticketType->id,
+                        'category_id' => $category->id,
+                        'user_id' => null,
+                        'participant_data' => [
+                            'name' => 'Participante ' . fake()->name(),
+                            'email' => fake()->email(),
+                            'cpf' => fake()->numerify('###########'),
+                            'birth_date' => fake()->date('Y-m-d', '-25 years'),
+                            'gender' => $category->gender,
+                        ],
+                    ]);
+                }
+                
+                $totalOrders++;
             }
         }
 
-        $this->command->info('✅ Pedidos criados com sucesso!');
+        $this->command->info("✅ {$totalOrders} pedidos criados com sucesso!");
+    }
+    
+    /**
+     * Gera dias aleatórios com distribuição realista (mais vendas recentes)
+     */
+    private function getRandomDaysAgo(): int
+    {
+        $rand = rand(1, 100);
+        
+        // 40% nos últimos 7 dias
+        if ($rand <= 40) {
+            return rand(0, 7);
+        }
+        
+        // 30% entre 8-15 dias
+        if ($rand <= 70) {
+            return rand(8, 15);
+        }
+        
+        // 30% entre 16-30 dias
+        return rand(16, 30);
     }
 }

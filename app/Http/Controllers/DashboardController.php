@@ -139,14 +139,14 @@ class DashboardController extends Controller
         return Cache::remember($cacheKey, 300, function () use ($event) {
             // Resumo do evento com agregações otimizadas
             $summary = Order::where('event_id', $event->id)
-                ->selectRaw('
+                ->selectRaw("
                     COUNT(*) as total_orders,
-                    SUM(CASE WHEN status = "paid" THEN 1 ELSE 0 END) as paid_orders,
-                    SUM(CASE WHEN status = "pending" THEN 1 ELSE 0 END) as pending_orders,
-                    SUM(CASE WHEN status = "cancelled" THEN 1 ELSE 0 END) as cancelled_orders,
-                    SUM(CASE WHEN status = "paid" THEN total_cents ELSE 0 END) / 100 as total_revenue,
-                    SUM(CASE WHEN status = "pending" THEN total_cents ELSE 0 END) / 100 as pending_revenue
-                ')
+                    SUM(CASE WHEN status = 'paid' THEN 1 ELSE 0 END) as paid_orders,
+                    SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending_orders,
+                    SUM(CASE WHEN status = 'cancelled' THEN 1 ELSE 0 END) as cancelled_orders,
+                    SUM(CASE WHEN status = 'paid' THEN total_cents ELSE 0 END) / 100 as total_revenue,
+                    SUM(CASE WHEN status = 'pending' THEN total_cents ELSE 0 END) / 100 as pending_revenue
+                ")
                 ->first();
 
             // Funil de conversão

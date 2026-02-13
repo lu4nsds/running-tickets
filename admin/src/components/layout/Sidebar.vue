@@ -4,36 +4,45 @@
         :class="{ '-translate-x-full': !isOpen }"
     >
         <!-- Logo -->
-        <div
-            class="flex items-center justify-center h-16 border-b border-surface-elevated"
-        >
-            <div class="flex items-center gap-3">
+        <div class="p-6">
+            <div class="flex items-center gap-2 mb-10">
                 <div
-                    class="w-10 h-10 bg-primary rounded-lg flex items-center justify-center shadow-primary"
+                    class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center shadow-[0_0_15px_rgba(0,230,119,0.5)]"
                 >
                     <span
-                        class="material-symbols-outlined text-background-dark text-2xl font-bold"
+                        class="material-symbols-outlined text-background-dark font-bold"
                     >
-                        payments
+                        bolt
                     </span>
                 </div>
-                <span class="text-white font-bold text-lg"
-                    >Running Tickets</span
+                <span
+                    class="text-xl font-extrabold tracking-tight uppercase italic"
                 >
+                    Running<span class="text-primary">Tickets</span>
+                </span>
             </div>
         </div>
 
         <!-- Navigation -->
-        <nav class="flex-1 overflow-y-auto p-4 space-y-1">
+        <nav class="flex-1 overflow-y-auto px-6 space-y-2">
             <router-link
                 v-for="item in menuItems"
                 :key="item.path"
                 :to="item.path"
-                class="flex items-center gap-3 px-4 py-3 rounded-lg text-text-secondary hover:bg-surface-elevated hover:text-white transition-all group"
-                active-class="bg-surface-elevated text-white border-l-4 border-primary pl-3"
+                class="flex items-center gap-3 px-4 py-3 rounded-lg transition-all group"
+                :class="
+                    $route.path === item.path
+                        ? 'bg-primary/10 text-primary neon-border-active font-semibold'
+                        : 'text-text-secondary hover:bg-white/5 hover:text-white'
+                "
             >
                 <span
-                    class="material-symbols-outlined text-[20px] group-hover:text-primary transition-colors"
+                    class="material-symbols-outlined text-[20px] transition-colors"
+                    :class="
+                        $route.path === item.path
+                            ? 'text-primary'
+                            : 'group-hover:text-primary'
+                    "
                 >
                     {{ item.icon }}
                 </span>

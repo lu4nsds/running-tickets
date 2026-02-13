@@ -18,4 +18,10 @@
             "opsz" 24;
         user-select: none;
     }
+
+    /* Neon Border for Active Sidebar Item */
+    .neon-border-active {
+        border-right: 3px solid #00e677;
+        box-shadow: inset -10px 0 15px -10px rgba(0, 230, 119, 0.4);
+    }
 }
