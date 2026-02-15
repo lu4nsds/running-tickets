@@ -2,7 +2,9 @@
 
 namespace App\Http\Requests;
 
+use App\Enums\EventStatus;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class UpdateEventRequest extends FormRequest
 {
@@ -34,8 +36,9 @@ class UpdateEventRequest extends FormRequest
             'date_start' => 'sometimes|required|date',
             'date_end' => 'sometimes|required|date|after_or_equal:date_start',
             'max_participants' => 'nullable|integer|min:1',
+            'banner' => 'nullable|image|mimes:jpeg,png,webp|max:2048',
             'banner_url' => 'nullable|url',
-            'status' => 'sometimes|in:draft,published,cancelled',
+            'status' => ['sometimes', Rule::in(EventStatus::values())],
             'meta' => 'nullable|array',
         ];
     }

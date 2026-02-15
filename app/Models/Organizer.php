@@ -41,4 +41,12 @@ class Organizer extends Model
     {
         return $this->hasMany(Event::class);
     }
+
+    /**
+     * Pedidos/Vendas deste organizador
+     */
+    public function orders()
+    {
+        return $this->hasMany(Order::class);
+    }
 }

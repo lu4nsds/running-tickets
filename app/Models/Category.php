@@ -12,10 +12,17 @@ class Category extends Model
     protected $fillable = [
         'event_id',
         'name',
+        'distance',
+        'description',
         'gender',
         'min_age',
         'max_age',
         'active',
+    ];
+
+    protected $casts = [
+        'distance' => 'decimal:2',
+        'active' => 'boolean',
     ];
 
     /**

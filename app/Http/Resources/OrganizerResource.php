@@ -34,6 +34,9 @@ class OrganizerResource extends JsonResource
             'users' => $this->whenLoaded('users'),
             'events' => $this->whenLoaded('events'),
             'events_count' => $this->when(isset($this->events_count), $this->events_count),
+            
+            // Stats calculados
+            'total_sales' => $this->when(isset($this->total_sales), $this->total_sales),
         ];
     }
 }

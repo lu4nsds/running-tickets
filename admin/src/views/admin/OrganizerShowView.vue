@@ -570,6 +570,51 @@
                 </div>
             </template>
         </Modal>
+
+        <!-- Modal de Confirmação de Exclusão -->
+        <Modal
+            v-model="showDeleteModal"
+            title="Deletar Organizador"
+            :subtitle="organizer?.name"
+        >
+            <p class="text-text-secondary">
+                Tem certeza que deseja excluir permanentemente
+                <strong class="text-white">{{ organizer?.name }}</strong
+                >?
+            </p>
+            <p class="text-sm text-red-400 mt-2">
+                Esta ação não pode ser desfeita. Todos os dados, eventos e
+                usuários vinculados serão removidos.
+            </p>
+
+            <template #footer>
+                <div class="flex justify-end gap-3">
+                    <button
+                        @click="showDeleteModal = false"
+                        class="px-4 py-2 text-text-muted hover:text-white transition-colors"
+                    >
+                        Cancelar
+                    </button>
+                    <button
+                        @click="deleteOrganizer"
+                        :disabled="isDeleting"
+                        class="px-4 py-2 bg-red-500 text-white rounded-lg font-medium hover:bg-red-600 transition-colors flex items-center gap-2 disabled:opacity-50"
+                    >
+                        <span
+                            v-if="isDeleting"
+                            class="material-symbols-outlined text-[18px] animate-spin"
+                            >progress_activity</span
+                        >
+                        <span
+                            v-else
+                            class="material-symbols-outlined text-[18px]"
+                            >delete</span
+                        >
+                        {{ isDeleting ? "Excluindo..." : "Excluir" }}
+                    </button>
+                </div>
+            </template>
+        </Modal>
     </div>
 </template>
 
@@ -598,6 +643,8 @@ const recentEvents = ref([]);
 const showUnlinkModal = ref(false);
 const userToUnlink = ref(null);
 const isUnlinking = ref(false);
+const showDeleteModal = ref(false);
+const isDeleting = ref(false);
 
 // Methods
 const fetchOrganizer = async () => {
@@ -609,8 +656,8 @@ const fetchOrganizer = async () => {
         if (result.success) {
             organizer.value = result.data;
             recentEvents.value = result.data.events?.slice(0, 3) || [];
-            // TODO: Fetch real stats from API when available
-            stats.value.totalSales = 0;
+            // Total de vendas vem do backend em centavos
+            stats.value.totalSales = (result.data.total_sales || 0) / 100;
         } else {
             error.value = result.error;
         }
@@ -621,8 +668,13 @@ const fetchOrganizer = async () => {
     }
 };
 
-const confirmDelete = async () => {
-    if (confirm(`Tem certeza que deseja excluir "${organizer.value.name}"?`)) {
+const confirmDelete = () => {
+    showDeleteModal.value = true;
+};
+
+const deleteOrganizer = async () => {
+    isDeleting.value = true;
+    try {
         const result = await store.deleteOrganizer(organizer.value.id);
         if (result.success) {
             toast.success("Organizador excluído com sucesso");
@@ -630,6 +682,9 @@ const confirmDelete = async () => {
         } else {
             toast.error(result.error);
         }
+    } finally {
+        isDeleting.value = false;
+        showDeleteModal.value = false;
     }
 };
 

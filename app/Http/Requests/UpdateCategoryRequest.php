@@ -35,6 +35,8 @@ class UpdateCategoryRequest extends FormRequest
                     ->where('event_id', $eventId)
                     ->ignore($categoryId),
             ],
+            'distance' => ['nullable', 'numeric', 'min:0', 'max:999999.99'],
+            'description' => ['nullable', 'string', 'max:1000'],
             'gender' => ['nullable', 'in:M,F,X'],
             'min_age' => ['nullable', 'integer', 'min:0', 'required_with:max_age'],
             'max_age' => ['nullable', 'integer', 'min:0', 'required_with:min_age', 'gte:min_age'],
@@ -52,6 +54,9 @@ class UpdateCategoryRequest extends FormRequest
         return [
             'name.required' => 'O nome da categoria é obrigatório.',
             'name.unique' => 'Já existe uma categoria com este nome para este evento.',
+            'distance.numeric' => 'A distância deve ser um número.',
+            'distance.min' => 'A distância deve ser maior ou igual a 0.',
+            'description.max' => 'A descrição deve ter no máximo 1000 caracteres.',
             'gender.in' => 'O gênero deve ser M (masculino), F (feminino) ou X (misto).',
             'min_age.integer' => 'A idade mínima deve ser um número inteiro.',
             'min_age.min' => 'A idade mínima deve ser maior ou igual a 0.',

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\Admin;
 
+use App\Enums\OrderStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreOrganizerRequest;
 use App\Http\Requests\UpdateOrganizerRequest;
@@ -49,6 +50,13 @@ class OrganizerController extends Controller
     {
         $organizer->load(['users', 'events'])
             ->loadCount('events');
+        
+        // Calcular total de vendas (apenas pedidos pagos)
+        $totalSales = $organizer->orders()
+            ->where('status', OrderStatus::PAID)
+            ->sum('total_cents');
+        
+        $organizer->total_sales = $totalSales;
         
         return new OrganizerResource($organizer);
     }

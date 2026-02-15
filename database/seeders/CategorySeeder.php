@@ -18,12 +18,12 @@ class CategorySeeder extends Seeder
         $events = Event::all();
 
         $categoryTemplates = [
-            ['name' => 'Masculino Geral', 'gender' => 'M', 'min_age' => null, 'max_age' => null],
-            ['name' => 'Feminino Geral', 'gender' => 'F', 'min_age' => null, 'max_age' => null],
-            ['name' => 'Masculino 18-29', 'gender' => 'M', 'min_age' => 18, 'max_age' => 29],
-            ['name' => 'Feminino 18-29', 'gender' => 'F', 'min_age' => 18, 'max_age' => 29],
-            ['name' => 'Masculino 30-39', 'gender' => 'M', 'min_age' => 30, 'max_age' => 39],
-            ['name' => 'Feminino 30-39', 'gender' => 'F', 'min_age' => 30, 'max_age' => 39],
+            ['name' => 'Masculino 5K', 'distance' => 5, 'description' => 'Corrida de 5km categoria masculina', 'gender' => 'M', 'min_age' => null, 'max_age' => null],
+            ['name' => 'Feminino 5K', 'distance' => 5, 'description' => 'Corrida de 5km categoria feminina', 'gender' => 'F', 'min_age' => null, 'max_age' => null],
+            ['name' => 'Masculino 10K', 'distance' => 10, 'description' => 'Corrida de 10km categoria masculina', 'gender' => 'M', 'min_age' => 18, 'max_age' => null],
+            ['name' => 'Feminino 10K', 'distance' => 10, 'description' => 'Corrida de 10km categoria feminina', 'gender' => 'F', 'min_age' => 18, 'max_age' => null],
+            ['name' => 'Masculino 21K', 'distance' => 21, 'description' => 'Meia maratona masculina', 'gender' => 'M', 'min_age' => 18, 'max_age' => null],
+            ['name' => 'Feminino 21K', 'distance' => 21, 'description' => 'Meia maratona feminina', 'gender' => 'F', 'min_age' => 18, 'max_age' => null],
         ];
 
         foreach ($events as $event) {
@@ -34,6 +34,8 @@ class CategorySeeder extends Seeder
                         'name' => $category['name'],
                     ],
                     [
+                        'distance' => $category['distance'],
+                        'description' => $category['description'],
                         'gender' => $category['gender'],
                         'min_age' => $category['min_age'],
                         'max_age' => $category['max_age'],

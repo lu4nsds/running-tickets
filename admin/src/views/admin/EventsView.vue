@@ -3,19 +3,18 @@
         <!-- Header -->
         <div class="flex items-center justify-between">
             <div>
-                <h1 class="text-3xl font-extrabold text-white">
-                    Organizadores
-                </h1>
+                <h1 class="text-3xl font-extrabold text-white">Eventos</h1>
                 <p class="text-text-secondary mt-1">
-                    Gerencie todos os organizadores da plataforma
+                    Gerencie todos os eventos da plataforma de forma
+                    centralizada.
                 </p>
             </div>
             <button
-                @click="openCreateModal"
+                @click="openCreatePage"
                 class="flex items-center gap-2 px-6 py-3 bg-primary text-black rounded-xl font-semibold shadow-[0_0_20px_rgba(0,230,118,0.4)] hover:shadow-[0_0_30px_rgba(0,230,118,0.6)] transition-all"
             >
                 <span class="material-symbols-outlined text-[20px]">add</span>
-                Criar Organizador
+                Criar Evento
             </button>
         </div>
 
@@ -24,7 +23,7 @@
             class="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between"
         >
             <!-- Search -->
-            <div class="relative w-full md:w-[30rem]">
+            <div class="relative w-full md:w-[20rem]">
                 <span
                     class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-text-muted text-[20px]"
                 >
@@ -33,31 +32,49 @@
                 <input
                     v-model="searchQuery"
                     type="text"
-                    placeholder="Buscar por nome, e-mail ou CNPJ"
+                    placeholder="Buscar por título ou cidade..."
                     class="w-full bg-surface-elevated border border-surface-elevated rounded-lg pl-10 pr-4 py-2.5 text-white placeholder-text-muted focus:outline-none focus:border-primary transition-colors"
                     @input="debouncedSearch"
                 />
             </div>
 
-            <!-- Status Tabs -->
-            <div class="flex items-center gap-1 bg-surface rounded-lg p-1">
-                <button
-                    v-for="tab in statusTabs"
-                    :key="tab.value"
-                    @click="filterByStatus(tab.value)"
-                    class="px-4 py-2 rounded-md text-sm font-medium transition-colors"
-                    :class="
-                        currentStatus === tab.value
-                            ? 'bg-primary text-black'
-                            : 'text-text-secondary hover:text-white'
-                    "
+            <div class="flex items-center gap-4">
+                <!-- Organizer Filter -->
+                <select
+                    v-model="selectedOrganizer"
+                    @change="filterByOrganizer"
+                    class="bg-surface-elevated border border-surface-elevated rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-primary transition-colors appearance-none cursor-pointer min-w-[200px]"
                 >
-                    {{ tab.label }}
-                </button>
+                    <option value="">Todos Organizadores</option>
+                    <option
+                        v-for="org in organizers"
+                        :key="org.id"
+                        :value="org.id"
+                    >
+                        {{ org.name }}
+                    </option>
+                </select>
+
+                <!-- Status Tabs -->
+                <div class="flex items-center gap-1 bg-surface rounded-lg p-1">
+                    <button
+                        v-for="tab in statusTabs"
+                        :key="tab.value"
+                        @click="filterByStatus(tab.value)"
+                        class="px-4 py-2 rounded-md text-sm font-medium transition-colors"
+                        :class="
+                            currentStatus === tab.value
+                                ? 'bg-primary text-black'
+                                : 'text-text-secondary hover:text-white'
+                        "
+                    >
+                        {{ tab.label }}
+                    </button>
+                </div>
             </div>
         </div>
 
-        <!-- Initial Loading Skeleton (before first load) -->
+        <!-- Initial Loading Skeleton -->
         <div
             v-if="!hasLoadedOnce && store.isLoading"
             class="bg-card-bg rounded-xl border border-surface-elevated overflow-hidden"
@@ -68,22 +85,27 @@
                         <th
                             class="text-left text-text-muted text-xs font-medium uppercase tracking-wider px-6 py-4"
                         >
-                            Organizador
+                            Banner
                         </th>
                         <th
                             class="text-left text-text-muted text-xs font-medium uppercase tracking-wider px-6 py-4"
                         >
-                            CNPJ
+                            Título / Organizador
                         </th>
                         <th
                             class="text-left text-text-muted text-xs font-medium uppercase tracking-wider px-6 py-4"
                         >
-                            Telefone
+                            Cidade
+                        </th>
+                        <th
+                            class="text-left text-text-muted text-xs font-medium uppercase tracking-wider px-6 py-4"
+                        >
+                            Data Início
                         </th>
                         <th
                             class="text-center text-text-muted text-xs font-medium uppercase tracking-wider px-6 py-4"
                         >
-                            Eventos
+                            Participantes
                         </th>
                         <th
                             class="text-center text-text-muted text-xs font-medium uppercase tracking-wider px-6 py-4"
@@ -98,35 +120,35 @@
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-surface-elevated">
-                    <tr v-for="n in 6" :key="'skeleton-' + n" class="h-[77px]">
-                        <td class="px-6 py-4">
-                            <div class="flex items-center gap-3">
-                                <div
-                                    class="w-10 h-10 rounded-full bg-surface-elevated animate-pulse"
-                                ></div>
-                                <div class="space-y-2">
-                                    <div
-                                        class="h-4 w-32 bg-surface-elevated rounded animate-pulse"
-                                    ></div>
-                                    <div
-                                        class="h-3 w-40 bg-surface-elevated rounded animate-pulse"
-                                    ></div>
-                                </div>
-                            </div>
-                        </td>
+                    <tr v-for="n in 10" :key="'skeleton-' + n" class="h-[77px]">
                         <td class="px-6 py-4">
                             <div
-                                class="h-4 w-36 bg-surface-elevated rounded animate-pulse"
+                                class="w-14 h-10 rounded-lg bg-surface-elevated animate-pulse"
                             ></div>
+                        </td>
+                        <td class="px-6 py-4">
+                            <div class="space-y-2">
+                                <div
+                                    class="h-4 w-40 bg-surface-elevated rounded animate-pulse"
+                                ></div>
+                                <div
+                                    class="h-3 w-28 bg-surface-elevated rounded animate-pulse"
+                                ></div>
+                            </div>
                         </td>
                         <td class="px-6 py-4">
                             <div
                                 class="h-4 w-28 bg-surface-elevated rounded animate-pulse"
                             ></div>
                         </td>
+                        <td class="px-6 py-4">
+                            <div
+                                class="h-4 w-32 bg-surface-elevated rounded animate-pulse"
+                            ></div>
+                        </td>
                         <td class="px-6 py-4 text-center">
                             <div
-                                class="w-8 h-8 rounded-full bg-surface-elevated animate-pulse mx-auto"
+                                class="h-4 w-16 bg-surface-elevated rounded animate-pulse mx-auto"
                             ></div>
                         </td>
                         <td class="px-6 py-4 text-center">
@@ -139,38 +161,11 @@
                                 <div
                                     class="w-9 h-9 bg-surface-elevated rounded-lg animate-pulse"
                                 ></div>
-                                <div
-                                    class="w-9 h-9 bg-surface-elevated rounded-lg animate-pulse"
-                                ></div>
-                                <div
-                                    class="w-9 h-9 bg-surface-elevated rounded-lg animate-pulse"
-                                ></div>
                             </div>
                         </td>
                     </tr>
                 </tbody>
             </table>
-            <div
-                class="flex items-center justify-between px-6 py-4 border-t border-surface-elevated"
-            >
-                <div
-                    class="h-4 w-48 bg-surface-elevated rounded animate-pulse"
-                ></div>
-                <div class="flex items-center gap-1">
-                    <div
-                        class="w-9 h-9 bg-surface-elevated rounded-lg animate-pulse"
-                    ></div>
-                    <div
-                        class="w-9 h-9 bg-surface-elevated rounded-lg animate-pulse"
-                    ></div>
-                    <div
-                        class="w-9 h-9 bg-surface-elevated rounded-lg animate-pulse"
-                    ></div>
-                    <div
-                        class="w-9 h-9 bg-surface-elevated rounded-lg animate-pulse"
-                    ></div>
-                </div>
-            </div>
         </div>
 
         <!-- Empty State -->
@@ -181,29 +176,29 @@
             <span
                 class="material-symbols-outlined text-[48px] text-text-muted mb-4"
             >
-                business
+                directions_run
             </span>
             <h3 class="text-lg font-semibold text-white mb-2">
-                Nenhum organizador encontrado
+                Nenhum evento encontrado
             </h3>
             <p class="text-text-secondary mb-6">
                 {{
-                    searchQuery || currentStatus
+                    searchQuery || currentStatus || selectedOrganizer
                         ? "Tente ajustar os filtros de busca."
-                        : "Comece adicionando o primeiro organizador à plataforma."
+                        : "Comece criando o primeiro evento na plataforma."
                 }}
             </p>
             <button
-                v-if="!searchQuery && !currentStatus"
-                @click="openCreateModal"
+                v-if="!searchQuery && !currentStatus && !selectedOrganizer"
+                @click="openCreatePage"
                 class="btn-primary inline-flex items-center gap-2"
             >
                 <span class="material-symbols-outlined text-[20px]">add</span>
-                Criar Organizador
+                Criar Evento
             </button>
         </div>
 
-        <!-- Table Container (always visible after first load when there's data) -->
+        <!-- Table Container -->
         <div
             v-if="hasLoadedOnce && localPagination.total > 0"
             class="bg-card-bg rounded-xl border border-surface-elevated overflow-hidden"
@@ -214,22 +209,27 @@
                         <th
                             class="text-left text-text-muted text-xs font-medium uppercase tracking-wider px-6 py-4"
                         >
-                            Organizador
+                            Banner
                         </th>
                         <th
                             class="text-left text-text-muted text-xs font-medium uppercase tracking-wider px-6 py-4"
                         >
-                            CNPJ
+                            Título / Organizador
                         </th>
                         <th
                             class="text-left text-text-muted text-xs font-medium uppercase tracking-wider px-6 py-4"
                         >
-                            Telefone
+                            Cidade
+                        </th>
+                        <th
+                            class="text-left text-text-muted text-xs font-medium uppercase tracking-wider px-6 py-4"
+                        >
+                            Data Início
                         </th>
                         <th
                             class="text-center text-text-muted text-xs font-medium uppercase tracking-wider px-6 py-4"
                         >
-                            Eventos
+                            Participantes
                         </th>
                         <th
                             class="text-center text-text-muted text-xs font-medium uppercase tracking-wider px-6 py-4"
@@ -245,43 +245,43 @@
                 </thead>
                 <tbody
                     class="divide-y divide-surface-elevated"
-                    style="min-height: 462px"
+                    style="min-height: 770px"
                 >
                     <!-- Skeleton rows during loading -->
                     <template v-if="store.isLoading">
                         <tr
-                            v-for="n in 6"
+                            v-for="n in 10"
                             :key="'skeleton-row-' + n"
                             class="h-[77px]"
                         >
                             <td class="px-6 py-4">
-                                <div class="flex items-center gap-3">
-                                    <div
-                                        class="w-10 h-10 rounded-full bg-surface-elevated animate-pulse"
-                                    ></div>
-                                    <div class="space-y-2">
-                                        <div
-                                            class="h-4 w-32 bg-surface-elevated rounded animate-pulse"
-                                        ></div>
-                                        <div
-                                            class="h-3 w-40 bg-surface-elevated rounded animate-pulse"
-                                        ></div>
-                                    </div>
-                                </div>
+                                <div
+                                    class="w-14 h-10 rounded-lg bg-surface-elevated animate-pulse"
+                                ></div>
                             </td>
                             <td class="px-6 py-4">
-                                <div
-                                    class="h-4 w-36 bg-surface-elevated rounded animate-pulse"
-                                ></div>
+                                <div class="space-y-2">
+                                    <div
+                                        class="h-4 w-40 bg-surface-elevated rounded animate-pulse"
+                                    ></div>
+                                    <div
+                                        class="h-3 w-28 bg-surface-elevated rounded animate-pulse"
+                                    ></div>
+                                </div>
                             </td>
                             <td class="px-6 py-4">
                                 <div
                                     class="h-4 w-28 bg-surface-elevated rounded animate-pulse"
                                 ></div>
                             </td>
+                            <td class="px-6 py-4">
+                                <div
+                                    class="h-4 w-32 bg-surface-elevated rounded animate-pulse"
+                                ></div>
+                            </td>
                             <td class="px-6 py-4 text-center">
                                 <div
-                                    class="w-8 h-8 rounded-full bg-surface-elevated animate-pulse mx-auto"
+                                    class="h-4 w-16 bg-surface-elevated rounded animate-pulse mx-auto"
                                 ></div>
                             </td>
                             <td class="px-6 py-4 text-center">
@@ -296,12 +296,6 @@
                                     <div
                                         class="w-9 h-9 bg-surface-elevated rounded-lg animate-pulse"
                                     ></div>
-                                    <div
-                                        class="w-9 h-9 bg-surface-elevated rounded-lg animate-pulse"
-                                    ></div>
-                                    <div
-                                        class="w-9 h-9 bg-surface-elevated rounded-lg animate-pulse"
-                                    ></div>
                                 </div>
                             </td>
                         </tr>
@@ -310,57 +304,89 @@
                     <!-- Data rows when not loading -->
                     <template v-else>
                         <tr
-                            v-for="organizer in store.organizers"
-                            :key="organizer.id"
+                            v-for="event in store.events"
+                            :key="event.id"
                             class="hover:bg-white/[0.02] transition-colors h-[77px]"
                         >
-                            <!-- Nome + Email -->
+                            <!-- Banner -->
                             <td class="px-6 py-4">
-                                <div class="flex items-center gap-3">
+                                <div
+                                    class="w-14 h-10 rounded-lg bg-surface-elevated overflow-hidden flex-shrink-0"
+                                >
+                                    <img
+                                        v-if="event.banner_url"
+                                        :src="event.banner_url"
+                                        :alt="event.title"
+                                        class="w-full h-full object-cover"
+                                    />
                                     <div
-                                        class="w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold"
-                                        :class="getAvatarColor(organizer.name)"
+                                        v-else
+                                        class="w-full h-full flex items-center justify-center"
                                     >
-                                        {{ getInitials(organizer.name) }}
-                                    </div>
-                                    <div>
-                                        <p class="text-white font-medium">
-                                            {{ organizer.name }}
-                                        </p>
-                                        <p class="text-text-muted text-sm">
-                                            {{ organizer.email }}
-                                        </p>
+                                        <span
+                                            class="material-symbols-outlined text-text-muted text-[20px]"
+                                        >
+                                            image
+                                        </span>
                                     </div>
                                 </div>
                             </td>
 
-                            <!-- Documento -->
+                            <!-- Título + Organizador -->
                             <td class="px-6 py-4">
-                                <span
-                                    class="text-text-secondary font-mono text-sm"
-                                >
-                                    {{ formatDocument(organizer.document) }}
-                                </span>
+                                <div>
+                                    <p class="text-white font-medium">
+                                        {{ event.title }}
+                                    </p>
+                                    <p
+                                        class="text-text-muted text-sm flex items-center gap-1"
+                                    >
+                                        <span
+                                            class="material-symbols-outlined text-[14px]"
+                                            >business</span
+                                        >
+                                        {{ event.organizer?.name || "-" }}
+                                    </p>
+                                </div>
                             </td>
 
-                            <!-- Telefone -->
+                            <!-- Cidade -->
                             <td class="px-6 py-4">
                                 <span class="text-text-secondary">
-                                    {{ formatPhone(organizer.phone) }}
+                                    {{ event.city }}
                                 </span>
                             </td>
 
-                            <!-- Eventos Count -->
+                            <!-- Data Início -->
+                            <td class="px-6 py-4">
+                                <span class="text-text-secondary">
+                                    {{ formatDateTime(event.date_start) }}
+                                </span>
+                            </td>
+
+                            <!-- Participantes -->
                             <td class="px-6 py-4 text-center">
                                 <span
-                                    class="inline-flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium"
+                                    class="inline-flex items-center gap-1 text-sm"
                                     :class="
-                                        organizer.events_count > 0
-                                            ? 'bg-primary/10 text-primary'
-                                            : 'bg-surface-elevated text-text-muted'
+                                        event.max_participants
+                                            ? 'text-primary'
+                                            : 'text-text-muted'
                                     "
                                 >
-                                    {{ organizer.events_count || 0 }}
+                                    <span
+                                        class="material-symbols-outlined text-[16px]"
+                                        >{{
+                                            event.max_participants
+                                                ? "group"
+                                                : "all_inclusive"
+                                        }}</span
+                                    >
+                                    {{
+                                        event.max_participants
+                                            ? event.max_participants
+                                            : "Ilimitado"
+                                    }}
                                 </span>
                             </td>
 
@@ -368,9 +394,9 @@
                             <td class="px-6 py-4 text-center">
                                 <span
                                     class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium"
-                                    :class="getStatusClass(organizer.status)"
+                                    :class="getStatusClass(event.status)"
                                 >
-                                    {{ getStatusLabel(organizer.status) }}
+                                    {{ getStatusLabel(event.status) }}
                                 </span>
                             </td>
 
@@ -380,7 +406,7 @@
                                     class="flex items-center justify-center gap-1"
                                 >
                                     <button
-                                        @click="viewOrganizer(organizer)"
+                                        @click="viewEvent(event)"
                                         class="p-2 text-text-muted hover:text-white hover:bg-surface-elevated rounded-lg transition-colors"
                                         title="Ver detalhes"
                                     >
@@ -399,7 +425,7 @@
                             :key="'empty-' + n"
                             class="h-[77px]"
                         >
-                            <td colspan="6"></td>
+                            <td colspan="7"></td>
                         </tr>
                     </template>
                 </tbody>
@@ -465,23 +491,25 @@
 <script setup>
 import { ref, computed, onMounted, watch } from "vue";
 import { useRouter } from "vue-router";
-import { useOrganizersStore } from "@/stores/organizers";
+import { useEventsStore } from "@/stores/events";
 import { useToast } from "@/composables/useToast";
 
 const router = useRouter();
-const store = useOrganizersStore();
+const store = useEventsStore();
 const toast = useToast();
 
 // State
 const searchQuery = ref("");
 const currentStatus = ref("");
+const selectedOrganizer = ref("");
 const hasLoadedOnce = ref(false);
+const organizers = ref([]);
 
 // Local pagination state that persists during loading
 const localPagination = ref({
     currentPage: 1,
     lastPage: 1,
-    perPage: 6,
+    perPage: 8,
     total: 0,
 });
 
@@ -502,14 +530,14 @@ let searchTimeout = null;
 // Status tabs
 const statusTabs = [
     { label: "Todos", value: "" },
-    { label: "Ativos", value: "active" },
-    { label: "Inativos", value: "blocked" },
+    { label: "Ativos", value: "ativo" },
+    { label: "Inativos", value: "inativo" },
 ];
 
 // Computed
 const emptyRowsCount = computed(() => {
-    const itemsPerPage = 6;
-    const currentItems = store.organizers.length;
+    const itemsPerPage = 8;
+    const currentItems = store.events.length;
     return Math.max(0, itemsPerPage - currentItems);
 });
 
@@ -546,67 +574,35 @@ const visiblePages = computed(() => {
 });
 
 // Methods
-const getInitials = (name) => {
-    if (!name) return "?";
-    return name
-        .split(" ")
-        .map((n) => n[0])
-        .join("")
-        .toUpperCase()
-        .slice(0, 2);
-};
-
-const getAvatarColor = (name) => {
-    const colors = [
-        "bg-primary/20 text-primary",
-        "bg-blue-500/20 text-blue-400",
-        "bg-purple-500/20 text-purple-400",
-        "bg-yellow-500/20 text-yellow-400",
-        "bg-pink-500/20 text-pink-400",
-    ];
-    const index = name ? name.charCodeAt(0) % colors.length : 0;
-    return colors[index];
-};
-
-const formatDocument = (doc) => {
-    if (!doc) return "-";
-    const cleaned = doc.replace(/\D/g, "");
-    if (cleaned.length === 11) {
-        // CPF: 000.000.000-00
-        return cleaned.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4");
-    } else if (cleaned.length === 14) {
-        // CNPJ: 00.000.000/0000-00
-        return cleaned.replace(
-            /(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/,
-            "$1.$2.$3/$4-$5",
-        );
-    }
-    return doc;
-};
-
-const formatPhone = (phone) => {
-    if (!phone) return "-";
-    const cleaned = phone.replace(/\D/g, "");
-    if (cleaned.length === 11) {
-        return cleaned.replace(/(\d{2})(\d{5})(\d{4})/, "($1) $2-$3");
-    } else if (cleaned.length === 10) {
-        return cleaned.replace(/(\d{2})(\d{4})(\d{4})/, "($1) $2-$3");
-    }
-    return phone;
+const formatDateTime = (date) => {
+    if (!date) return "-";
+    const d = new Date(date);
+    return (
+        d.toLocaleDateString("pt-BR", {
+            day: "2-digit",
+            month: "2-digit",
+            year: "numeric",
+        }) +
+        " " +
+        d.toLocaleTimeString("pt-BR", {
+            hour: "2-digit",
+            minute: "2-digit",
+        })
+    );
 };
 
 const getStatusClass = (status) => {
     const classes = {
-        active: "bg-primary/10 text-primary",
-        blocked: "bg-red-500/10 text-red-400",
+        ativo: "bg-primary/10 text-primary",
+        inativo: "bg-yellow-500/10 text-yellow-400",
     };
     return classes[status] || "bg-surface-elevated text-text-muted";
 };
 
 const getStatusLabel = (status) => {
     const labels = {
-        active: "Ativo",
-        blocked: "Inativo",
+        ativo: "Ativo",
+        inativo: "Inativo",
     };
     return labels[status] || status;
 };
@@ -615,14 +611,19 @@ const debouncedSearch = () => {
     clearTimeout(searchTimeout);
     searchTimeout = setTimeout(() => {
         store.setFilters({ search: searchQuery.value });
-        store.fetchOrganizers(1);
+        store.fetchEvents(1);
     }, 300);
 };
 
 const filterByStatus = (status) => {
     currentStatus.value = status;
     store.setFilters({ status });
-    store.fetchOrganizers(1);
+    store.fetchEvents(1);
+};
+
+const filterByOrganizer = () => {
+    store.setFilters({ organizer_id: selectedOrganizer.value });
+    store.fetchEvents(1);
 };
 
 const goToPage = (page) => {
@@ -631,21 +632,28 @@ const goToPage = (page) => {
         page <= localPagination.value.lastPage &&
         !store.isLoading
     ) {
-        store.fetchOrganizers(page);
+        store.fetchEvents(page);
     }
 };
 
-const viewOrganizer = (organizer) => {
-    router.push(`/admin/organizers/${organizer.id}`);
+const viewEvent = (event) => {
+    router.push(`/admin/events/${event.id}`);
 };
 
-const openCreateModal = () => {
-    router.push("/admin/organizers/create");
+const openCreatePage = () => {
+    router.push("/admin/events/create");
+};
+
+const loadOrganizers = async () => {
+    const result = await store.fetchOrganizers();
+    if (result.success) {
+        organizers.value = result.data;
+    }
 };
 
 // Lifecycle
 onMounted(async () => {
-    await store.fetchOrganizers();
+    await Promise.all([store.fetchEvents(), loadOrganizers()]);
     localPagination.value = { ...store.pagination };
     hasLoadedOnce.value = true;
 });

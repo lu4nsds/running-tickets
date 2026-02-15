@@ -21,8 +21,8 @@ return new class extends Migration
             $table->string('slug')->unique();
             $table->text('description')->nullable();
 
-            $table->string('city')->nullable();
-            $table->string('venue')->nullable();
+            $table->string('city');
+            $table->string('venue');
 
             $table->dateTime('date_start');
             $table->dateTime('date_end')->nullable();

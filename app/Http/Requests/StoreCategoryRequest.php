@@ -31,6 +31,8 @@ class StoreCategoryRequest extends FormRequest
                 'max:255',
                 Rule::unique('categories')->where('event_id', $eventId),
             ],
+            'distance' => ['nullable', 'numeric', 'min:0', 'max:999999.99'],
+            'description' => ['nullable', 'string', 'max:1000'],
             'gender' => ['nullable', 'in:M,F,X'],
             'min_age' => ['nullable', 'integer', 'min:0'],
             'max_age' => ['nullable', 'integer', 'min:0', 'gte:min_age'],

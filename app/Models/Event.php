@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\EventStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Storage;
 
 class Event extends Model
 {
@@ -31,6 +32,25 @@ class Event extends Model
         'date_end' => 'datetime',
         'status' => EventStatus::class,
     ];
+
+    /**
+     * Accessor para URL completa do banner
+     * Suporta tanto URLs externas quanto paths locais do Storage
+     */
+    public function getBannerFullUrlAttribute(): ?string
+    {
+        if (!$this->banner_url) {
+            return null;
+        }
+
+        // Se já é URL completa (http/https), retorna direto
+        if (str_starts_with($this->banner_url, 'http')) {
+            return $this->banner_url;
+        }
+
+        // Se é path local, gera URL via Storage
+        return asset('storage/' . $this->banner_url);
+    }
 
     /**
      * Organizador dono do evento

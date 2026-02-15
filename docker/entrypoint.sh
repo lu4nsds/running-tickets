@@ -32,6 +32,10 @@ php artisan config:cache
 php artisan route:cache
 php artisan view:cache
 
+# Criar link simbólico do storage
+echo "Criando link simbólico do storage..."
+php artisan storage:link --force 2>/dev/null || true
+
 echo "Aplicação iniciada!"
 
 # Executar o comando passado como argumento

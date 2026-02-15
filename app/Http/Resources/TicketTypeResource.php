@@ -29,6 +29,9 @@ class TicketTypeResource extends JsonResource
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
             
+            // Contadores (quando carregados via withCount)
+            'tickets_sold_count' => $this->when(isset($this->order_items_count), $this->order_items_count ?? 0),
+            
             // Relacionamentos opcionais
             'event' => new EventResource($this->whenLoaded('event')),
         ];

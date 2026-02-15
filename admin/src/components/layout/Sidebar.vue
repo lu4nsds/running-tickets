@@ -31,7 +31,7 @@
                 :to="item.path"
                 class="flex items-center gap-3 px-4 py-3 rounded-lg transition-all group"
                 :class="
-                    $route.path === item.path
+                    isActive(item.path)
                         ? 'bg-primary/10 text-primary neon-border-active font-semibold'
                         : 'text-text-secondary hover:bg-white/5 hover:text-white'
                 "
@@ -39,7 +39,7 @@
                 <span
                     class="material-symbols-outlined text-[20px] transition-colors"
                     :class="
-                        $route.path === item.path
+                        isActive(item.path)
                             ? 'text-primary'
                             : 'group-hover:text-primary'
                     "
@@ -76,7 +76,7 @@
 
 <script setup>
 import { computed } from "vue";
-import { useRouter } from "vue-router";
+import { useRouter, useRoute } from "vue-router";
 import { useAuthStore } from "@/stores/auth";
 
 const props = defineProps({
@@ -89,7 +89,17 @@ const props = defineProps({
 const emit = defineEmits(["update:isOpen"]);
 
 const router = useRouter();
+const route = useRoute();
 const authStore = useAuthStore();
+
+const isActive = (path) => {
+    // Dashboard precisa de match exato
+    if (path.endsWith("/dashboard")) {
+        return route.path === path;
+    }
+    // Outras rotas usam startsWith
+    return route.path.startsWith(path);
+};
 
 const menuItems = computed(() => {
     if (authStore.isSuperAdmin) {

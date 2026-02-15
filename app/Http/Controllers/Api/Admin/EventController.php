@@ -10,6 +10,7 @@ use App\Models\Event;
 use App\Models\EventPayoutSetting;
 use App\Services\MercadoPagoService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class EventController extends Controller
@@ -44,9 +45,15 @@ class EventController extends Controller
     {
         $data = $request->validated();
         
-        // Remover payout_mode dos dados do evento
+        // Remover payout_mode e banner dos dados do evento
         $payoutMode = $data['payout_mode'] ?? null;
         unset($data['payout_mode']);
+        unset($data['banner']);
+        
+        // Processar upload do banner
+        if ($request->hasFile('banner')) {
+            $data['banner_url'] = $request->file('banner')->store('events/banners', 'public');
+        }
         
         // Gerar slug se não fornecido
         if (empty($data['slug'])) {
@@ -109,7 +116,27 @@ class EventController extends Controller
      */
     public function show(Event $event)
     {
-        $event->load(['organizer', 'categories', 'ticketTypes']);
+        // Carregar relacionamentos com contagens
+        $event->load([
+            'organizer',
+            'categories' => function ($query) {
+                $query->withCount('orderItems');
+            },
+            'ticketTypes' => function ($query) {
+                $query->withCount('orderItems');
+            },
+        ]);
+        
+        // Calcular estatísticas do evento
+        $event->participants_count = $event->orders()
+            ->where('status', 'paid')
+            ->withCount('items')
+            ->get()
+            ->sum('items_count');
+            
+        $event->total_revenue = $event->orders()
+            ->where('status', 'paid')
+            ->sum('total_cents');
         
         return new EventResource($event);
     }
@@ -120,6 +147,16 @@ class EventController extends Controller
     public function update(UpdateEventRequest $request, Event $event)
     {
         $data = $request->validated();
+        unset($data['banner']);
+        
+        // Processar upload do banner
+        if ($request->hasFile('banner')) {
+            // Deletar banner anterior se for path local
+            if ($event->banner_url && !str_starts_with($event->banner_url, 'http')) {
+                Storage::disk('public')->delete($event->banner_url);
+            }
+            $data['banner_url'] = $request->file('banner')->store('events/banners', 'public');
+        }
         
         // Atualizar slug se title mudou
         if (isset($data['title']) && !isset($data['slug'])) {

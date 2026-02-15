@@ -32,6 +32,7 @@ class StoreEventRequest extends FormRequest
             'date_start' => 'required|date|after:now',
             'date_end' => 'required|date|after_or_equal:date_start',
             'max_participants' => 'nullable|integer|min:1',
+            'banner' => 'nullable|image|mimes:jpeg,png,webp|max:2048',
             'banner_url' => 'nullable|url',
             'meta' => 'nullable|array',
             'payout_mode' => 'nullable|in:direct,platform',
