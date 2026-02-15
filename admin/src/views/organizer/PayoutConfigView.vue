@@ -285,6 +285,7 @@ import api from "@/api/axios";
 import { API_ENDPOINTS } from "@/constants/apiEndpoints";
 import { useLoading } from "@/composables/useLoading";
 import { useToast } from "@/composables/useToast";
+import { useAuthStore } from "@/stores/auth";
 import ErrorState from "@/components/ui/ErrorState.vue";
 import SkeletonCard from "@/components/ui/SkeletonCard.vue";
 
@@ -292,6 +293,7 @@ const router = useRouter();
 const route = useRoute();
 const { isLoading, error, withLoading } = useLoading(true);
 const toast = useToast();
+const authStore = useAuthStore();
 
 const event = ref(null);
 const payoutConfig = ref(null);

@@ -77,6 +77,49 @@ export const useOrganizersStore = defineStore("organizers", () => {
         }
     };
 
+    const fetchOrganizer = async (id) => {
+        try {
+            const response = await api.get(`/admin/organizers/${id}`);
+            return { success: true, data: response.data.data };
+        } catch (err) {
+            return {
+                success: false,
+                error:
+                    err.response?.data?.message ||
+                    "Erro ao carregar organizador",
+            };
+        }
+    };
+
+    const createOrganizer = async (data) => {
+        try {
+            const response = await api.post("/admin/organizers", data);
+            return { success: true, data: response.data.data };
+        } catch (err) {
+            return {
+                success: false,
+                error:
+                    err.response?.data?.message || "Erro ao criar organizador",
+                errors: err.response?.data?.errors,
+            };
+        }
+    };
+
+    const updateOrganizer = async (id, data) => {
+        try {
+            const response = await api.put(`/admin/organizers/${id}`, data);
+            return { success: true, data: response.data.data };
+        } catch (err) {
+            return {
+                success: false,
+                error:
+                    err.response?.data?.message ||
+                    "Erro ao atualizar organizador",
+                errors: err.response?.data?.errors,
+            };
+        }
+    };
+
     const setFilters = (newFilters) => {
         filters.value = { ...filters.value, ...newFilters };
     };
@@ -97,6 +140,9 @@ export const useOrganizersStore = defineStore("organizers", () => {
         isEmpty,
         // Actions
         fetchOrganizers,
+        fetchOrganizer,
+        createOrganizer,
+        updateOrganizer,
         deleteOrganizer,
         setFilters,
         clearFilters,

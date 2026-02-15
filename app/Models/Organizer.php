@@ -14,6 +14,12 @@ class Organizer extends Model
         'document',
         'email',
         'phone',
+        'address',
+        'address_complement',
+        'neighborhood',
+        'city',
+        'state',
+        'zip_code',
         'status',
     ];
 

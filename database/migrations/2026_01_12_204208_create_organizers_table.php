@@ -10,27 +10,35 @@ return new class extends Migration
      * Run the migrations.
      */
     public function up(): void
-{
-    Schema::create('organizers', function (Blueprint $table) {
-        $table->id();
+    {
+        Schema::create('organizers', function (Blueprint $table) {
+            $table->id();
 
-        // Nome do organizador (empresa ou pessoa)
-        $table->string('name');
+            // Nome do organizador (empresa ou pessoa)
+            $table->string('name');
 
-        // Documento (CPF ou CNPJ)
-        $table->string('document')->unique();
+            // Documento (CPF ou CNPJ)
+            $table->string('document')->unique();
 
-        // Contato principal
-        $table->string('email')->unique();
-        $table->string('phone')->nullable();
+            // Contato principal
+            $table->string('email')->unique();
+            $table->string('phone');
 
-        // Status do organizador na plataforma
-        $table->string('status')->default('active');
-        // active | suspended | blocked
+            // Endereço (para nota fiscal)
+            $table->string('address'); // Logradouro + número
+            $table->string('address_complement')->nullable();
+            $table->string('neighborhood'); // Bairro
+            $table->string('city');
+            $table->string('state', 2); // UF
+            $table->string('zip_code', 10); // CEP
 
-        $table->timestamps();
-    });
-}
+            // Status do organizador na plataforma
+            $table->string('status')->default('active');
+            // active | suspended | blocked
+
+            $table->timestamps();
+        });
+    }
 
 
     /**

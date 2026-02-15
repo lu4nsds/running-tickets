@@ -47,7 +47,8 @@ class OrganizerController extends Controller
      */
     public function show(Organizer $organizer)
     {
-        $organizer->load(['users', 'events']);
+        $organizer->load(['users', 'events'])
+            ->loadCount('events');
         
         return new OrganizerResource($organizer);
     }

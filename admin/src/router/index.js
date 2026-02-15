@@ -102,6 +102,30 @@ const router = createRouter({
                     component: () => import("@/views/admin/OrganizersView.vue"),
                 },
                 {
+                    path: "organizers/create",
+                    name: "admin-organizer-create",
+                    component: () =>
+                        import("@/views/admin/OrganizerCreateView.vue"),
+                },
+                {
+                    path: "organizers/:id",
+                    name: "admin-organizer-show",
+                    component: () =>
+                        import("@/views/admin/OrganizerShowView.vue"),
+                },
+                {
+                    path: "organizers/:id/edit",
+                    name: "admin-organizer-edit",
+                    component: () =>
+                        import("@/views/admin/OrganizerEditView.vue"),
+                },
+                {
+                    path: "organizers/:id/users/create",
+                    name: "admin-organizer-user-create",
+                    component: () =>
+                        import("@/views/admin/OrganizerUserCreateView.vue"),
+                },
+                {
                     path: "events",
                     name: "admin-events",
                     component: () => import("@/views/admin/DashboardView.vue"),

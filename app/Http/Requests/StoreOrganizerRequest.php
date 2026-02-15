@@ -26,8 +26,14 @@ class StoreOrganizerRequest extends FormRequest
             'name' => 'required|string|max:255',
             'document' => 'required|string|max:20|unique:organizers,document',
             'email' => 'required|email|max:255|unique:organizers,email',
-            'phone' => 'nullable|string|max:20',
-            'status' => 'nullable|in:active,inactive',
+            'phone' => 'required|string|max:20',
+            'address' => 'required|string|max:255',
+            'address_complement' => 'nullable|string|max:100',
+            'neighborhood' => 'required|string|max:100',
+            'city' => 'required|string|max:100',
+            'state' => 'required|string|size:2',
+            'zip_code' => 'required|string|max:10',
+            'status' => 'nullable|in:active,inactive,blocked',
         ];
     }
 

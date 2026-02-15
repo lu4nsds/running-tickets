@@ -28,8 +28,14 @@ class UpdateOrganizerRequest extends FormRequest
             'name' => 'sometimes|required|string|max:255',
             'document' => 'sometimes|required|string|max:20|unique:organizers,document,' . $organizerId,
             'email' => 'sometimes|required|email|max:255|unique:organizers,email,' . $organizerId,
-            'phone' => 'nullable|string|max:20',
-            'status' => 'sometimes|in:active,inactive',
+            'phone' => 'sometimes|required|string|max:20',
+            'address' => 'sometimes|required|string|max:255',
+            'address_complement' => 'nullable|string|max:100',
+            'neighborhood' => 'sometimes|required|string|max:100',
+            'city' => 'sometimes|required|string|max:100',
+            'state' => 'sometimes|required|string|size:2',
+            'zip_code' => 'sometimes|required|string|max:10',
+            'status' => 'sometimes|in:active,inactive,blocked',
         ];
     }
 
