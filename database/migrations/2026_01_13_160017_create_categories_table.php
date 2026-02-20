@@ -20,7 +20,7 @@ return new class extends Migration
             $table->string('name');
 
             // Sexo permitido
-            $table->enum('gender', ['M', 'F', 'X'])->nullable();
+            $table->enum('gender', ['M', 'F', 'X']);
             // M = masculino | F = feminino | X = misto / não especificado
 
             // Faixa etária

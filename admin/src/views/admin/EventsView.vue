@@ -120,7 +120,7 @@
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-surface-elevated">
-                    <tr v-for="n in 10" :key="'skeleton-' + n" class="h-[77px]">
+                    <tr v-for="n in 6" :key="'skeleton-' + n" class="h-[77px]">
                         <td class="px-6 py-4">
                             <div
                                 class="w-14 h-10 rounded-lg bg-surface-elevated animate-pulse"
@@ -250,7 +250,7 @@
                     <!-- Skeleton rows during loading -->
                     <template v-if="store.isLoading">
                         <tr
-                            v-for="n in 10"
+                            v-for="n in 6"
                             :key="'skeleton-row-' + n"
                             class="h-[77px]"
                         >
@@ -509,7 +509,7 @@ const organizers = ref([]);
 const localPagination = ref({
     currentPage: 1,
     lastPage: 1,
-    perPage: 8,
+    perPage: 6,
     total: 0,
 });
 
@@ -536,7 +536,7 @@ const statusTabs = [
 
 // Computed
 const emptyRowsCount = computed(() => {
-    const itemsPerPage = 8;
+    const itemsPerPage = 6;
     const currentItems = store.events.length;
     return Math.max(0, itemsPerPage - currentItems);
 });

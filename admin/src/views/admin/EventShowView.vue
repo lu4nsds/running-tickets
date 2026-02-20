@@ -93,15 +93,6 @@
                 <!-- Actions -->
                 <div class="flex items-center gap-3">
                     <button
-                        @click="confirmDelete"
-                        class="flex items-center gap-2 px-4 py-2.5 border border-red-500 text-red-500 rounded-lg font-medium hover:bg-red-500/10 transition-colors"
-                    >
-                        <span class="material-symbols-outlined text-[20px]"
-                            >delete</span
-                        >
-                        Deletar
-                    </button>
-                    <button
                         @click="editEvent"
                         class="flex items-center gap-2 px-4 py-2.5 bg-primary text-black rounded-lg font-medium hover:brightness-110 transition-colors"
                     >
@@ -109,6 +100,15 @@
                             >edit</span
                         >
                         Editar Evento
+                    </button>
+                    <button
+                        @click="confirmDelete"
+                        class="flex items-center gap-2 px-4 py-2.5 border border-red-500 text-red-500 rounded-lg font-medium hover:bg-red-500/10 transition-colors"
+                    >
+                        <span class="material-symbols-outlined text-[20px]"
+                            >delete</span
+                        >
+                        Deletar Evento
                     </button>
                 </div>
             </div>
@@ -316,7 +316,8 @@
                                     categorias</span
                                 >
                                 <button
-                                    class="flex items-center gap-1 text-primary text-sm font-medium hover:underline"
+                                    @click="openCategoryModal()"
+                                    class="flex items-center gap-2 px-4 py-2 bg-primary text-black rounded-lg font-medium hover:brightness-110 transition-colors text-sm"
                                 >
                                     <span
                                         class="material-symbols-outlined text-[18px]"
@@ -345,8 +346,16 @@
                                         :key="category.id"
                                         class="border-t border-surface-elevated h-[65px]"
                                     >
-                                        <td class="py-3 text-primary font-bold">
-                                            {{ category.distance || "?" }}km
+                                        <td class="py-3">
+                                            <span
+                                                class="inline-flex items-center justify-center px-3 py-1 rounded bg-primary/10 text-primary font-bold text-sm"
+                                            >
+                                                {{
+                                                    formatDistance(
+                                                        category.distance,
+                                                    )
+                                                }}k
+                                            </span>
                                         </td>
                                         <td class="py-3">
                                             <p class="text-white font-medium">
@@ -366,20 +375,38 @@
                                             inscritos
                                         </td>
                                         <td class="py-3 text-right">
-                                            <button
-                                                @click="
-                                                    confirmDeleteCategory(
-                                                        category,
-                                                    )
-                                                "
-                                                class="p-1.5 text-text-muted hover:text-red-400 rounded transition-colors"
-                                                title="Deletar categoria"
+                                            <div
+                                                class="flex items-center justify-end gap-2"
                                             >
-                                                <span
-                                                    class="material-symbols-outlined text-[18px]"
-                                                    >delete</span
+                                                <button
+                                                    @click="
+                                                        openCategoryModal(
+                                                            category,
+                                                        )
+                                                    "
+                                                    class="p-1.5 text-text-muted hover:text-primary rounded transition-colors"
+                                                    title="Editar categoria"
                                                 >
-                                            </button>
+                                                    <span
+                                                        class="material-symbols-outlined text-[18px]"
+                                                        >edit</span
+                                                    >
+                                                </button>
+                                                <button
+                                                    @click="
+                                                        confirmDeleteCategory(
+                                                            category,
+                                                        )
+                                                    "
+                                                    class="p-1.5 text-text-muted hover:text-red-400 rounded transition-colors"
+                                                    title="Deletar categoria"
+                                                >
+                                                    <span
+                                                        class="material-symbols-outlined text-[18px]"
+                                                        >delete</span
+                                                    >
+                                                </button>
+                                            </div>
                                         </td>
                                     </tr>
                                     <!-- Empty rows to maintain fixed height -->
@@ -474,7 +501,8 @@
                                     tipos</span
                                 >
                                 <button
-                                    class="flex items-center gap-1 text-primary text-sm font-medium hover:underline"
+                                    @click="openTicketTypeModal()"
+                                    class="flex items-center gap-2 px-4 py-2 bg-primary text-black rounded-lg font-medium hover:brightness-110 transition-colors text-sm"
                                 >
                                     <span
                                         class="material-symbols-outlined text-[18px]"
@@ -532,20 +560,38 @@
                                             </span>
                                         </td>
                                         <td class="py-3 text-right">
-                                            <button
-                                                @click="
-                                                    confirmDeleteTicketType(
-                                                        ticket,
-                                                    )
-                                                "
-                                                class="p-1.5 text-text-muted hover:text-red-400 rounded transition-colors"
-                                                title="Deletar tipo de ingresso"
+                                            <div
+                                                class="flex items-center justify-end gap-2"
                                             >
-                                                <span
-                                                    class="material-symbols-outlined text-[18px]"
-                                                    >delete</span
+                                                <button
+                                                    @click="
+                                                        openTicketTypeModal(
+                                                            ticket,
+                                                        )
+                                                    "
+                                                    class="p-1.5 text-text-muted hover:text-primary rounded transition-colors"
+                                                    title="Editar tipo de ingresso"
                                                 >
-                                            </button>
+                                                    <span
+                                                        class="material-symbols-outlined text-[18px]"
+                                                        >edit</span
+                                                    >
+                                                </button>
+                                                <button
+                                                    @click="
+                                                        confirmDeleteTicketType(
+                                                            ticket,
+                                                        )
+                                                    "
+                                                    class="p-1.5 text-text-muted hover:text-red-400 rounded transition-colors"
+                                                    title="Deletar tipo de ingresso"
+                                                >
+                                                    <span
+                                                        class="material-symbols-outlined text-[18px]"
+                                                        >delete</span
+                                                    >
+                                                </button>
+                                            </div>
                                         </td>
                                     </tr>
                                     <!-- Empty rows to maintain fixed height -->
@@ -861,7 +907,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from "vue";
+import { ref, computed, onMounted, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useEventsStore } from "@/stores/events";
 import { useToast } from "@/composables/useToast";
@@ -1058,6 +1104,27 @@ const deleteTicketType = async () => {
     }
 };
 
+// Navigation methods for category and ticket type forms
+const openCategoryModal = (category = null) => {
+    if (category) {
+        router.push(
+            `/admin/events/${event.value.id}/categories/${category.id}/edit`,
+        );
+    } else {
+        router.push(`/admin/events/${event.value.id}/categories/create`);
+    }
+};
+
+const openTicketTypeModal = (ticketType = null) => {
+    if (ticketType) {
+        router.push(
+            `/admin/events/${event.value.id}/ticket-types/${ticketType.id}/edit`,
+        );
+    } else {
+        router.push(`/admin/events/${event.value.id}/ticket-types/create`);
+    }
+};
+
 // Formatters
 const formatDateTime = (date) => {
     if (!date) return "-";
@@ -1087,6 +1154,18 @@ const formatCurrency = (value) => {
         style: "currency",
         currency: "BRL",
     }).format(value);
+};
+
+const formatDistance = (value) => {
+    if (value == null || value === "") {
+        return "?";
+    }
+    const num = parseFloat(value);
+    if (isNaN(num)) {
+        return "?";
+    }
+    // Remove trailing zeros: 10.00 -> 10, 21.10 -> 21.1, 21.15 -> 21.15
+    return num % 1 === 0 ? num.toFixed(0) : num.toString();
 };
 
 // Status helpers
@@ -1156,4 +1235,14 @@ const getTicketStatus = (ticket) => {
 onMounted(() => {
     fetchEvent();
 });
+
+// Watch route to reload data when returning from category/ticket-type forms
+watch(
+    () => route.path,
+    () => {
+        if (route.name === "admin-event-show") {
+            fetchEvent();
+        }
+    },
+);
 </script>

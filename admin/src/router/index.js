@@ -146,6 +146,30 @@ const router = createRouter({
                     name: "admin-event-edit",
                     component: () => import("@/views/admin/EventEditView.vue"),
                 },
+                {
+                    path: "events/:eventId/categories/create",
+                    name: "admin-category-create",
+                    component: () =>
+                        import("@/views/admin/CategoryFormView.vue"),
+                },
+                {
+                    path: "events/:eventId/categories/:categoryId/edit",
+                    name: "admin-category-edit",
+                    component: () =>
+                        import("@/views/admin/CategoryFormView.vue"),
+                },
+                {
+                    path: "events/:eventId/ticket-types/create",
+                    name: "admin-ticket-type-create",
+                    component: () =>
+                        import("@/views/admin/TicketTypeFormView.vue"),
+                },
+                {
+                    path: "events/:eventId/ticket-types/:ticketTypeId/edit",
+                    name: "admin-ticket-type-edit",
+                    component: () =>
+                        import("@/views/admin/TicketTypeFormView.vue"),
+                },
             ],
         },
     ],

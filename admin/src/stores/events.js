@@ -8,7 +8,7 @@ export const useEventsStore = defineStore("events", () => {
     const pagination = ref({
         currentPage: 1,
         lastPage: 1,
-        perPage: 8,
+        perPage: 6,
         total: 0,
     });
     const isLoading = ref(false);
@@ -52,7 +52,7 @@ export const useEventsStore = defineStore("events", () => {
             pagination.value = {
                 currentPage: response.data.meta?.current_page || 1,
                 lastPage: response.data.meta?.last_page || 1,
-                perPage: response.data.meta?.per_page || 8,
+                perPage: response.data.meta?.per_page || 6,
                 total: response.data.meta?.total || 0,
             };
 

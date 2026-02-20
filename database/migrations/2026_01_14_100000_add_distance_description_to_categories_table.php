@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::table('categories', function (Blueprint $table) {
             // Distância da categoria (em km) - ex: 5, 10, 21, 42
-            $table->decimal('distance', 8, 2)->nullable()->after('name');
+            $table->decimal('distance', 8, 2)->after('name');
             
             // Descrição opcional da categoria
             $table->text('description')->nullable()->after('distance');
