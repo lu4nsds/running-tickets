@@ -62,6 +62,9 @@ class EventController extends Controller
         
         $event->load(['organizer', 'categories', 'ticketTypes']);
         
+        // Estatísticas de tickets (validação)
+        $event->ticket_stats = $event->getTicketStatistics();
+        
         return new EventResource($event);
     }
 }

@@ -328,26 +328,32 @@
                         </p>
                     </div>
 
-                    <!-- Modo de Repasse -->
+                    <!-- Modo de Repasse (Informativo) -->
                     <div>
-                        <label
-                            for="payout_mode"
-                            class="block text-xs font-medium text-text-muted uppercase tracking-wider mb-2"
+                        <div
+                            class="bg-primary/5 border border-primary/20 rounded-lg p-4"
                         >
-                            Modo de Repasse
-                        </label>
-                        <select
-                            id="payout_mode"
-                            v-model="form.payout_mode"
-                            class="w-full bg-surface border border-surface-elevated rounded-lg px-4 py-3 text-white focus:outline-none focus:border-primary transition-colors appearance-none cursor-pointer"
-                        >
-                            <option value="auto">Automático (D+2)</option>
-                            <option value="manual">Manual</option>
-                        </select>
-                        <p class="text-text-muted text-xs mt-1">
-                            Automático: repasse processado automaticamente após
-                            60h do evento.
-                        </p>
+                            <div class="flex items-start gap-3">
+                                <span
+                                    class="material-symbols-outlined text-primary mt-0.5 text-[20px]"
+                                    >info</span
+                                >
+                                <div>
+                                    <p
+                                        class="text-white text-sm font-medium mb-1"
+                                    >
+                                        Modo de Pagamento
+                                    </p>
+                                    <p
+                                        class="text-text-muted text-xs leading-relaxed"
+                                    >
+                                        Todos os pagamentos são processados pela
+                                        plataforma. O repasse ao organizador
+                                        segue as condições contratuais.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -524,7 +530,7 @@ const form = reactive({
     date_start: "",
     date_end: "",
     max_participants: null,
-    payout_mode: "auto",
+    payout_mode: "platform",
     status: "ativo",
 });
 

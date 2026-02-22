@@ -82,10 +82,16 @@ class TicketController extends Controller
      */
     public function downloadQr(Request $request, string $code): Response
     {
-        $ticket = Ticket::with('orderItem.order')->where('code', $code)->firstOrFail();
+        $ticket = Ticket::with('orderItem.order.event')->where('code', $code)->firstOrFail();
 
-        // Verifica se o ticket pertence ao usuário autenticado
-        if ($ticket->orderItem->order->user_id !== $request->user()->id) {
+        $user = $request->user();
+        
+        // Verifica permissão: dono do ticket, super admin ou organizador do evento
+        $isOwner = $ticket->orderItem->order->user_id === $user->id;
+        $isSuperAdmin = $user->hasRole('super_admin');
+        $isOrganizer = $user->canAccessOrganizer($ticket->orderItem->order->event->organizer_id);
+        
+        if (!$isOwner && !$isSuperAdmin && !$isOrganizer) {
             abort(403, 'Você não tem permissão para acessar este ticket.');
         }
 

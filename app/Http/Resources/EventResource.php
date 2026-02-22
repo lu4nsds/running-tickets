@@ -37,6 +37,7 @@ class EventResource extends JsonResource
                 isset($this->participants_count) && $this->max_participants,
                 fn() => max(0, $this->max_participants - ($this->participants_count ?? 0))
             ),
+            'ticket_stats' => $this->when(isset($this->ticket_stats), $this->ticket_stats),
             
             // Relacionamentos
             'organizer' => $this->whenLoaded('organizer', function () {

@@ -83,6 +83,18 @@ const router = createRouter({
                         next();
                     },
                 },
+                {
+                    path: "validate-tickets",
+                    name: "organizer-validate-tickets-select",
+                    component: () =>
+                        import("@/views/admin/TicketValidationSelectView.vue"),
+                },
+                {
+                    path: "validate-tickets/:eventId",
+                    name: "organizer-validate-tickets",
+                    component: () =>
+                        import("@/views/admin/TicketValidationView.vue"),
+                },
             ],
         },
         // Rotas Admin
@@ -169,6 +181,18 @@ const router = createRouter({
                     name: "admin-ticket-type-edit",
                     component: () =>
                         import("@/views/admin/TicketTypeFormView.vue"),
+                },
+                {
+                    path: "validate-tickets",
+                    name: "admin-validate-tickets-select",
+                    component: () =>
+                        import("@/views/admin/TicketValidationSelectView.vue"),
+                },
+                {
+                    path: "validate-tickets/:eventId",
+                    name: "admin-validate-tickets",
+                    component: () =>
+                        import("@/views/admin/TicketValidationView.vue"),
                 },
             ],
         },

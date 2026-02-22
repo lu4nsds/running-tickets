@@ -138,6 +138,9 @@ class EventController extends Controller
             ->where('status', 'paid')
             ->sum('total_cents');
         
+        // Estatísticas de tickets (validação)
+        $event->ticket_stats = $event->getTicketStatistics();
+        
         return new EventResource($event);
     }
 

@@ -99,4 +99,32 @@ class Event extends Model
     {
         return $this->hasOne(EventPayoutSetting::class)->where('active', true);
     }
+
+    /**
+     * Estatísticas de tickets do evento
+     * @return array
+     */
+    public function getTicketStatistics(): array
+    {
+        // Busca todos os tickets do evento (apenas de pedidos pagos)
+        $tickets = Ticket::whereHas('orderItem.order', function ($q) {
+            $q->where('event_id', $this->id)
+              ->where('status', 'paid');
+        })->get();
+
+        $validated = $tickets->where('status', \App\Enums\TicketStatus::USED)->count();
+        $active = $tickets->where('status', \App\Enums\TicketStatus::ACTIVE)->count();
+        $cancelled = $tickets->where('status', \App\Enums\TicketStatus::CANCELLED)->count();
+        $refunded = $tickets->where('status', \App\Enums\TicketStatus::REFUNDED)->count();
+        $total = $tickets->count();
+
+        return [
+            'total' => $total,
+            'validated' => $validated,
+            'active' => $active,
+            'cancelled' => $cancelled,
+            'refunded' => $refunded,
+            'validation_percentage' => $total > 0 ? round(($validated / $total) * 100, 2) : 0,
+        ];
+    }
 }

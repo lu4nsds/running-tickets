@@ -55,7 +55,41 @@
                 class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-primary/50 to-transparent"
             ></div>
 
-            <form @submit.prevent="handleSubmit" class="p-8 space-y-6">
+            <!-- Skeleton Loader -->
+            <div v-if="isLoading" class="p-8 space-y-6 animate-pulse">
+                <div class="space-y-2">
+                    <div class="h-4 bg-surface rounded w-32"></div>
+                    <div class="h-12 bg-surface rounded-lg"></div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="space-y-2">
+                        <div class="h-4 bg-surface rounded w-28"></div>
+                        <div class="h-12 bg-surface rounded-lg"></div>
+                    </div>
+                    <div class="space-y-2">
+                        <div class="h-4 bg-surface rounded w-24"></div>
+                        <div class="h-12 bg-surface rounded-lg"></div>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="space-y-2">
+                        <div class="h-4 bg-surface rounded w-28"></div>
+                        <div class="h-12 bg-surface rounded-lg"></div>
+                    </div>
+                    <div class="space-y-2">
+                        <div class="h-4 bg-surface rounded w-28"></div>
+                        <div class="h-12 bg-surface rounded-lg"></div>
+                    </div>
+                </div>
+                <div class="space-y-2">
+                    <div class="h-4 bg-surface rounded w-24"></div>
+                    <div class="h-32 bg-surface rounded-lg"></div>
+                </div>
+                <div class="h-16 bg-surface/50 rounded-lg"></div>
+            </div>
+
+            <!-- Form -->
+            <form v-else @submit.prevent="handleSubmit" class="p-8 space-y-6">
                 <!-- Nome da Categoria -->
                 <div class="space-y-2">
                     <label
@@ -295,6 +329,7 @@
 
             <!-- Footer -->
             <div
+                v-if="!isLoading"
                 class="px-8 py-6 bg-surface/30 border-t border-surface-elevated flex justify-end items-center gap-4"
             >
                 <button
@@ -342,7 +377,7 @@ import axios from "@/api/axios";
 
 const route = useRoute();
 const router = useRouter();
-const { showToast } = useToast();
+const toast = useToast();
 
 const eventId = computed(() => route.params.eventId);
 const categoryId = computed(() => route.params.categoryId);
@@ -361,6 +396,7 @@ const form = ref({
 
 const errors = ref({});
 const isSubmitting = ref(false);
+const isLoading = ref(isEditMode.value);
 
 const goBack = () => {
     router.push(`/admin/events/${eventId.value}`);
@@ -377,7 +413,10 @@ const fetchEventName = async () => {
 };
 
 const fetchCategory = async () => {
-    if (!isEditMode.value) return;
+    if (!isEditMode.value) {
+        isLoading.value = false;
+        return;
+    }
 
     try {
         const response = await axios.get(
@@ -394,8 +433,10 @@ const fetchCategory = async () => {
             active: category.active ?? true,
         };
     } catch (error) {
-        showToast("Erro ao carregar categoria", "error");
+        toast.error("Erro ao carregar categoria");
         goBack();
+    } finally {
+        isLoading.value = false;
     }
 };
 
@@ -419,13 +460,13 @@ const handleSubmit = async () => {
                 `/admin/events/${eventId.value}/categories/${categoryId.value}`,
                 payload,
             );
-            showToast("Categoria atualizada com sucesso!", "success");
+            toast.success("Categoria atualizada com sucesso!");
         } else {
             await axios.post(
                 `/admin/events/${eventId.value}/categories`,
                 payload,
             );
-            showToast("Categoria criada com sucesso!", "success");
+            toast.success("Categoria criada com sucesso!");
         }
 
         goBack();
@@ -433,10 +474,9 @@ const handleSubmit = async () => {
         if (error.response?.status === 422) {
             errors.value = error.response.data.errors || {};
         } else {
-            showToast(
+            toast.error(
                 error.response?.data?.message ||
                     "Erro ao salvar categoria. Tente novamente.",
-                "error",
             );
         }
     } finally {

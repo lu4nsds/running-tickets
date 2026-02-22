@@ -106,6 +106,11 @@ const menuItems = computed(() => {
         return [
             { path: "/admin/dashboard", icon: "dashboard", label: "Dashboard" },
             {
+                path: "/admin/validate-tickets",
+                icon: "qr_code_scanner",
+                label: "Validar Tickets",
+            },
+            {
                 path: "/admin/organizers",
                 icon: "group",
                 label: "Organizadores",
@@ -118,6 +123,11 @@ const menuItems = computed(() => {
                 path: "/organizer/dashboard",
                 icon: "dashboard",
                 label: "Dashboard",
+            },
+            {
+                path: "/organizer/validate-tickets",
+                icon: "qr_code_scanner",
+                label: "Validar Tickets",
             },
             { path: "/organizer/events", icon: "event", label: "Eventos" },
         ];
