@@ -45,8 +45,8 @@ Route::middleware('auth:sanctum')->group(function () {
     
     // Pedidos do usuário autenticado
     Route::get('/orders', [OrderController::class, 'index']);
-    Route::get('/orders/{id}', [OrderController::class, 'show']);
-    Route::post('/orders/{id}/cancel', [OrderController::class, 'cancel']);
+    Route::get('/orders/{order:reference}', [OrderController::class, 'show']);
+    Route::post('/orders/{order:reference}/cancel', [OrderController::class, 'cancel']);
     
     // Tickets do usuário autenticado
     Route::get('/tickets', [TicketController::class, 'index']);

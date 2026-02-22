@@ -52,10 +52,10 @@ class OrderController extends Controller
     /**
      * Exibe um pedido específico
      */
-    public function show(Request $request, string $id): JsonResponse
+    public function show(Request $request, Order $order): JsonResponse
     {
-        $order = Order::with(['event', 'organizer', 'items.ticketType', 'items.category', 'items.ticket'])
-            ->findOrFail($id);
+        // Load relationships
+        $order->load(['event', 'organizer', 'items.ticketType', 'items.category', 'items.ticket']);
 
         $user = $request->user();
 
@@ -213,9 +213,8 @@ class OrderController extends Controller
     /**
      * Cancela um pedido
      */
-    public function cancel(Request $request, string $id): JsonResponse
+    public function cancel(Request $request, Order $order): JsonResponse
     {
-        $order = Order::findOrFail($id);
         $user = $request->user();
 
         // Verifica autorização (mesma lógica do show)

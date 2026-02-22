@@ -30,6 +30,15 @@ class Order extends Model
     ];
 
     /**
+     * Get the route key for the model.
+     * Use 'reference' instead of 'id' for secure URLs
+     */
+    public function getRouteKeyName(): string
+    {
+        return 'reference';
+    }
+
+    /**
      * Evento ao qual a compra pertence
      */
     public function event()
