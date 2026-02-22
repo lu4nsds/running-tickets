@@ -129,13 +129,7 @@
                         >
                             <span
                                 class="material-symbols-outlined text-primary/90"
-                                :style="{
-                                    fontSize: isMobile ? '100px' : '140px',
-                                }"
-                                style="
-                                    font-variation-settings: &quot;wght&quot;
-                                        200;
-                                "
+                                :style="qrIconStyle"
                             >
                                 qr_code_2
                             </span>
@@ -660,6 +654,12 @@ const getSubtitle = computed(() => {
             return "Aguardando leitura do ticket...";
     }
 });
+
+// Estilo do ícone QR code
+const qrIconStyle = computed(() => ({
+    fontSize: isMobile.value ? "100px" : "140px",
+    fontVariationSettings: '"wght" 200',
+}));
 
 // Detectar mudanças no tamanho da tela
 const handleResize = () => {
