@@ -1,11 +1,9 @@
 <template>
-    <div class="flex h-[calc(100vh-4rem)] overflow-hidden">
+    <div class="-m-4 flex h-[calc(100vh-4rem)] overflow-hidden">
         <!-- Main Scanner Area -->
-        <div class="flex-1 flex flex-col min-w-0">
+        <div class="flex-1 flex flex-col min-w-0 p-4">
             <!-- Header with Breadcrumb + Title + Stats -->
-            <div
-                class="pt-6 md:pt-10 px-4 md:px-10 pb-4 flex flex-col gap-2 relative z-10"
-            >
+            <div class="flex flex-col gap-2 relative z-10">
                 <!-- Breadcrumb -->
                 <nav class="flex text-sm font-medium text-text-muted mb-1">
                     <ol class="flex items-center gap-2 flex-wrap">
@@ -103,7 +101,7 @@
 
             <!-- Scanner Content -->
             <div
-                class="flex-1 flex items-center justify-center p-4 md:p-8 relative overflow-hidden bg-background"
+                class="flex-1 flex items-center justify-center relative overflow-hidden bg-background"
             >
                 <!-- Grid Background -->
                 <div
@@ -534,7 +532,7 @@
         <aside
             class="w-80 bg-card-bg border-l border-surface-elevated shrink-0 hidden xl:flex flex-col h-[calc(100vh-4rem)]"
         >
-            <div class="p-6 border-b border-surface-elevated">
+            <div class="p-4 border-b border-surface-elevated shrink-0">
                 <h3
                     class="text-lg font-bold text-white flex items-center gap-2"
                 >

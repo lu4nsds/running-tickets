@@ -12,7 +12,7 @@
             <Header @toggle-sidebar="sidebarOpen = !sidebarOpen" />
 
             <!-- Page Content -->
-            <main class="flex-1 overflow-y-auto">
+            <main class="flex-1 overflow-y-auto p-4">
                 <router-view />
             </main>
         </div>

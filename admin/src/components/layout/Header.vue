@@ -22,19 +22,6 @@
 
         <!-- Right: Notifications + User Menu -->
         <div class="flex items-center gap-4">
-            <!-- Notifications -->
-            <button
-                class="relative text-text-secondary hover:text-primary transition-colors"
-            >
-                <span class="material-symbols-outlined text-[22px]"
-                    >notifications</span
-                >
-                <!-- Badge -->
-                <span
-                    class="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full"
-                ></span>
-            </button>
-
             <!-- User Menu -->
             <div class="relative">
                 <button
@@ -54,12 +41,6 @@
                         </p>
                         <p class="text-xs text-text-muted">{{ userRole }}</p>
                     </div>
-
-                    <span
-                        class="material-symbols-outlined text-text-secondary text-[18px]"
-                    >
-                        expand_more
-                    </span>
                 </button>
 
                 <!-- Dropdown -->
