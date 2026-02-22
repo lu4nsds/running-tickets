@@ -119,6 +119,7 @@ class EventController extends Controller
         // Carregar relacionamentos com contagens
         $event->load([
             'organizer',
+            'payoutSetting',
             'categories' => function ($query) {
                 $query->withCount('orderItems');
             },

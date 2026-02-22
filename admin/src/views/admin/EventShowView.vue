@@ -293,6 +293,70 @@
                         </div>
                     </div>
 
+                    <!-- Forma de Pagamento/Repasse -->
+                    <div
+                        class="bg-card-bg border border-surface-elevated rounded-xl p-6"
+                    >
+                        <h3
+                            class="flex items-center gap-2 text-white font-semibold mb-4"
+                        >
+                            <span
+                                class="material-symbols-outlined text-primary text-[20px]"
+                                >account_balance</span
+                            >
+                            Forma de Repasse
+                        </h3>
+                        <div v-if="event.payout_mode">
+                            <span
+                                class="px-3 py-1.5 rounded-full text-sm font-semibold inline-flex items-center gap-2"
+                                :class="
+                                    event.payout_mode === 'direct'
+                                        ? 'bg-primary/10 text-primary border border-primary/20'
+                                        : 'bg-blue-500/10 text-blue-400 border border-blue-500/20'
+                                "
+                            >
+                                <span
+                                    class="material-symbols-outlined text-[18px]"
+                                    >{{
+                                        {
+                                            direct: "trending_flat",
+                                            platform: "account_balance_wallet",
+                                        }[event.payout_mode]
+                                    }}</span
+                                >
+                                {{
+                                    event.payout_mode === "direct"
+                                        ? "Repasse Direto"
+                                        : "Repasse via Plataforma"
+                                }}
+                            </span>
+                            <p class="text-text-muted text-sm mt-3">
+                                {{
+                                    event.payout_mode === "direct"
+                                        ? "Pagamentos vão diretamente para a conta do organizador"
+                                        : "Pagamentos ficam na plataforma para repasse manual"
+                                }}
+                            </p>
+                            <p
+                                v-if="event.payout_provider"
+                                class="text-text-muted text-xs mt-2"
+                            >
+                                Provedor: {{ event.payout_provider }}
+                            </p>
+                        </div>
+                        <div
+                            v-else
+                            class="flex items-center gap-2 text-yellow-500"
+                        >
+                            <span class="material-symbols-outlined text-[20px]"
+                                >warning</span
+                            >
+                            <p class="text-sm font-medium">
+                                Forma de repasse não configurada
+                            </p>
+                        </div>
+                    </div>
+
                     <!-- Categorias -->
                     <div
                         class="bg-card-bg border border-surface-elevated rounded-xl p-6"

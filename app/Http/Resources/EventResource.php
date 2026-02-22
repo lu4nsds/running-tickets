@@ -39,6 +39,14 @@ class EventResource extends JsonResource
             ),
             'ticket_stats' => $this->when(isset($this->ticket_stats), $this->ticket_stats),
             
+            // Configuração de pagamento
+            'payout_mode' => $this->whenLoaded('payoutSetting', function () {
+                return $this->payoutSetting?->payout_mode;
+            }),
+            'payout_provider' => $this->whenLoaded('payoutSetting', function () {
+                return $this->payoutSetting?->provider;
+            }),
+            
             // Relacionamentos
             'organizer' => $this->whenLoaded('organizer', function () {
                 return new OrganizerResource($this->organizer);
