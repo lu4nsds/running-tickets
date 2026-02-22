@@ -1,10 +1,10 @@
 <template>
     <aside
-        class="fixed inset-y-0 left-0 z-50 w-64 bg-[#0F1114] border-r border-surface-elevated transform transition-transform duration-200 ease-in-out lg:translate-x-0"
+        class="fixed inset-y-0 left-0 z-50 w-64 bg-[#0F1114] border-r border-surface-elevated transform transition-transform duration-200 ease-in-out lg:translate-x-0 flex flex-col"
         :class="{ '-translate-x-full': !isOpen }"
     >
         <!-- Logo -->
-        <div class="p-6">
+        <div class="p-6 shrink-0">
             <div class="flex items-center gap-2 mb-10">
                 <div
                     class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center shadow-[0_0_15px_rgba(0,230,119,0.5)]"
@@ -51,7 +51,7 @@
         </nav>
 
         <!-- Logout -->
-        <div class="p-4 border-t border-surface-elevated">
+        <div class="p-4 border-t border-surface-elevated mt-auto shrink-0">
             <button
                 @click="handleLogout"
                 class="flex items-center gap-3 px-4 py-3 rounded-lg text-text-secondary hover:bg-surface-elevated hover:text-red-400 transition-all w-full group"
