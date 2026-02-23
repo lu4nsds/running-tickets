@@ -1,3 +1,216 @@
+# Running Tickets
+
+Sistema de venda e validação de ingressos para corridas e eventos esportivos.
+
+## 📋 Sobre o Projeto
+
+Plataforma completa de e-ticketing para organizadores de eventos esportivos, com três componentes principais:
+
+1. **Backend (Laravel)** - API REST
+2. **Admin (Vue.js)** - Painel administrativo para organizadores
+3. **Client (Vue.js)** - Plataforma de compra de ingressos
+
+## ⚙️ Requisitos
+
+### Node.js
+
+**⚠️ IMPORTANTE:** Use **Node.js 20.9.0** para os projetos frontend (Admin e Client).
+
+```bash
+nvm install 20.9.0
+nvm use 20.9.0
+```
+
+**Por que Node 20.9.0?**
+
+- ✅ Compatível com Vite 6.0.7 usado em ambos os projetos
+- ✅ Versão estável e testada
+- ❌ Node 22.x tem problemas de npm em algumas máquinas
+- ❌ Vite 7+ requer Node 20.19+ (incompatível com nosso setup)
+
+### PHP & Composer
+
+- PHP 8.2+
+- Composer 2.x
+
+## 🚀 Instalação
+
+### 1. Backend (Laravel)
+
+```bash
+# Instalar dependências
+composer install
+
+# Configurar ambiente
+cp .env.example .env
+php artisan key:generate
+
+# Configurar banco de dados no .env
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=running_tickets
+DB_USERNAME=root
+DB_PASSWORD=
+
+# Rodar migrations e seeders
+php artisan migrate --seed
+
+# Iniciar servidor
+php artisan serve
+```
+
+API estará em: http://localhost:8000
+
+### 2. Admin (Painel Administrativo)
+
+```bash
+cd admin
+
+# Usar Node 20.9.0
+nvm use 20.9.0
+
+# Instalar dependências
+npm install
+
+# Iniciar servidor
+npm run dev
+```
+
+Admin estará em: http://localhost:5174
+
+📖 [Ver documentação completa do Admin](./admin/README.md)
+
+### 3. Client (Plataforma de Compra)
+
+```bash
+cd client
+
+# Usar Node 20.9.0
+nvm use 20.9.0
+
+# Instalar dependências
+npm install
+
+# Iniciar servidor
+npm run dev
+```
+
+Client estará em: http://localhost:5173
+
+📖 [Ver documentação completa do Client](./client/SETUP.md)
+
+## 📁 Estrutura do Projeto
+
+```
+running-tickets/
+├── app/                    # Backend Laravel
+│   ├── Http/Controllers/
+│   ├── Models/
+│   └── Providers/
+├── admin/                  # Frontend Admin (Vue.js)
+│   ├── src/
+│   │   ├── views/
+│   │   ├── components/
+│   │   ├── stores/
+│   │   └── router/
+│   └── package.json (Vite 6.0.7)
+├── client/                 # Frontend Client (Vue.js)
+│   ├── src/
+│   │   ├── views/
+│   │   ├── components/
+│   │   ├── stores/
+│   │   └── router/
+│   └── package.json (Vite 6.0.7)
+├── database/
+│   ├── migrations/
+│   └── seeders/
+├── routes/
+│   ├── api.php
+│   └── web.php
+└── README.md
+```
+
+## 🎯 Funcionalidades
+
+### Backend (API)
+
+- ✅ Autenticação com Laravel Sanctum
+- ✅ CRUD de eventos, organizadores, categorias
+- ✅ Sistema de pedidos com reference UUID
+- ✅ Geração e validação de ingressos (QR code)
+- ✅ Seeders com dados de exemplo
+
+### Admin
+
+- ✅ Dashboard com métricas e gráficos
+- ✅ Gestão de eventos e organizadores
+- ✅ Scanner de QR code para validação
+- ✅ Configuração de pagamentos e repasse
+- ✅ Controle de acesso (Super Admin/Organizador)
+
+### Client
+
+- ✅ Home com listagem de eventos
+- ✅ Sistema de autenticação (Login/Registro)
+- ✅ Carrinho de compras
+- 🚧 Checkout e pagamento
+- 🚧 Área do usuário (Meus Pedidos/Ingressos)
+
+## 🔒 Segurança
+
+URLs não expõem IDs numéricos:
+
+- **Eventos**: slug (`maratona-sp-2026`)
+- **Ingressos**: UUID (`a1b2c3d4-...`)
+- **Pedidos**: reference (`ORD-ABC123`)
+
+## 🎨 Design
+
+- **Cores**: Verde neon (#00e677) + Dark mode (#0F1114)
+- **Fonte**: Inter (Google Fonts)
+- **Ícones**: Material Symbols Outlined
+- **Framework CSS**: Tailwind CSS 3.4
+
+## 🛠️ Troubleshooting
+
+### Erro de npm no Windows
+
+Se o npm falhar com erro de módulo:
+
+```bash
+# Reinstalar Node 20.9.0
+nvm uninstall 20.9.0
+nvm install 20.9.0
+nvm use 20.9.0
+
+# Confirmar versão
+node --version  # v20.9.0
+npm --version   # 10.1.0
+```
+
+### Erro de Vite
+
+Se aparecer erro de Node incompatível:
+
+```bash
+# Confirmar versão do Node
+node --version
+
+# Deve estar usando 20.9.0
+nvm use 20.9.0
+```
+
+### Backend não conecta
+
+Verifique:
+
+1. Servidor Laravel rodando em `http://localhost:8000`
+2. `.env` configurado em admin e client com `VITE_API_URL=http://localhost:8000/api`
+3. CORS habilitado no Laravel
+
+---
+
 <p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
 
 <p align="center">
