@@ -29,6 +29,7 @@ Route::post('/auth/login', [AuthController::class, 'login']);
 
 // Eventos públicos
 Route::get('/events', [EventController::class, 'index']);
+Route::get('/events/cities', [EventController::class, 'cities']);
 Route::get('/events/{slug}', [EventController::class, 'show']);
 
 // Pedidos - autenticação opcional (funciona com ou sem token)
