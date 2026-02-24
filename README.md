@@ -14,14 +14,14 @@ Plataforma completa de e-ticketing para organizadores de eventos esportivos, com
 
 ### Node.js
 
-**⚠️ IMPORTANTE:** Use **Node.js 20.9.0** para os projetos frontend (Admin e Client).
+**⚠️ IMPORTANTE:** Use **Node.js 24.14.0** para os projetos frontend (Admin e Client).
 
 ```bash
-nvm install 20.9.0
-nvm use 20.9.0
+nvm install 24.14.0
+nvm use 24.14.0
 ```
 
-**Por que Node 20.9.0?**
+**Por que Node 24.14.0?**
 
 - ✅ Compatível com Vite 6.0.7 usado em ambos os projetos
 - ✅ Versão estável e testada
@@ -67,8 +67,8 @@ API estará em: http://localhost:8000
 ```bash
 cd admin
 
-# Usar Node 20.9.0
-nvm use 20.9.0
+# Usar Node 24.14.0
+nvm use 24.14.0
 
 # Instalar dependências
 npm install
@@ -86,8 +86,8 @@ Admin estará em: http://localhost:5174
 ```bash
 cd client
 
-# Usar Node 20.9.0
-nvm use 20.9.0
+# Usar Node 24.14.0
+nvm use 24.14.0
 
 # Instalar dependências
 npm install
@@ -179,13 +179,13 @@ URLs não expõem IDs numéricos:
 Se o npm falhar com erro de módulo:
 
 ```bash
-# Reinstalar Node 20.9.0
-nvm uninstall 20.9.0
-nvm install 20.9.0
-nvm use 20.9.0
+# Reinstalar Node 24.14.0
+nvm uninstall 24.14.0
+nvm install 24.14.0
+nvm use 24.14.0
 
 # Confirmar versão
-node --version  # v20.9.0
+node --version  # v24.14.0
 npm --version   # 10.1.0
 ```
 
@@ -197,8 +197,8 @@ Se aparecer erro de Node incompatível:
 # Confirmar versão do Node
 node --version
 
-# Deve estar usando 20.9.0
-nvm use 20.9.0
+# Deve estar usando 24.14.0
+nvm use 24.14.0
 ```
 
 ### Backend não conecta
