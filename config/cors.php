@@ -1,9 +1,16 @@
 <?php
 
+# Define os domínios que podem realizar requisições à api
+$domains = [];
+
+foreach (explode(',', env('ALLOWED_ORIGINS', 'http://localhost:5173')) as $domain) {
+    $domains[] = $domain;
+}
+
 return [
     'paths' => ['api/*', 'sanctum/csrf-cookie'],
     'allowed_methods' => ['*'],
-    'allowed_origins' => ['http://localhost:5173', 'http://localhost:5174'],
+    'allowed_origins' => $domains,
     'allowed_origins_patterns' => [],
     'allowed_headers' => ['*'],
     'exposed_headers' => [],
