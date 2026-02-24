@@ -27,6 +27,7 @@ class StoreEventRequest extends FormRequest
             'title' => 'required|string|max:255',
             'slug' => 'required|string|max:255|unique:events,slug',
             'description' => 'nullable|string',
+            'state' => 'required|string|size:2',
             'city' => 'required|string|max:100',
             'venue' => 'required|string|max:255',
             'date_start' => 'required|date|after:now',

@@ -159,10 +159,7 @@
                                 :class="{ 'border-red-500': errors.slug }"
                             />
                         </div>
-                        <p
-                            v-if="errors.slug"
-                            class="text-red-500 text-sm mt-1"
-                        >
+                        <p v-if="errors.slug" class="text-red-500 text-sm mt-1">
                             {{ errors.slug }}
                         </p>
                     </div>
@@ -200,6 +197,42 @@
                     </div>
 
                     <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                        <!-- Estado -->
+                        <div>
+                            <label
+                                for="state"
+                                class="block text-xs font-medium text-text-muted uppercase tracking-wider mb-2"
+                            >
+                                Estado *
+                            </label>
+                            <select
+                                id="state"
+                                v-model="form.state"
+                                class="w-full bg-surface border border-surface-elevated rounded-lg px-4 py-3 text-white focus:outline-none focus:border-primary transition-colors"
+                                :class="{
+                                    'border-red-500': errors.state,
+                                    'text-text-muted': !form.state,
+                                }"
+                            >
+                                <option value="" disabled>
+                                    Selecione um estado
+                                </option>
+                                <option
+                                    v-for="state in BRAZILIAN_STATES"
+                                    :key="state.uf"
+                                    :value="state.uf"
+                                >
+                                    {{ state.name }} ({{ state.uf }})
+                                </option>
+                            </select>
+                            <p
+                                v-if="errors.state"
+                                class="text-red-500 text-sm mt-1"
+                            >
+                                {{ errors.state }}
+                            </p>
+                        </div>
+
                         <!-- Cidade -->
                         <div>
                             <label
@@ -218,7 +251,7 @@
                                     id="city"
                                     v-model="form.city"
                                     type="text"
-                                    placeholder="Ex: São Paulo, SP"
+                                    placeholder="Ex: Natal"
                                     class="w-full bg-surface border border-surface-elevated rounded-lg pl-10 pr-4 py-3 text-white placeholder-text-muted focus:outline-none focus:border-primary transition-colors"
                                     :class="{ 'border-red-500': errors.city }"
                                 />
@@ -518,6 +551,7 @@ import { useRoute, useRouter } from "vue-router";
 import { useEventsStore } from "@/stores/events";
 import { useToast } from "@/composables/useToast";
 import ErrorState from "@/components/ui/ErrorState.vue";
+import { BRAZILIAN_STATES } from "@/constants/brazilianStates";
 
 const route = useRoute();
 const router = useRouter();
@@ -536,6 +570,7 @@ const form = reactive({
     title: "",
     slug: "",
     description: "",
+    state: "",
     city: "",
     venue: "",
     date_start: "",
@@ -547,6 +582,7 @@ const form = reactive({
 const errors = reactive({
     title: "",
     slug: "",
+    state: "",
     city: "",
     venue: "",
     date_start: "",
@@ -578,6 +614,7 @@ const populateForm = (data) => {
     form.title = data.title || "";
     form.slug = data.slug || "";
     form.description = data.description || "";
+    form.state = data.state || "";
     form.city = data.city || "";
     form.venue = data.venue || "";
     form.date_start = formatDateTimeLocal(data.date_start);
@@ -642,6 +679,11 @@ const validate = () => {
         isValid = false;
     }
 
+    if (!form.state || !form.state.trim()) {
+        errors.state = "Estado é obrigatório";
+        isValid = false;
+    }
+
     if (!form.city.trim()) {
         errors.city = "Cidade é obrigatória";
         isValid = false;
@@ -680,6 +722,7 @@ const handleSubmit = async () => {
         formData.append("title", form.title);
         formData.append("slug", form.slug);
         formData.append("description", form.description || "");
+        formData.append("state", form.state);
         formData.append("city", form.city);
         formData.append("venue", form.venue);
         formData.append("date_start", form.date_start);

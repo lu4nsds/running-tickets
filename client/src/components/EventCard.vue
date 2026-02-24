@@ -48,15 +48,12 @@
                         {{ formattedPrice }}
                     </p>
                 </div>
-                <router-link
-                    :to="{
-                        name: 'event-details',
-                        params: { slug: event.slug },
-                    }"
+                <button
+                    @click="goToDetails"
                     class="rounded-lg bg-primary px-4 py-2 text-sm font-bold text-background-dark transition-colors hover:bg-primary-dark"
                 >
                     Ver Detalhes
-                </router-link>
+                </button>
             </div>
         </div>
     </div>
@@ -64,8 +61,11 @@
 
 <script setup>
 import { computed } from "vue";
+import { useRouter } from "vue-router";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+
+const router = useRouter();
 
 const props = defineProps({
     event: {
@@ -84,7 +84,10 @@ const eventImage = computed(() => {
 
 // Localização combinada (city + venue)
 const eventLocation = computed(() => {
-    const parts = [props.event.city, props.event.venue].filter(Boolean);
+    const cityState = [props.event.city, props.event.state]
+        .filter(Boolean)
+        .join(", ");
+    const parts = [cityState, props.event.venue].filter(Boolean);
     return parts.join(" - ") || "Local a definir";
 });
 
@@ -137,4 +140,16 @@ const formattedPrice = computed(() => {
         currency: "BRL",
     }).format(price / 100);
 });
+
+// Navegar para detalhes do evento
+function goToDetails() {
+    if (props.event?.slug) {
+        router.push({
+            name: "event-details",
+            params: { slug: props.event.slug },
+        });
+    } else {
+        console.error("[EventCard] Event slug is missing:", props.event);
+    }
+}
 </script>

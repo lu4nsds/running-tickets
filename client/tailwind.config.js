@@ -10,6 +10,7 @@ export default {
                 "background-light": "#f5f8f7",
                 "background-dark": "#0F1114",
                 "surface-dark": "#1E212B",
+                "surface-darker": "#15171e",
                 "border-dark": "#252B3A",
             },
             fontFamily: {

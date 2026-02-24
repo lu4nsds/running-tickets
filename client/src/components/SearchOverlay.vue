@@ -91,7 +91,7 @@
                                         <div
                                             v-for="event in results"
                                             :key="event.id"
-                                            @click="selectEvent(event)"
+                                            @click.stop="selectEvent(event)"
                                             class="group flex items-center gap-4 p-3 rounded-2xl hover:bg-white/5 transition-all cursor-pointer"
                                         >
                                             <div

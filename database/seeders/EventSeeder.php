@@ -62,11 +62,11 @@ class EventSeeder extends Seeder
         ];
 
         $cities = [
-            ['name' => 'Natal', 'venues' => ['Parque das Dunas', 'Via Costeira', 'Ponta Negra']],
-            ['name' => 'Mossoró', 'venues' => ['Centro', 'Abolição', 'Ilha de Santa Luzia']],
-            ['name' => 'Parnamirim', 'venues' => ['Cotovelo', 'Pirangi', 'Centro']],
-            ['name' => 'João Pessoa', 'venues' => ['Cabo Branco', 'Tambaú', 'Manaíra']],
-            ['name' => 'Recife', 'venues' => ['Boa Viagem', 'Recife Antigo', 'Parque Dona Lindu']],
+            ['name' => 'Natal', 'state' => 'RN', 'venues' => ['Parque das Dunas', 'Via Costeira', 'Ponta Negra']],
+            ['name' => 'Mossoró', 'state' => 'RN', 'venues' => ['Centro', 'Abolição', 'Ilha de Santa Luzia']],
+            ['name' => 'Parnamirim', 'state' => 'RN', 'venues' => ['Cotovelo', 'Pirangi', 'Centro']],
+            ['name' => 'João Pessoa', 'state' => 'PB', 'venues' => ['Cabo Branco', 'Tambaú', 'Manaíra']],
+            ['name' => 'Recife', 'state' => 'PE', 'venues' => ['Boa Viagem', 'Recife Antigo', 'Parque Dona Lindu']],
         ];
 
         $eventCount = 0;
@@ -92,6 +92,7 @@ class EventSeeder extends Seeder
                         'organizer_id' => $organizer->id,
                         'title' => $title,
                         'description' => $template['description'],
+                        'state' => $city['state'],
                         'city' => $city['name'],
                         'venue' => $venue,
                         'date_start' => now()->addDays($daysInFuture),

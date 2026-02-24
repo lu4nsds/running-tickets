@@ -31,6 +31,7 @@ class UpdateEventRequest extends FormRequest
             'title' => 'sometimes|required|string|max:255',
             'slug' => 'sometimes|required|string|max:255|unique:events,slug,' . $eventId,
             'description' => 'nullable|string',
+            'state' => 'sometimes|required|string|size:2',
             'city' => 'sometimes|required|string|max:100',
             'venue' => 'sometimes|required|string|max:255',
             'date_start' => 'sometimes|required|date',

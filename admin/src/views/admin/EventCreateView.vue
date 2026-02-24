@@ -178,6 +178,50 @@
                 </div>
 
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                    <!-- Estado -->
+                    <div>
+                        <label
+                            for="state"
+                            class="block text-xs font-medium text-text-muted uppercase tracking-wider mb-2"
+                        >
+                            Estado *
+                        </label>
+                        <div class="relative">
+                            <span
+                                class="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-text-muted text-[20px]"
+                            >
+                                map
+                            </span>
+                            <select
+                                id="state"
+                                v-model="form.state"
+                                class="w-full bg-surface border border-surface-elevated rounded-lg pl-10 pr-4 py-3 text-white focus:outline-none focus:border-primary transition-colors appearance-none"
+                                :class="{
+                                    'border-red-500': errors.state,
+                                    'text-text-muted': !form.state,
+                                }"
+                            >
+                                <option value="" disabled>
+                                    Selecione um estado
+                                </option>
+                                <option
+                                    v-for="state in BRAZILIAN_STATES"
+                                    :key="state.uf"
+                                    :value="state.uf"
+                                    class="text-white"
+                                >
+                                    {{ state.name }} ({{ state.uf }})
+                                </option>
+                            </select>
+                        </div>
+                        <p
+                            v-if="errors.state"
+                            class="text-red-500 text-sm mt-1"
+                        >
+                            {{ errors.state }}
+                        </p>
+                    </div>
+
                     <!-- Cidade -->
                     <div>
                         <label
@@ -196,7 +240,7 @@
                                 id="city"
                                 v-model="form.city"
                                 type="text"
-                                placeholder="Ex: São Paulo, SP"
+                                placeholder="Ex: Natal"
                                 class="w-full bg-surface border border-surface-elevated rounded-lg pl-10 pr-4 py-3 text-white placeholder-text-muted focus:outline-none focus:border-primary transition-colors"
                                 :class="{ 'border-red-500': errors.city }"
                             />
@@ -509,6 +553,7 @@ import { ref, reactive, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import { useEventsStore } from "@/stores/events";
 import { useToast } from "@/composables/useToast";
+import { BRAZILIAN_STATES } from "@/constants/brazilianStates";
 
 const router = useRouter();
 const store = useEventsStore();
@@ -525,6 +570,7 @@ const form = reactive({
     title: "",
     slug: "",
     description: "",
+    state: "",
     city: "",
     venue: "",
     date_start: "",
@@ -538,6 +584,7 @@ const errors = reactive({
     organizer_id: "",
     title: "",
     slug: "",
+    state: "",
     city: "",
     venue: "",
     date_start: "",
@@ -607,6 +654,11 @@ const validate = () => {
         isValid = false;
     }
 
+    if (!form.state || !form.state.trim()) {
+        errors.state = "Estado é obrigatório";
+        isValid = false;
+    }
+
     if (!form.city.trim()) {
         errors.city = "Cidade é obrigatória";
         isValid = false;
@@ -646,6 +698,7 @@ const handleSubmit = async () => {
         formData.append("title", form.title);
         formData.append("slug", form.slug);
         formData.append("description", form.description || "");
+        formData.append("state", form.state);
         formData.append("city", form.city);
         formData.append("venue", form.venue);
         formData.append("date_start", form.date_start);

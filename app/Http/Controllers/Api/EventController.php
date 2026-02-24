@@ -23,11 +23,16 @@ class EventController extends Controller
         ])
         ->where('status', EventStatus::ATIVO)
         ->when($request->search, fn($q, $search) => 
-            $q->where('title', 'like', "%{$search}%")
-              ->orWhere('city', 'like', "%{$search}%")
+            $q->where(function($subQuery) use ($search) {
+                $subQuery->where('title', 'like', "%{$search}%")
+                         ->orWhere('city', 'like', "%{$search}%");
+            })
         )
         ->when($request->city, fn($q, $city) => 
             $q->where('city', $city)
+        )
+        ->when($request->state, fn($q, $state) => 
+            $q->where('state', $state)
         )
         ->when($request->date_from, fn($q, $date) => 
             $q->where('date_start', '>=', $date)
@@ -86,7 +91,14 @@ class EventController extends Controller
         $event = Event::with([
             'categories',
             'ticketTypes' => function ($query) {
-                $query->where('active', true);
+                $query->where('active', true)
+                    ->withCount([
+                        'orderItems as sold_count' => function ($q) {
+                            $q->whereHas('order', function ($oq) {
+                                $oq->whereIn('status', ['pending', 'paid']);
+                            });
+                        }
+                    ]);
             },
             'organizer'
         ])
@@ -106,6 +118,19 @@ class EventController extends Controller
             ->distinct()
             ->orderBy('city')
             ->pluck('city')
+            ->filter()
+            ->values();
+    }
+
+    /**
+     * Listar estados distintos dos eventos ativos
+     */
+    public function states()
+    {
+        return Event::where('status', EventStatus::ATIVO)
+            ->distinct()
+            ->orderBy('state')
+            ->pluck('state')
             ->filter()
             ->values();
     }

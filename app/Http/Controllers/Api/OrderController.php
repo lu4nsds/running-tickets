@@ -95,8 +95,14 @@ class OrderController extends Controller
         try {
             DB::beginTransaction();
 
-            // Busca o evento
+            // Busca o evento e valida se está ativo
             $event = Event::with('organizer')->findOrFail($request->event_id);
+            
+            if ($event->status !== \App\Enums\EventStatus::ATIVO) {
+                return response()->json([
+                    'message' => 'Este evento não está disponível para compra de ingressos.'
+                ], 422);
+            }
 
             // Valida se todos os tipos de ingresso estão disponíveis
             $ticketTypes = [];

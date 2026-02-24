@@ -21,6 +21,7 @@ return new class extends Migration
             $table->string('slug')->unique();
             $table->text('description')->nullable();
 
+            $table->string('state', 2);
             $table->string('city');
             $table->string('venue');
 
