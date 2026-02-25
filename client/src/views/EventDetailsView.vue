@@ -374,12 +374,12 @@
                                 </h3>
 
                                 <div
-                                    v-if="cartItems.length > 0"
+                                    v-if="selectedTickets.length > 0"
                                     class="flex flex-col gap-4 mb-6 max-h-[250px] overflow-y-auto pr-2"
                                 >
                                     <div
-                                        v-for="item in cartItems"
-                                        :key="item.ticket_type_id"
+                                        v-for="item in selectedTickets"
+                                        :key="item.id"
                                         class="flex justify-between items-start gap-3"
                                     >
                                         <div class="flex flex-col">
@@ -387,16 +387,8 @@
                                                 class="text-white font-medium text-sm"
                                             >
                                                 {{ item.quantity }}x
-                                                {{ item.ticket_type_name }}
+                                                {{ item.name }}
                                             </span>
-                                            <span
-                                                class="text-slate-400 text-xs"
-                                                >{{
-                                                    getCategoryName(
-                                                        item.ticket_type_id,
-                                                    )
-                                                }}</span
-                                            >
                                         </div>
                                         <span
                                             class="text-white font-bold text-sm"
@@ -407,21 +399,6 @@
                                                         item.quantity,
                                                 )
                                             }}
-                                        </span>
-                                    </div>
-                                    <div
-                                        class="flex justify-between items-start gap-3"
-                                    >
-                                        <div class="flex flex-col">
-                                            <span
-                                                class="text-slate-400 font-medium text-sm"
-                                                >Taxa de Serviço</span
-                                            >
-                                        </div>
-                                        <span
-                                            class="text-slate-400 font-medium text-sm"
-                                        >
-                                            {{ formatPrice(serviceFee) }}
                                         </span>
                                     </div>
                                 </div>
@@ -442,7 +419,7 @@
                                     <p>Adicione ingressos ao carrinho</p>
                                 </div>
 
-                                <div v-if="cartItems.length > 0">
+                                <div v-if="selectedTickets.length > 0">
                                     <div
                                         class="border-t border-dashed border-slate-600 mb-4"
                                     ></div>
@@ -458,11 +435,6 @@
                                             >
                                                 {{ formatPrice(totalAmount) }}
                                             </span>
-                                            <p
-                                                class="text-xs text-slate-500 mt-1"
-                                            >
-                                                Até 3x sem juros
-                                            </p>
                                         </div>
                                     </div>
                                     <button
@@ -472,7 +444,7 @@
                                         <span
                                             class="relative z-10 flex items-center gap-2"
                                         >
-                                            Adicionar ao Carrinho
+                                            Informar participantes
                                             <svg
                                                 class="w-5 h-5 group-hover:translate-x-1 transition-transform"
                                                 fill="currentColor"
@@ -623,64 +595,41 @@
 <script setup>
 import { ref, computed, onMounted, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import { useCartStore } from "../stores/cart";
 import axios from "axios";
 import Navbar from "../components/Navbar.vue";
 import Footer from "../components/Footer.vue";
 
 const route = useRoute();
 const router = useRouter();
-const cartStore = useCartStore();
 
 const event = ref(null);
 const loading = ref(true);
-const selectedCategory = ref(null);
 const quantities = ref({});
-const categoriesScroll = ref(null);
 
 // Computed
-const uniqueCategories = computed(() => {
-    if (!event.value?.categories) return [];
-    const distances = [
-        ...new Set(event.value.categories.map((c) => c.distance)),
-    ];
-    return distances.sort((a, b) => a - b).map((distance) => ({ distance }));
-});
-
 const filteredTickets = computed(() => {
     if (!event.value?.ticket_types) return [];
     return event.value.ticket_types;
 });
 
-const cartItems = computed(() => {
-    return Object.entries(quantities.value)
-        .filter(([_, qty]) => qty > 0)
-        .map(([ticketId, quantity]) => {
-            const ticket = event.value.ticket_types.find(
-                (t) => t.id === parseInt(ticketId),
-            );
-            return {
-                ticket_type_id: ticket.id,
-                ticket_type_name: ticket.name,
-                quantity,
-                price_cents: ticket.price_cents,
-            };
-        });
-});
+const selectedTickets = computed(() => {
+    if (!event.value?.ticket_types) return [];
 
-const subtotal = computed(() => {
-    return cartItems.value.reduce(
-        (sum, item) => sum + item.price_cents * item.quantity,
-        0,
-    );
-});
-
-const serviceFee = computed(() => {
-    return Math.round(subtotal.value * 0.1); // 10% taxa de serviço
+    return event.value.ticket_types
+        .filter((ticket) => (quantities.value[ticket.id] || 0) > 0)
+        .map((ticket) => ({
+            id: ticket.id,
+            name: ticket.name,
+            price_cents: ticket.price_cents,
+            quantity: quantities.value[ticket.id] || 0,
+        }));
 });
 
 const totalAmount = computed(() => {
-    return subtotal.value + serviceFee.value;
+    return selectedTickets.value.reduce(
+        (sum, item) => sum + item.price_cents * item.quantity,
+        0,
+    );
 });
 
 // Methods
@@ -699,15 +648,6 @@ function formatPrice(cents) {
         style: "currency",
         currency: "BRL",
     }).format(cents / 100);
-}
-
-function getCategoryName(ticketId) {
-    const ticket = event.value?.ticket_types.find((t) => t.id === ticketId);
-    if (!ticket) return "";
-
-    // Tentar extrair a distância do nome do ticket
-    const match = ticket.name.match(/\d+K/i);
-    return match ? match[0] : "";
 }
 
 function increaseQuantity(ticketId) {
@@ -729,34 +669,26 @@ function decreaseQuantity(ticketId) {
     }
 }
 
-function scrollCategories(direction) {
-    if (!categoriesScroll.value) return;
-    const scrollAmount = 200;
-    if (direction === "left") {
-        categoriesScroll.value.scrollLeft -= scrollAmount;
-    } else {
-        categoriesScroll.value.scrollLeft += scrollAmount;
-    }
-}
-
 async function addToCart() {
-    if (cartItems.value.length === 0) return;
-
-    // Adicionar cada item ao carrinho principal
-    for (const item of cartItems.value) {
-        const ticket = event.value.ticket_types.find(
-            (t) => t.id === item.ticket_type_id,
-        );
-        const category = event.value.categories[0]; // Simplificado por enquanto
-
-        cartStore.addItem(ticket, event.value, category, item.quantity);
+    if (selectedTickets.value.length === 0) {
+        alert("Adicione pelo menos 1 ingresso ao carrinho");
+        return;
     }
 
-    // Limpar quantidades locais
-    quantities.value = {};
+    // Salvar dados no localStorage para usar no checkout
+    const checkoutData = {
+        event: {
+            id: event.value.id,
+            title: event.value.title,
+            slug: event.value.slug,
+        },
+        tickets: selectedTickets.value,
+    };
 
-    // Redirecionar para o carrinho
-    router.push({ name: "cart" });
+    localStorage.setItem("checkout_data", JSON.stringify(checkoutData));
+
+    // Redirecionar para o checkout
+    router.push({ name: "checkout" });
 }
 
 async function fetchEvent() {
@@ -766,7 +698,6 @@ async function fetchEvent() {
         loading.value = true;
         event.value = null; // Limpar evento anterior
         quantities.value = {}; // Limpar quantidades
-        selectedCategory.value = null; // Resetar filtro
 
         const response = await axios.get(
             `http://localhost:8000/api/events/${targetSlug}`,

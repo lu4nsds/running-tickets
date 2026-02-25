@@ -134,4 +134,23 @@ class EventController extends Controller
             ->filter()
             ->values();
     }
+
+    /**
+     * Listar categorias de um evento específico
+     */
+    public function categories($eventId)
+    {
+        $event = Event::where('id', $eventId)
+            ->orWhere('slug', $eventId)
+            ->where('status', EventStatus::ATIVO)
+            ->firstOrFail();
+
+        $categories = $event->categories()
+            ->where('active', true)
+            ->orderBy('distance', 'asc')
+            ->orderBy('name', 'asc')
+            ->get();
+
+        return \App\Http\Resources\CategoryResource::collection($categories);
+    }
 }

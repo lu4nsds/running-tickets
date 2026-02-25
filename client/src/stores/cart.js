@@ -20,7 +20,7 @@ export const useCartStore = defineStore("cart", () => {
     const isEmpty = computed(() => items.value.length === 0);
 
     // Actions
-    function addItem(ticketType, event, category, quantity = 1) {
+    function addItem(ticketType, event, category = null, quantity = 1) {
         const existingItem = items.value.find(
             (item) => item.ticket_type_id === ticketType.id,
         );
@@ -31,14 +31,14 @@ export const useCartStore = defineStore("cart", () => {
             items.value.push({
                 ticket_type_id: ticketType.id,
                 event_id: event.id,
-                category_id: category.id,
-                event_name: event.name,
+                category_id: category?.id || null,
+                event_name: event.title || event.name,
                 event_slug: event.slug,
                 ticket_type_name: ticketType.name,
-                category_name: category.name,
+                category_name: category?.name || "",
                 price_cents: ticketType.price_cents,
                 quantity: quantity,
-                max_per_order: ticketType.max_per_order,
+                max_per_order: ticketType.max_per_order || 10,
             });
         }
 

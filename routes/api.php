@@ -31,6 +31,7 @@ Route::post('/auth/login', [AuthController::class, 'login']);
 Route::get('/events', [EventController::class, 'index']);
 Route::get('/events/cities', [EventController::class, 'cities']);
 Route::get('/events/states', [EventController::class, 'states']);
+Route::get('/events/{event}/categories', [EventController::class, 'categories']);
 Route::get('/events/{slug}', [EventController::class, 'show']);
 
 // Pedidos - autenticação opcional (funciona com ou sem token)

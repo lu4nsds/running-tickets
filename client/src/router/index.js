@@ -21,11 +21,11 @@ const router = createRouter({
             name: "event-details",
             component: () => import("../views/EventDetailsView.vue"),
         },
-        // Carrinho
+        // Checkout - Informações dos participantes
         {
-            path: "/carrinho",
-            name: "cart",
-            component: () => import("../views/CartView.vue"),
+            path: "/checkout",
+            name: "checkout",
+            component: () => import("../views/CheckoutView.vue"),
         },
         // Meus pedidos - usará reference
         {

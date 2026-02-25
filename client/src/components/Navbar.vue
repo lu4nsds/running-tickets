@@ -45,19 +45,6 @@
             <!-- Right Actions -->
             <div class="flex items-center gap-4">
                 <router-link
-                    to="/carrinho"
-                    class="relative rounded-full p-2 text-slate-300 transition-colors hover:bg-surface-dark hover:text-white"
-                >
-                    <span class="material-symbols-outlined">shopping_cart</span>
-                    <span
-                        v-if="cartStore.totalItems > 0"
-                        class="absolute right-1 top-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-background-dark"
-                    >
-                        {{ cartStore.totalItems }}
-                    </span>
-                </router-link>
-
-                <router-link
                     v-if="!authStore.isAuthenticated"
                     to="/entrar"
                     class="hidden rounded-lg bg-surface-dark px-5 py-2.5 text-sm font-semibold text-white transition-all hover:bg-[#2A2F3D] sm:block"
@@ -164,13 +151,11 @@ import { ref } from "vue";
 import { useRouter } from "vue-router";
 import { watchDebounced } from "@vueuse/core";
 import { useAuthStore } from "../stores/auth";
-import { useCartStore } from "../stores/cart";
 import { useEventsStore } from "../stores/events";
 import SearchOverlay from "./SearchOverlay.vue";
 
 const router = useRouter();
 const authStore = useAuthStore();
-const cartStore = useCartStore();
 const eventsStore = useEventsStore();
 
 const searchQuery = ref("");
