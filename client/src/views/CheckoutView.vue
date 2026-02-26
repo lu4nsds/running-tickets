@@ -2,7 +2,10 @@
     <div class="min-h-screen bg-background-dark text-slate-100">
         <Navbar />
 
-        <div class="max-w-7xl mx-auto px-4 py-8">
+        <!-- Loading State -->
+        <CheckoutFormSkeleton v-if="loading" />
+
+        <div v-else class="max-w-7xl mx-auto px-4 py-8">
             <!-- Header -->
             <div class="mb-8">
                 <h1 class="text-3xl font-bold text-white mb-2">
@@ -435,9 +438,11 @@ import { useRouter } from "vue-router";
 import axios from "axios";
 import Navbar from "../components/Navbar.vue";
 import Footer from "../components/Footer.vue";
+import CheckoutFormSkeleton from "../components/CheckoutFormSkeleton.vue";
 
 const router = useRouter();
 
+const loading = ref(true);
 const participants = ref([]);
 const categories = ref([]);
 const selectedTickets = ref([]);
@@ -656,6 +661,8 @@ async function fetchCategories(eventSlugOrId) {
 }
 
 onMounted(async () => {
+    loading.value = true;
+
     // Carregar dados do localStorage
     const checkoutData = localStorage.getItem("checkout_data");
     if (!checkoutData) {
@@ -697,6 +704,8 @@ onMounted(async () => {
         console.error("Erro ao carregar dados do checkout:", error);
         alert("Erro ao carregar dados");
         router.push({ name: "events" });
+    } finally {
+        loading.value = false;
     }
 });
 </script>

@@ -3,14 +3,7 @@
         <Navbar />
 
         <!-- Loading State -->
-        <div
-            v-if="loading"
-            class="flex items-center justify-center min-h-screen"
-        >
-            <div
-                class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"
-            ></div>
-        </div>
+        <EventDetailsSkeleton v-if="loading" />
 
         <!-- Content -->
         <main v-else-if="event" class="flex-grow">
@@ -598,6 +591,7 @@ import { useRoute, useRouter } from "vue-router";
 import axios from "axios";
 import Navbar from "../components/Navbar.vue";
 import Footer from "../components/Footer.vue";
+import EventDetailsSkeleton from "../components/EventDetailsSkeleton.vue";
 
 const route = useRoute();
 const router = useRouter();
