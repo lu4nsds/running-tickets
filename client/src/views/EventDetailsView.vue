@@ -654,8 +654,12 @@ function increaseQuantity(ticketId) {
     const ticket = event.value.ticket_types.find((t) => t.id === ticketId);
     if (!ticket) return;
 
+    // Não permitir se esgotado
+    if (ticket.is_sold_out) return;
+
     const currentQty = quantities.value[ticketId] || 0;
-    const maxQty = ticket.available || 999;
+    // Use ?? ao invés de || para tratar corretamente available === 0
+    const maxQty = ticket.available ?? 999;
 
     if (currentQty < maxQty) {
         quantities.value[ticketId] = currentQty + 1;
