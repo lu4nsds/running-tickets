@@ -1059,10 +1059,7 @@ async function fetchPaymentMethodId(bin) {
 }
 
 async function fetchInstallments(bin) {
-    console.log("🔍 fetchInstallments chamado", { bin, mp: !!mp });
-
     if (!mp || !bin) {
-        console.warn("⚠️ fetchInstallments: mp ou bin não disponível");
         return;
     }
 
@@ -1070,7 +1067,6 @@ async function fetchInstallments(bin) {
 
     try {
         const amount = String((orderData.value.total_cents || 0) / 100);
-        console.log("💰 Buscando parcelas", { amount, bin });
 
         const result = await mp.getInstallments({
             amount,
@@ -1078,15 +1074,11 @@ async function fetchInstallments(bin) {
             bin,
         });
 
-        console.log("✅ Resultado getInstallments:", result);
-
         if (result?.length) {
             // Correto: usar payer_costs, não installments
             installments.value = result[0].payer_costs || [];
             selectedInstallment.value = installments.value[0] || null;
-            console.log("✅ Parcelas carregadas:", installments.value.length);
         } else {
-            console.warn("⚠️ Nenhuma parcela retornada");
             installments.value = [];
         }
     } catch (e) {

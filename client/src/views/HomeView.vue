@@ -284,7 +284,6 @@ function scrollToEvents() {
 
 function handleNewsletter() {
     // TODO: Implementar integração com newsletter
-    console.log("Newsletter:", newsletterEmail.value);
     alert("Obrigado por se inscrever!");
     newsletterEmail.value = "";
 }
