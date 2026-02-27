@@ -6,6 +6,46 @@
         <CheckoutFormSkeleton v-if="loading" />
 
         <div v-else class="max-w-7xl mx-auto px-4 py-8">
+            <!-- Auth Prompt (somente para usuários não autenticados) -->
+            <div
+                v-if="showAuthPrompt"
+                class="mb-8 bg-surface-dark border border-primary/30 rounded-xl p-6"
+            >
+                <div class="flex flex-col sm:flex-row sm:items-center gap-4">
+                    <div class="flex-1">
+                        <h2 class="text-lg font-bold text-white mb-1">
+                            Salve seus ingressos na sua conta
+                        </h2>
+                        <p class="text-slate-400 text-sm">
+                            Com uma conta, você acessa seus ingressos a qualquer
+                            momento e recebe confirmações por e-mail.
+                        </p>
+                    </div>
+                    <div
+                        class="flex flex-col sm:flex-row gap-2 sm:items-center flex-shrink-0"
+                    >
+                        <button
+                            @click="goToLogin"
+                            class="px-5 py-2.5 bg-primary text-background-dark font-bold rounded-lg hover:bg-primary/90 transition-colors text-sm whitespace-nowrap"
+                        >
+                            Fazer Login
+                        </button>
+                        <button
+                            @click="goToRegister"
+                            class="px-5 py-2.5 border border-primary text-primary font-bold rounded-lg hover:bg-primary/10 transition-colors text-sm whitespace-nowrap"
+                        >
+                            Criar Conta
+                        </button>
+                        <button
+                            @click="continueAsGuest"
+                            class="px-5 py-2.5 border border-border-dark text-slate-400 rounded-lg hover:border-slate-500 hover:text-slate-300 transition-colors text-sm whitespace-nowrap"
+                        >
+                            Continuar como Convidado
+                        </button>
+                    </div>
+                </div>
+            </div>
+
             <!-- Header -->
             <div class="mb-8">
                 <h1 class="text-3xl font-bold text-white mb-2">
@@ -434,13 +474,34 @@
 
 <script setup>
 import { ref, computed, onMounted } from "vue";
-import { useRouter } from "vue-router";
-import axios from "axios";
+import { useRouter, useRoute } from "vue-router";
+import api from "../api/axios";
 import Navbar from "../components/Navbar.vue";
 import Footer from "../components/Footer.vue";
 import CheckoutFormSkeleton from "../components/CheckoutFormSkeleton.vue";
+import { useAuthStore } from "../stores/auth";
 
 const router = useRouter();
+const route = useRoute();
+const authStore = useAuthStore();
+
+// Auth prompt: exibido apenas para não autenticados que não escolheram "convidado"
+const showAuthPrompt = computed(
+    () => !authStore.isAuthenticated && !guestChosen.value,
+);
+const guestChosen = ref(false);
+
+function goToLogin() {
+    router.push({ name: "login", query: { redirect: route.fullPath } });
+}
+
+function goToRegister() {
+    router.push({ name: "register", query: { redirect: route.fullPath } });
+}
+
+function continueAsGuest() {
+    guestChosen.value = true;
+}
 
 const loading = ref(true);
 const participants = ref([]);
@@ -644,10 +705,7 @@ async function proceedToPayment() {
         };
 
         // Criar o pedido no backend
-        const response = await axios.post(
-            "http://localhost:8000/api/orders",
-            orderData,
-        );
+        const response = await api.post("/orders", orderData);
 
         const { order, public_key } = response.data;
 
@@ -696,9 +754,7 @@ async function fetchCategories(eventSlugOrId) {
     if (!eventSlugOrId) return;
 
     try {
-        const response = await axios.get(
-            `http://localhost:8000/api/events/${eventSlugOrId}/categories`,
-        );
+        const response = await api.get(`/events/${eventSlugOrId}/categories`);
         categories.value = response.data.data || [];
     } catch (error) {
         console.error("Erro ao buscar categorias:", error);

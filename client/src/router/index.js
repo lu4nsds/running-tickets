@@ -85,6 +85,11 @@ const router = createRouter({
             name: "register",
             component: () => import("../views/RegisterView.vue"),
         },
+        {
+            path: "/auth/callback",
+            name: "auth-callback",
+            component: () => import("../views/AuthCallbackView.vue"),
+        },
     ],
     scrollBehavior(to, from, savedPosition) {
         if (savedPosition) {

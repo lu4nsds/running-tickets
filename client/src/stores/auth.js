@@ -78,6 +78,12 @@ export const useAuthStore = defineStore("auth", () => {
         }
     }
 
+    async function loginWithToken(plainToken) {
+        token.value = plainToken;
+        localStorage.setItem("auth_token", plainToken);
+        await fetchUser();
+    }
+
     return {
         user,
         token,
@@ -88,5 +94,6 @@ export const useAuthStore = defineStore("auth", () => {
         register,
         logout,
         fetchUser,
+        loginWithToken,
     };
 });

@@ -55,16 +55,39 @@
                 <div v-else class="hidden sm:flex items-center gap-3">
                     <router-link
                         to="/meus-ingressos"
-                        class="rounded-lg bg-surface-dark px-4 py-2 text-sm font-semibold text-white transition-all hover:bg-[#2A2F3D]"
+                        class="flex items-center gap-2 rounded-lg border border-primary/40 bg-primary/10 px-4 py-2 text-sm font-semibold text-primary transition-all hover:bg-primary/20"
                     >
+                        <span class="material-symbols-outlined text-base">confirmation_number</span>
                         Meus Ingressos
                     </router-link>
-                    <button
-                        @click="handleLogout"
-                        class="rounded-lg border border-border-dark px-4 py-2 text-sm font-semibold text-slate-300 transition-all hover:bg-surface-dark hover:text-white"
-                    >
-                        Sair
-                    </button>
+
+                    <!-- Saudação + dropdown -->
+                    <div class="relative" ref="userMenuRef">
+                        <button
+                            @click="showUserMenu = !showUserMenu"
+                            class="flex items-center gap-2 rounded-lg border border-border-dark bg-surface-dark px-4 py-2 text-sm font-semibold text-white transition-all hover:bg-[#2A2F3D]"
+                        >
+                            <div class="flex flex-col items-start leading-none">
+                                <span class="text-[10px] text-slate-400 font-normal">Bem-vindo,</span>
+                                <span>{{ firstName }}</span>
+                            </div>
+                            <span class="material-symbols-outlined text-slate-400 text-base">expand_more</span>
+                        </button>
+
+                        <!-- Dropdown -->
+                        <div
+                            v-if="showUserMenu"
+                            class="absolute right-0 mt-2 w-44 rounded-xl border border-border-dark bg-surface-dark shadow-xl overflow-hidden z-50"
+                        >
+                            <button
+                                @click="handleLogout"
+                                class="flex items-center gap-2 w-full px-4 py-3 text-sm text-slate-300 hover:bg-[#2A2F3D] hover:text-white transition-colors"
+                            >
+                                <span class="material-symbols-outlined text-base">logout</span>
+                                Sair
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -150,7 +173,7 @@
 </template>
 
 <script setup>
-import { ref } from "vue";
+import { ref, computed, onMounted, onUnmounted } from "vue";
 import { useRouter } from "vue-router";
 import { watchDebounced } from "@vueuse/core";
 import { useAuthStore } from "../stores/auth";
@@ -178,6 +201,22 @@ const showSearchOverlay = ref(false);
 const searchResults = ref([]);
 const searchLoading = ref(false);
 const totalResults = ref(0);
+const showUserMenu = ref(false);
+const userMenuRef = ref(null);
+
+const firstName = computed(() => {
+    const name = authStore.user?.name || "";
+    return name.split(" ")[0];
+});
+
+function handleClickOutside(event) {
+    if (userMenuRef.value && !userMenuRef.value.contains(event.target)) {
+        showUserMenu.value = false;
+    }
+}
+
+onMounted(() => document.addEventListener("click", handleClickOutside));
+onUnmounted(() => document.removeEventListener("click", handleClickOutside));
 
 async function performSearch(query) {
     if (!query || !query.trim()) {
@@ -244,6 +283,7 @@ function toggleMobileMenu() {
 async function handleLogout() {
     await authStore.logout();
     showMobileMenu.value = false;
+    showUserMenu.value = false;
     router.push({ name: "home" });
 }
 </script>

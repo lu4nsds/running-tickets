@@ -37,14 +37,22 @@ class TicketController extends Controller
                     'ticket' => TicketResource::make($ticket),
                     'participant' => $ticket->orderItem->participant_data,
                     'event' => [
-                        'id' => $ticket->orderItem->order->event->id,
-                        'title' => $ticket->orderItem->order->event->title,
+                        'id'         => $ticket->orderItem->order->event->id,
+                        'title'      => $ticket->orderItem->order->event->title,
                         'date_start' => $ticket->orderItem->order->event->date_start,
+                        'banner_url' => $ticket->orderItem->order->event->banner_url,
+                        'city'       => $ticket->orderItem->order->event->city,
+                        'state'      => $ticket->orderItem->order->event->state,
                     ],
                     'ticket_type' => [
-                        'id' => $ticket->orderItem->ticketType->id,
+                        'id'   => $ticket->orderItem->ticketType->id,
                         'name' => $ticket->orderItem->ticketType->name,
                     ],
+                    'category' => $ticket->orderItem->category ? [
+                        'id'       => $ticket->orderItem->category->id,
+                        'name'     => $ticket->orderItem->category->name,
+                        'distance' => $ticket->orderItem->category->distance,
+                    ] : null,
                 ];
             }),
         ]);

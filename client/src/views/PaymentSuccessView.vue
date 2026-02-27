@@ -72,6 +72,26 @@
                     </router-link>
                 </div>
 
+                <!-- Banner de criação de conta (somente para guests) -->
+                <div
+                    v-if="!isAuthenticated"
+                    class="mt-8 bg-surface-dark border border-primary/30 rounded-xl p-6 text-left"
+                >
+                    <h3 class="text-lg font-bold text-white mb-2">
+                        Quer acessar seus ingressos a qualquer momento?
+                    </h3>
+                    <p class="text-slate-400 text-sm mb-4">
+                        Crie uma conta com o e-mail usado no pedido e seus
+                        ingressos ficarão salvos automaticamente.
+                    </p>
+                    <router-link
+                        :to="{ name: 'register' }"
+                        class="inline-flex items-center gap-2 px-6 py-3 bg-primary text-background-dark font-bold rounded-lg hover:bg-primary/90 transition-colors"
+                    >
+                        Criar Conta Gratuita
+                    </router-link>
+                </div>
+
                 <!-- Info Card -->
                 <div
                     class="mt-12 bg-surface-dark border border-border-dark rounded-xl p-6 text-left"
