@@ -51,11 +51,12 @@ class StoreOrderRequest extends FormRequest
                         return;
                     }
 
-                    // Verifica se o CPF já foi usado em outro pedido para este evento
+                    // Verifica se o CPF já foi usado em outro pedido PAGO para este evento
+                    // Pedidos PENDING não bloqueiam o CPF (usuário pode abandonar e tentar novamente)
                     $exists = \DB::table('order_items')
                         ->join('orders', 'order_items.order_id', '=', 'orders.id')
                         ->where('orders.event_id', $eventId)
-                        ->whereIn('orders.status', ['pending', 'paid'])
+                        ->where('orders.status', 'paid')
                         ->whereRaw("JSON_EXTRACT(order_items.participant_data, '$.cpf') = ?", [$value])
                         ->exists();
 

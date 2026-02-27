@@ -36,6 +36,10 @@ Route::get('/events/{slug}', [EventController::class, 'show']);
 
 // Pedidos - autenticação opcional (funciona com ou sem token)
 Route::post('/orders', [OrderController::class, 'store'])->middleware('optional_auth');
+Route::post('/orders/{order}/payment', [OrderController::class, 'processPayment'])->middleware('optional_auth');
+
+// Status público do pedido (para polling de PIX)
+Route::get('/orders/{reference}/status', [OrderController::class, 'status']);
 
 // Webhook do Mercado Pago (público)
 Route::post('/webhooks/mercadopago', [MercadoPagoWebhookController::class, 'handle'])->name('webhooks.mercadopago');

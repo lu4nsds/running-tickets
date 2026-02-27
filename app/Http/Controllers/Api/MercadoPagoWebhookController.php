@@ -52,8 +52,36 @@ class MercadoPagoWebhookController extends Controller
                 'action' => $action,
             ]);
 
-            // Busca todos os pedidos pendentes (não é o ideal, mas funciona)
-            // Em produção, você poderia armazenar o payment_id temporariamente
+            // Tenta buscar o pedido pelo payment_id primeiro (mais eficiente)
+            $order = Order::where('payment_id', $paymentId)
+                ->with('event.payoutSetting')
+                ->first();
+
+            if ($order) {
+                Log::info('Pedido encontrado por payment_id', [
+                    'order_id' => $order->id,
+                    'reference' => $order->reference,
+                ]);
+
+                $payoutSetting = $order->event->payoutSetting;
+                
+                if ($payoutSetting && isset($payoutSetting->details['access_token'])) {
+                    // Busca dados atualizados do pagamento
+                    $payment = $this->mercadoPagoService->getPaymentById(
+                        $paymentId,
+                        $payoutSetting->details['access_token']
+                    );
+
+                    if ($payment) {
+                        $this->updateOrderStatus($order, $payment);
+                        return response()->json(['status' => 'processed'], 200);
+                    }
+                }
+            }
+
+            // Fallback: busca por external_reference (para pagamentos antigos ou primeiro webhook)
+            Log::info('Buscando pedido por external_reference (fallback)');
+            
             $orders = Order::where('status', OrderStatus::PENDING)
                 ->with('event.payoutSetting')
                 ->get();
@@ -66,7 +94,7 @@ class MercadoPagoWebhookController extends Controller
                 }
 
                 // Busca o pagamento no Mercado Pago
-                $payment = $this->mercadoPagoService->getPayment(
+                $payment = $this->mercadoPagoService->getPaymentById(
                     $paymentId,
                     $payoutSetting->details['access_token']
                 );

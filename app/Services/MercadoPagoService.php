@@ -4,8 +4,10 @@ namespace App\Services;
 
 use App\Models\Event;
 use App\Models\Order;
+use App\Models\EventPayoutSetting;
 use MercadoPago\MercadoPagoConfig;
-use MercadoPago\Client\Preference\PreferenceClient;
+use MercadoPago\Client\Payment\PaymentClient;
+use MercadoPago\Client\Common\RequestOptions;
 use MercadoPago\Exceptions\MPApiException;
 use Illuminate\Support\Facades\Http;
 
@@ -73,109 +75,197 @@ class MercadoPagoService
             'public_key' => $publicKey,
         ];
     }
+
     /**
-     * Cria uma preferência de pagamento no Mercado Pago
+     * Retorna a public key do organizador do evento para uso no frontend (Bricks)
      */
-    public function createPreference(Order $order): array
+    public function getPublicKey(EventPayoutSetting $payoutSetting): string
     {
-        try {
-            // Busca as credenciais do organizador
-            $payoutSetting = $order->event->payoutSetting;
-            
-            if (!$payoutSetting || $payoutSetting->method !== 'mercadopago') {
-                throw new \Exception('Configuração de pagamento não encontrada ou inválida para este evento.');
-            }
-
-            $details = $payoutSetting->details;
-            if (!isset($details['access_token'])) {
-                throw new \Exception('Access token do Mercado Pago não configurado.');
-            }
-
-            // Configura o SDK do Mercado Pago com o token do organizador
-            MercadoPagoConfig::setAccessToken($details['access_token']);
-
-            // Prepara os itens para o Mercado Pago
-            $items = [];
-            foreach ($order->items as $item) {
-                $items[] = [
-                    'id' => (string) $item->ticketType->id,
-                    'title' => $item->ticketType->name,
-                    'description' => $item->ticketType->description ?? $order->event->title,
-                    'category_id' => 'tickets',
-                    'quantity' => 1,
-                    'currency_id' => $order->currency,
-                    'unit_price' => (float) ($item->ticketType->price_cents / 100), // Mercado Pago usa decimais
-                ];
-            }
-
-            // Cria a preferência
-            $client = new PreferenceClient();
-            
-            $preferenceData = [
-                'items' => $items,
-                'external_reference' => $order->reference,
-                'notification_url' => url('/api/webhooks/mercadopago'),
-                'expires' => true,
-                'expiration_date_from' => now()->toIso8601String(),
-                'expiration_date_to' => now()->addHours(48)->toIso8601String(),
-            ];
-
-            // Adiciona statement_descriptor apenas se o nome do evento não estiver vazio
-            if (!empty($order->event->title)) {
-                $preferenceData['statement_descriptor'] = substr($order->event->title, 0, 22);
-            }
-
-            \Log::info('Criando preferência no Mercado Pago', [
-                'preference_data' => $preferenceData,
-            ]);
-            
-            $preference = $client->create($preferenceData);
-
-            return [
-                'init_point' => $preference->init_point,
-                'sandbox_init_point' => $preference->sandbox_init_point,
-                'preference_id' => $preference->id,
-            ];
-
-        } catch (MPApiException $e) {
-            \Log::error('Erro ao criar preferência no Mercado Pago', [
-                'message' => $e->getMessage(),
-                'status_code' => $e->getStatusCode(),
-                'api_response' => $e->getApiResponse(),
-            ]);
-            
-            throw new \Exception('Erro ao criar link de pagamento: ' . $e->getMessage());
-        } catch (\Exception $e) {
-            \Log::error('Erro ao criar preferência no Mercado Pago', [
-                'message' => $e->getMessage(),
-            ]);
-            
-            throw $e;
+        if (!$payoutSetting || $payoutSetting->method !== 'mercadopago') {
+            throw new \Exception('Configuração de pagamento não encontrada ou inválida para este evento.');
         }
+
+        if ($payoutSetting->payout_mode === 'platform') {
+            $publicKey = config('mercadopago.platform_public_key');
+            if (empty($publicKey)) {
+                throw new \Exception('Public key da plataforma não configurada no .env.');
+            }
+            return $publicKey;
+        }
+
+        $details = $payoutSetting->details;
+        if (!isset($details['public_key'])) {
+            throw new \Exception('Public key do Mercado Pago não configurada.');
+        }
+
+        return $details['public_key'];
     }
 
     /**
-     * Busca informações de um pagamento
+     * Cria um pagamento com token de cartão (Checkout Transparente)
      */
-    public function getPayment(string $paymentId, string $accessToken): ?array
-    {
+    public function createCardPayment(
+        string $token,
+        int $amountCents,
+        string $paymentMethodId,
+        int $installments,
+        array $payer,
+        string $externalReference,
+        string $accessToken
+    ): array {
         try {
-            MercadoPagoConfig::setAccessToken($accessToken);
-            
-            $client = new \MercadoPago\Client\Payment\PaymentClient();
-            $payment = $client->get($paymentId);
+            $requestOptions = new RequestOptions();
+            $requestOptions->setAccessToken($accessToken);
+
+            $client = new PaymentClient();
+            $payment = $client->create([
+                'transaction_amount' => (float) ($amountCents / 100),
+                'token' => $token,
+                'description' => 'Running Tickets - Pedido ' . $externalReference,
+                'installments' => $installments,
+                'payment_method_id' => $paymentMethodId,
+                'external_reference' => $externalReference,
+                'payer' => $payer,
+            ], $requestOptions);
 
             return [
                 'id' => $payment->id,
                 'status' => $payment->status,
                 'status_detail' => $payment->status_detail,
-                'external_reference' => $payment->external_reference,
+                'external_reference' => $payment->external_reference ?? null,
                 'transaction_amount' => $payment->transaction_amount,
                 'payment_method_id' => $payment->payment_method_id,
                 'payment_type_id' => $payment->payment_type_id,
+                'installments' => $payment->installments ?? 1,
+                'payer' => [
+                    'email' => $payment->payer->email ?? null,
+                    'identification' => [
+                        'type' => $payment->payer->identification->type ?? null,
+                        'number' => $payment->payer->identification->number ?? null,
+                    ],
+                ],
             ];
 
         } catch (MPApiException $e) {
+            \Log::error('Erro ao criar pagamento com cartão no Mercado Pago', [
+                'external_reference' => $externalReference,
+                'message' => $e->getMessage(),
+                'status_code' => $e->getStatusCode(),
+            ]);
+            throw $e;
+        } catch (\Exception $e) {
+            \Log::error('Erro ao criar pagamento com cartão no Mercado Pago', [
+                'external_reference' => $externalReference,
+                'message' => $e->getMessage(),
+            ]);
+            throw $e;
+        }
+    }
+
+    /**
+     * Cria um pagamento via PIX (Checkout Transparente)
+     */
+    public function createPixPayment(
+        int $amountCents,
+        array $payer,
+        string $externalReference,
+        string $accessToken
+    ): array {
+        try {
+            $requestOptions = new RequestOptions();
+            $requestOptions->setAccessToken($accessToken);
+
+            $client = new PaymentClient();
+            $appUrl = config('app.url');
+            $isLocalhost = str_contains($appUrl, 'localhost') || str_contains($appUrl, '127.0.0.1');
+
+            $payload = [
+                'transaction_amount' => (float) ($amountCents / 100),
+                'description' => 'Running Tickets - Pedido ' . $externalReference,
+                'payment_method_id' => 'pix',
+                'external_reference' => $externalReference,
+                'payer' => $payer,
+            ];
+
+            if (!$isLocalhost) {
+                $payload['notification_url'] = $appUrl . '/api/webhooks/mercadopago';
+            }
+
+            $payment = $client->create($payload, $requestOptions);
+
+            return [
+                'id' => $payment->id,
+                'status' => $payment->status,
+                'status_detail' => $payment->status_detail,
+                'external_reference' => $payment->external_reference ?? null,
+                'transaction_amount' => $payment->transaction_amount,
+                'payment_method_id' => 'pix',
+                'payment_type_id' => 'bank_transfer',
+                'point_of_interaction' => [
+                    'transaction_data' => [
+                        'qr_code' => $payment->point_of_interaction->transaction_data->qr_code ?? null,
+                        'qr_code_base64' => $payment->point_of_interaction->transaction_data->qr_code_base64 ?? null,
+                        'ticket_url' => $payment->point_of_interaction->transaction_data->ticket_url ?? null,
+                    ],
+                ],
+            ];
+
+        } catch (MPApiException $e) {
+            \Log::error('Erro ao criar pagamento PIX no Mercado Pago', [
+                'external_reference' => $externalReference,
+                'message' => $e->getMessage(),
+                'status_code' => $e->getStatusCode(),
+                'api_response' => $e->getApiResponse()?->getContent(),
+            ]);
+            throw $e;
+        } catch (\Exception $e) {
+            \Log::error('Erro ao criar pagamento PIX no Mercado Pago', [
+                'external_reference' => $externalReference,
+                'message' => $e->getMessage(),
+            ]);
+            throw $e;
+        }
+    }
+
+    /**
+     * Busca informações de um pagamento pelo ID
+     */
+    public function getPaymentById(string $paymentId, string $accessToken): ?array
+    {
+        try {
+            $requestOptions = new RequestOptions();
+            $requestOptions->setAccessToken($accessToken);
+
+            $client = new PaymentClient();
+            $payment = $client->get($paymentId, $requestOptions);
+
+            return [
+                'id' => $payment->id,
+                'status' => $payment->status,
+                'status_detail' => $payment->status_detail,
+                'external_reference' => $payment->external_reference ?? null,
+                'transaction_amount' => $payment->transaction_amount,
+                'payment_method_id' => $payment->payment_method_id,
+                'payment_type_id' => $payment->payment_type_id,
+                'installments' => $payment->installments ?? 1,
+                'payer' => [
+                    'email' => $payment->payer->email ?? null,
+                    'identification' => [
+                        'type' => $payment->payer->identification->type ?? null,
+                        'number' => $payment->payer->identification->number ?? null,
+                    ],
+                ],
+            ];
+
+        } catch (MPApiException $e) {
+            \Log::error('Erro ao buscar pagamento no Mercado Pago', [
+                'payment_id' => $paymentId,
+                'message' => $e->getMessage(),
+                'status_code' => $e->getStatusCode(),
+            ]);
+            
+            return null;
+        } catch (\Exception $e) {
             \Log::error('Erro ao buscar pagamento no Mercado Pago', [
                 'payment_id' => $paymentId,
                 'message' => $e->getMessage(),

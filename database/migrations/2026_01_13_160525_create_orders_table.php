@@ -38,6 +38,9 @@ return new class extends Migration
             $table->string('status')->default('pending');
             // pending | paid | cancelled | refunded
 
+            // Email do comprador (quem efetua o pagamento)
+            $table->string('buyer_email')->nullable();
+
             // Informações do pagamento (gateway)
             $table->string('payment_gateway')->nullable();
             $table->string('payment_id')->nullable();

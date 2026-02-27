@@ -627,20 +627,66 @@ async function proceedToPayment() {
     isSubmitting.value = true;
 
     try {
-        // Salvar dados dos participantes no localStorage para usar no pagamento
+        // Preparar dados para criar o pedido
+        const orderData = {
+            event_id: eventData.value.id,
+            items: participants.value.map((p) => ({
+                ticket_type_id: p.ticket_type_id,
+                category_id: p.category_id,
+                participant_data: {
+                    name: p.name,
+                    email: p.email,
+                    cpf: p.cpf.replace(/\D/g, ""), // Remove formatação do CPF
+                    birthdate: p.birthdate,
+                    shirt_size: p.shirt_size || null,
+                },
+            })),
+        };
+
+        // Criar o pedido no backend
+        const response = await axios.post(
+            "http://localhost:8000/api/orders",
+            orderData,
+        );
+
+        const { order, public_key } = response.data;
+
+        // Salvar informações do pedido no localStorage para a tela de pagamento
+        localStorage.setItem(
+            "payment_order",
+            JSON.stringify({
+                id: order.id,
+                reference: order.reference,
+                total_cents: order.total_cents,
+                currency: order.currency,
+                event_title: eventData.value.title,
+                public_key: public_key,
+                items: order.items,
+                created_at: order.created_at,
+            }),
+        );
+
+        // Salvar dados dos participantes (para exibir na confirmação)
         localStorage.setItem(
             "checkout_participants",
             JSON.stringify(participants.value),
         );
 
-        // TODO: Navegar para a página de pagamento quando ela for criada
-        alert(
-            "Dados salvos! Próximo passo: implementar a página de pagamento com Mercado Pago Bricks",
-        );
-        console.log("Participantes:", participants.value);
+        // Navegar para a página de pagamento
+        router.push({ name: "payment" });
     } catch (error) {
-        console.error("Erro ao processar:", error);
-        alert("Erro ao processar. Tente novamente.");
+        console.error("Erro ao criar pedido:", error);
+
+        let errorMessage = "Erro ao processar pedido. Tente novamente.";
+
+        if (error.response?.data?.message) {
+            errorMessage = error.response.data.message;
+        } else if (error.response?.data?.errors) {
+            const errors = Object.values(error.response.data.errors).flat();
+            errorMessage = errors.join("\n");
+        }
+
+        alert(errorMessage);
     } finally {
         isSubmitting.value = false;
     }

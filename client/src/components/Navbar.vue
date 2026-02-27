@@ -23,7 +23,7 @@
             </router-link>
 
             <!-- Search Bar (Hidden on mobile, visible on tablet+) -->
-            <div class="hidden flex-1 px-8 md:flex max-w-lg">
+            <div v-if="!hideSearch" class="hidden flex-1 px-8 md:flex max-w-lg">
                 <div class="relative w-full">
                     <div
                         class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3"
@@ -43,7 +43,7 @@
             </div>
 
             <!-- Right Actions -->
-            <div class="flex items-center gap-4">
+            <div v-if="!hideActions" class="flex items-center gap-4">
                 <router-link
                     v-if="!authStore.isAuthenticated"
                     to="/entrar"
@@ -66,7 +66,10 @@
                         Sair
                     </button>
                 </div>
+            </div>
 
+            <!-- Mobile Menu Button (always visible) -->
+            <div v-if="!hideActions" class="flex items-center">
                 <button @click="toggleMobileMenu" class="sm:hidden text-white">
                     <span class="material-symbols-outlined">menu</span>
                 </button>
@@ -74,7 +77,7 @@
         </div>
 
         <!-- Mobile Search (Visible only on mobile) -->
-        <div class="md:hidden px-4 pb-4">
+        <div v-if="!hideSearch" class="md:hidden px-4 pb-4">
             <div class="relative w-full">
                 <div
                     class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3"
@@ -153,6 +156,17 @@ import { watchDebounced } from "@vueuse/core";
 import { useAuthStore } from "../stores/auth";
 import { useEventsStore } from "../stores/events";
 import SearchOverlay from "./SearchOverlay.vue";
+
+const props = defineProps({
+    hideSearch: {
+        type: Boolean,
+        default: false,
+    },
+    hideActions: {
+        type: Boolean,
+        default: false,
+    },
+});
 
 const router = useRouter();
 const authStore = useAuthStore();

@@ -3,6 +3,7 @@
 namespace App\Mail;
 
 use App\Models\Order;
+use App\Services\TicketPdfService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Attachment;
@@ -14,6 +15,8 @@ use Illuminate\Support\Facades\Storage;
 class OrderPaidMail extends Mailable
 {
     use Queueable, SerializesModels;
+
+    private array $generatedPdfs = [];
 
     /**
      * Create a new message instance.
@@ -48,19 +51,38 @@ class OrderPaidMail extends Mailable
     public function attachments(): array
     {
         $attachments = [];
+        $pdfService = app(TicketPdfService::class);
 
-        // Anexa os QR codes de todos os tickets
+        // Gera e anexa PDFs de todos os tickets
         foreach ($this->order->items as $item) {
-            if ($item->ticket && $item->ticket->qr_path) {
-                $qrContent = Storage::disk('public')->get($item->ticket->qr_path);
-                
-                if ($qrContent) {
-                    $attachments[] = Attachment::fromData(fn () => $qrContent, 'ticket-' . $item->ticket->code . '.svg')
-                        ->withMime('image/svg+xml');
+            if ($item->ticket) {
+                try {
+                    $pdfPath = $pdfService->generateTicketPdf($item);
+                    $this->generatedPdfs[] = $pdfPath;
+                    
+                    $attachments[] = Attachment::fromStorage($pdfPath)
+                        ->as('ingresso-' . $item->participant_data['name'] . '.pdf')
+                        ->withMime('application/pdf');
+                } catch (\Exception $e) {
+                    \Log::error('Erro ao gerar PDF do ticket', [
+                        'order_item_id' => $item->id,
+                        'error' => $e->getMessage()
+                    ]);
                 }
             }
         }
 
         return $attachments;
+    }
+
+    /**
+     * Limpa PDFs temporários após o envio
+     */
+    public function __destruct()
+    {
+        if (!empty($this->generatedPdfs)) {
+            $pdfService = app(TicketPdfService::class);
+            $pdfService->cleanupTempPdfs($this->generatedPdfs);
+        }
     }
 }

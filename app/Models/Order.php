@@ -19,6 +19,7 @@ class Order extends Model
         'total_cents',
         'currency',
         'status',
+        'buyer_email',
         'payment_gateway',
         'payment_id',
         'metadata',

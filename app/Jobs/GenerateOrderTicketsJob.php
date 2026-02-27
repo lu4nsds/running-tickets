@@ -112,24 +112,48 @@ class GenerateOrderTicketsJob implements ShouldQueue
     }
 
     /**
-     * Envia email de confirmação com os tickets
+     * Envia emails de confirmação com os tickets
      */
     private function sendConfirmationEmail(): void
     {
         // Carrega as relações necessárias
-        $this->order->load(['items.ticket', 'event']);
+        $this->order->load(['items.ticket', 'items.ticketType', 'items.category', 'event']);
 
-        // Pega email do primeiro participante
-        $email = $this->order->items->first()->participant_data['email'] ?? null;
-
-        if ($email) {
-            \Illuminate\Support\Facades\Mail::to($email)
+        // 1. Envia email para o COMPRADOR com TODOS os tickets
+        $buyerEmail = $this->order->buyer_email;
+        
+        if ($buyerEmail) {
+            \Illuminate\Support\Facades\Mail::to($buyerEmail)
                 ->queue(new \App\Mail\OrderPaidMail($this->order));
 
-            Log::info('Email de confirmação enviado', [
+            Log::info('Email completo enviado para comprador', [
                 'order_id' => $this->order->id,
-                'email' => $email,
+                'buyer_email' => $buyerEmail,
+                'total_tickets' => $this->order->items->count(),
             ]);
+        }
+
+        // 2. Envia email para CADA PARTICIPANTE com apenas SEU ticket
+        foreach ($this->order->items as $item) {
+            $participantEmail = $item->participant_data['email'] ?? null;
+            
+            if ($participantEmail && $participantEmail !== $buyerEmail) {
+                // Só envia se for email diferente do comprador (evita duplicação)
+                \Illuminate\Support\Facades\Mail::to($participantEmail)
+                    ->queue(new \App\Mail\ParticipantTicketMail($item));
+
+                Log::info('Email individual enviado para participante', [
+                    'order_id' => $this->order->id,
+                    'participant_email' => $participantEmail,
+                    'participant_name' => $item->participant_data['name'] ?? 'N/A',
+                    'ticket_id' => $item->ticket->id ?? null,
+                ]);
+            } elseif ($participantEmail === $buyerEmail) {
+                Log::info('Participante é o comprador, email já enviado', [
+                    'order_id' => $this->order->id,
+                    'email' => $participantEmail,
+                ]);
+            }
         }
     }
 }

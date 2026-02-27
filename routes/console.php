@@ -8,5 +8,6 @@ Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote');
 
-// Agendar cancelamento de pedidos expirados a cada hora
-Schedule::command('orders:cancel-expired')->hourly();
+// Agendar cancelamento de pedidos expirados a cada 5 minutos
+// Por padrão cancela pedidos pendentes há mais de 30 minutos
+Schedule::command('orders:cancel-expired --minutes=30')->everyFiveMinutes();

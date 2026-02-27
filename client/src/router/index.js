@@ -27,6 +27,27 @@ const router = createRouter({
             name: "checkout",
             component: () => import("../views/CheckoutView.vue"),
         },
+        // Pagamento
+        {
+            path: "/pagamento",
+            name: "payment",
+            component: () => import("../views/PaymentView.vue"),
+        },
+        {
+            path: "/pagamento/sucesso",
+            name: "payment-success",
+            component: () => import("../views/PaymentSuccessView.vue"),
+        },
+        {
+            path: "/pagamento/pendente",
+            name: "payment-pending",
+            component: () => import("../views/PaymentPendingView.vue"),
+        },
+        {
+            path: "/pagamento/erro",
+            name: "payment-error",
+            component: () => import("../views/PaymentErrorView.vue"),
+        },
         // Meus pedidos - usará reference
         {
             path: "/meus-pedidos",

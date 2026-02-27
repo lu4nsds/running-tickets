@@ -67,10 +67,10 @@ class TicketType extends Model
         if ($this->quota !== null) {
             $sold = $this->orderItems()
                 ->whereHas('order', function ($query) {
-                    $query->whereIn('status', ['pending', 'paid']);
+                    $query->where('status', 'paid');
                 })
                 ->count();
-            
+
             if ($sold >= $this->quota) {
                 return false;
             }
@@ -90,7 +90,7 @@ class TicketType extends Model
 
         $sold = $this->orderItems()
             ->whereHas('order', function ($query) {
-                $query->whereIn('status', ['pending', 'paid']);
+                $query->where('status', 'paid');
             })
             ->count();
 
