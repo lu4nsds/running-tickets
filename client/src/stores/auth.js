@@ -16,7 +16,7 @@ export const useAuthStore = defineStore("auth", () => {
         try {
             const response = await api.post("/auth/login", { email, password });
 
-            token.value = response.data.token;
+            token.value = response.data.access_token;
             user.value = response.data.user;
 
             localStorage.setItem("auth_token", token.value);
@@ -37,7 +37,7 @@ export const useAuthStore = defineStore("auth", () => {
         try {
             const response = await api.post("/auth/register", data);
 
-            token.value = response.data.token;
+            token.value = response.data.access_token;
             user.value = response.data.user;
 
             localStorage.setItem("auth_token", token.value);

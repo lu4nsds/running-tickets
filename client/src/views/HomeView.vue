@@ -204,44 +204,82 @@
                 <div
                     class="flex flex-col items-center gap-8 px-4 text-center sm:px-6 lg:px-12 xl:px-20"
                 >
-                    <div
-                        class="rounded-full bg-primary/10 p-4 ring-1 ring-primary/20"
-                    >
-                        <span
-                            class="material-symbols-outlined text-4xl text-primary"
-                            >mail</span
-                        >
-                    </div>
+                    <!-- Estado: inscrito -->
+                    <template v-if="newsletterSubscribed">
+                        <div class="relative">
+                            <div
+                                class="absolute inset-0 rounded-full border-2 border-primary/30 animate-ping"
+                            ></div>
+                            <div
+                                class="relative rounded-full bg-primary/10 p-4 ring-1 ring-primary/40 shadow-[0_0_24px_rgba(16,185,129,0.25)]"
+                            >
+                                <svg
+                                    class="h-10 w-10 text-primary"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                >
+                                    <path
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        stroke-width="2.5"
+                                        d="M5 13l4 4L19 7"
+                                    />
+                                </svg>
+                            </div>
+                        </div>
+                        <div class="space-y-2">
+                            <h2 class="text-2xl font-bold text-white sm:text-3xl">
+                                Inscrição realizada!
+                            </h2>
+                            <p class="max-w-sm text-slate-400">
+                                Obrigado por se juntar a nós. Em breve você receberá
+                                nossas novidades no seu e-mail.
+                            </p>
+                        </div>
+                    </template>
 
-                    <div class="space-y-2">
-                        <h2 class="text-2xl font-bold text-white sm:text-3xl">
-                            Não perca nenhuma largada
-                        </h2>
-                        <p class="max-w-2xl text-slate-400">
-                            Inscreva-se na nossa newsletter para receber alertas
-                            de novas corridas, descontos exclusivos e dicas de
-                            treino.
-                        </p>
-                    </div>
-
-                    <form
-                        @submit.prevent="handleNewsletter"
-                        class="flex w-full max-w-md flex-col gap-3 sm:flex-row"
-                    >
-                        <input
-                            v-model="newsletterEmail"
-                            class="w-full rounded-xl border border-border-dark bg-background-dark px-4 py-3 text-white placeholder-slate-500 focus:border-primary focus:ring-1 focus:ring-primary"
-                            placeholder="Seu melhor e-mail"
-                            required
-                            type="email"
-                        />
-                        <button
-                            type="submit"
-                            class="whitespace-nowrap rounded-xl bg-primary px-6 py-3 font-bold text-background-dark transition-all hover:bg-primary-dark"
+                    <!-- Estado: formulário -->
+                    <template v-else>
+                        <div
+                            class="rounded-full bg-primary/10 p-4 ring-1 ring-primary/20"
                         >
-                            Inscrever-se
-                        </button>
-                    </form>
+                            <span
+                                class="material-symbols-outlined text-4xl text-primary"
+                                >mail</span
+                            >
+                        </div>
+
+                        <div class="space-y-2">
+                            <h2 class="text-2xl font-bold text-white sm:text-3xl">
+                                Não perca nenhuma largada
+                            </h2>
+                            <p class="max-w-2xl text-slate-400">
+                                Inscreva-se na nossa newsletter para receber alertas
+                                de novas corridas, descontos exclusivos e dicas de
+                                treino.
+                            </p>
+                        </div>
+
+                        <form
+                            @submit.prevent="handleNewsletter"
+                            class="flex w-full max-w-md flex-col gap-3 sm:flex-row"
+                        >
+                            <input
+                                v-model="newsletterEmail"
+                                class="w-full rounded-xl border border-border-dark bg-background-dark px-4 py-3 text-white placeholder-slate-500 focus:border-primary focus:ring-1 focus:ring-primary"
+                                placeholder="Seu melhor e-mail"
+                                required
+                                type="email"
+                            />
+                            <button
+                                type="submit"
+                                class="whitespace-nowrap rounded-xl bg-primary px-6 py-3 font-bold text-background-dark transition-all hover:bg-primary-dark"
+                            >
+                                Inscrever-se
+                            </button>
+                        </form>
+                    </template>
                 </div>
             </section>
         </main>
@@ -261,6 +299,7 @@ import EventCard from "../components/EventCard.vue";
 const router = useRouter();
 const eventsStore = useEventsStore();
 const newsletterEmail = ref("");
+const newsletterSubscribed = ref(false);
 
 onMounted(async () => {
     try {
@@ -283,8 +322,7 @@ function scrollToEvents() {
 }
 
 function handleNewsletter() {
-    // TODO: Implementar integração com newsletter
-    alert("Obrigado por se inscrever!");
+    newsletterSubscribed.value = true;
     newsletterEmail.value = "";
 }
 </script>

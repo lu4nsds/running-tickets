@@ -6,45 +6,6 @@
         <CheckoutFormSkeleton v-if="loading" />
 
         <div v-else class="max-w-7xl mx-auto px-4 py-8">
-            <!-- Auth Prompt (somente para usuários não autenticados) -->
-            <div
-                v-if="showAuthPrompt"
-                class="mb-8 bg-surface-dark border border-primary/30 rounded-xl p-6"
-            >
-                <div class="flex flex-col sm:flex-row sm:items-center gap-4">
-                    <div class="flex-1">
-                        <h2 class="text-lg font-bold text-white mb-1">
-                            Salve seus ingressos na sua conta
-                        </h2>
-                        <p class="text-slate-400 text-sm">
-                            Com uma conta, você acessa seus ingressos a qualquer
-                            momento e recebe confirmações por e-mail.
-                        </p>
-                    </div>
-                    <div
-                        class="flex flex-col sm:flex-row gap-2 sm:items-center flex-shrink-0"
-                    >
-                        <button
-                            @click="goToLogin"
-                            class="px-5 py-2.5 bg-primary text-background-dark font-bold rounded-lg hover:bg-primary/90 transition-colors text-sm whitespace-nowrap"
-                        >
-                            Fazer Login
-                        </button>
-                        <button
-                            @click="goToRegister"
-                            class="px-5 py-2.5 border border-primary text-primary font-bold rounded-lg hover:bg-primary/10 transition-colors text-sm whitespace-nowrap"
-                        >
-                            Criar Conta
-                        </button>
-                        <button
-                            @click="continueAsGuest"
-                            class="px-5 py-2.5 border border-border-dark text-slate-400 rounded-lg hover:border-slate-500 hover:text-slate-300 transition-colors text-sm whitespace-nowrap"
-                        >
-                            Continuar como Convidado
-                        </button>
-                    </div>
-                </div>
-            </div>
 
             <!-- Header -->
             <div class="mb-8">
@@ -297,6 +258,8 @@
                                         type="date"
                                         required
                                         :max="maxDate"
+                                        :min="minDate"
+                                        @change="validateBirthdateField(participant, index)"
                                         class="w-full px-4 py-3 bg-surface-darker border border-border-dark rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-primary transition-colors"
                                     />
                                     <p
@@ -474,7 +437,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from "vue";
-import { useRouter, useRoute } from "vue-router";
+import { useRouter } from "vue-router";
 import api from "../api/axios";
 import Navbar from "../components/Navbar.vue";
 import Footer from "../components/Footer.vue";
@@ -482,26 +445,7 @@ import CheckoutFormSkeleton from "../components/CheckoutFormSkeleton.vue";
 import { useAuthStore } from "../stores/auth";
 
 const router = useRouter();
-const route = useRoute();
 const authStore = useAuthStore();
-
-// Auth prompt: exibido apenas para não autenticados que não escolheram "convidado"
-const showAuthPrompt = computed(
-    () => !authStore.isAuthenticated && !guestChosen.value,
-);
-const guestChosen = ref(false);
-
-function goToLogin() {
-    router.push({ name: "login", query: { redirect: route.fullPath } });
-}
-
-function goToRegister() {
-    router.push({ name: "register", query: { redirect: route.fullPath } });
-}
-
-function continueAsGuest() {
-    guestChosen.value = true;
-}
 
 const loading = ref(true);
 const participants = ref([]);
@@ -517,6 +461,30 @@ const maxDate = computed(() => {
     return today.toISOString().split("T")[0];
 });
 
+const minDate = computed(() => {
+    const d = new Date();
+    d.setFullYear(d.getFullYear() - 120);
+    return d.toISOString().split("T")[0];
+});
+
+function isValidBirthdate(dateStr) {
+    if (!dateStr) return false;
+    const year = new Date(dateStr).getFullYear();
+    const currentYear = new Date().getFullYear();
+    return year >= currentYear - 120 && year <= currentYear;
+}
+
+function validateBirthdateField(participant, index) {
+    const key = `participants.${index}.birthdate`;
+    if (!participant.birthdate) {
+        errors.value[key] = "Data de nascimento é obrigatória";
+    } else if (!isValidBirthdate(participant.birthdate)) {
+        errors.value[key] = "Ano inválido. Informe uma data de nascimento real";
+    } else {
+        delete errors.value[key];
+    }
+}
+
 const totalAmount = computed(() => {
     return selectedTickets.value.reduce(
         (sum, item) => sum + item.price_cents * item.quantity,
@@ -526,7 +494,7 @@ const totalAmount = computed(() => {
 
 const isFormValid = computed(() => {
     return participants.value.every(
-        (p) => p.name && p.email && p.cpf && p.birthdate && p.category_id,
+        (p) => p.name && p.email && p.cpf && isValidBirthdate(p.birthdate) && p.category_id,
     );
 });
 
@@ -535,7 +503,7 @@ function isParticipantComplete(participant) {
         participant.name &&
         participant.email &&
         participant.cpf &&
-        participant.birthdate &&
+        isValidBirthdate(participant.birthdate) &&
         participant.category_id
     );
 }
@@ -665,9 +633,10 @@ function validateForm() {
         }
 
         // Data de nascimento
-        if (!participant.birthdate) {
-            errors.value[`participants.${index}.birthdate`] =
-                "Data de nascimento é obrigatória";
+        if (!isValidBirthdate(participant.birthdate)) {
+            errors.value[`participants.${index}.birthdate`] = !participant.birthdate
+                ? "Data de nascimento é obrigatória"
+                : "Ano inválido. Informe uma data de nascimento real";
             hasErrors = true;
         }
     });
@@ -729,6 +698,9 @@ async function proceedToPayment() {
             "checkout_participants",
             JSON.stringify(participants.value),
         );
+
+        // Limpar flag de guest checkout (não é mais necessária após criar o pedido)
+        sessionStorage.removeItem("checkoutGuest");
 
         // Navegar para a página de pagamento
         router.push({ name: "payment" });
@@ -801,6 +773,10 @@ onMounted(async () => {
             } catch (e) {
                 console.error("Erro ao restaurar participantes:", e);
             }
+        } else if (authStore.isAuthenticated && authStore.user && participants.value.length > 0) {
+            // Pré-preencher o primeiro participante com os dados do usuário logado
+            participants.value[0].name = authStore.user.name || "";
+            participants.value[0].email = authStore.user.email || "";
         }
     } catch (error) {
         console.error("Erro ao carregar dados do checkout:", error);

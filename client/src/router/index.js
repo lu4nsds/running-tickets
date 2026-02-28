@@ -21,6 +21,13 @@ const router = createRouter({
             name: "event-details",
             component: () => import("../views/EventDetailsView.vue"),
         },
+        // Checkout - Identificação (apenas para não autenticados)
+        {
+            path: "/checkout/identificacao",
+            name: "checkout-identificacao",
+            component: () =>
+                import("../views/CheckoutIdentificacaoView.vue"),
+        },
         // Checkout - Informações dos participantes
         {
             path: "/checkout",
@@ -48,20 +55,7 @@ const router = createRouter({
             name: "payment-error",
             component: () => import("../views/PaymentErrorView.vue"),
         },
-        // Meus pedidos - usará reference
-        {
-            path: "/meus-pedidos",
-            name: "my-orders",
-            component: () => import("../views/MyOrdersView.vue"),
-            meta: { requiresAuth: true },
-        },
-        {
-            path: "/meus-pedidos/:reference",
-            name: "order-details",
-            component: () => import("../views/OrderDetailsView.vue"),
-            meta: { requiresAuth: true },
-        },
-        // Meus ingressos - usará UUID code
+        // Meus ingressos
         {
             path: "/meus-ingressos",
             name: "my-tickets",
@@ -69,12 +63,17 @@ const router = createRouter({
             meta: { requiresAuth: true },
         },
         {
-            path: "/meus-ingressos/:code",
-            name: "ticket-details",
-            component: () => import("../views/TicketDetailsView.vue"),
+            path: "/meus-ingressos/evento/:eventId",
+            name: "event-tickets",
+            component: () => import("../views/EventTicketsView.vue"),
             meta: { requiresAuth: true },
         },
         // Autenticação
+        {
+            path: "/saindo",
+            name: "logout",
+            component: () => import("../views/LogoutView.vue"),
+        },
         {
             path: "/entrar",
             name: "login",
@@ -101,13 +100,20 @@ const router = createRouter({
 });
 
 // Navigation guard para rotas protegidas
-router.beforeEach((to, from, next) => {
+router.beforeEach((to) => {
     const token = localStorage.getItem("auth_token");
 
     if (to.meta.requiresAuth && !token) {
-        next({ name: "login", query: { redirect: to.fullPath } });
-    } else {
-        next();
+        return { name: "login", query: { redirect: to.fullPath } };
+    }
+
+    // Redirecionar para identificação se o usuário não está autenticado
+    // e não escolheu continuar como convidado
+    if (to.name === "checkout") {
+        const guestOk = sessionStorage.getItem("checkoutGuest");
+        if (!token && !guestOk) {
+            return { name: "checkout-identificacao" };
+        }
     }
 });
 

@@ -9,10 +9,10 @@
                     Meus Ingressos
                 </h1>
                 <span
-                    v-if="!loading && confirmedCount > 0"
+                    v-if="!loading && totalTickets > 0"
                     class="px-3 py-1 rounded-full bg-primary/10 border border-primary/30 text-primary text-xs font-bold"
                 >
-                    {{ confirmedCount }} Inscrição{{ confirmedCount !== 1 ? "s" : "" }} Confirmada{{ confirmedCount !== 1 ? "s" : "" }}
+                    {{ totalTickets }} Ingresso{{ totalTickets !== 1 ? "s" : "" }}
                 </span>
             </div>
 
@@ -95,25 +95,25 @@
 
                     <!-- Estado vazio por tab -->
                     <div
-                        v-if="filteredTickets.length === 0"
+                        v-if="filteredGroups.length === 0"
                         class="text-center py-16 text-slate-400"
                     >
                         <p>Nenhum ingresso em "{{ activeTab === 'upcoming' ? 'Próximas Corridas' : 'Histórico de Provas' }}".</p>
                     </div>
 
-                    <!-- Lista de ingressos -->
+                    <!-- Lista de eventos agrupados -->
                     <div v-else class="space-y-4">
                         <div
-                            v-for="item in filteredTickets"
-                            :key="item.ticket.code"
+                            v-for="group in filteredGroups"
+                            :key="group.event.id"
                             class="bg-surface-dark rounded-xl border border-border-dark overflow-hidden flex flex-col sm:flex-row"
                         >
-                            <!-- Imagem ou placeholder com badge de data -->
-                            <div class="relative w-full sm:w-32 h-32 sm:h-auto flex-shrink-0 bg-slate-800 flex items-center justify-center overflow-hidden">
+                            <!-- Imagem com badge de data -->
+                            <div class="relative w-full sm:w-36 h-36 sm:h-auto flex-shrink-0 bg-slate-800 flex items-center justify-center overflow-hidden">
                                 <img
-                                    v-if="item.event.banner_url"
-                                    :src="item.event.banner_url"
-                                    :alt="item.event.title"
+                                    v-if="group.event.banner_url"
+                                    :src="group.event.banner_url"
+                                    :alt="group.event.title"
                                     class="w-full h-full object-cover"
                                 />
                                 <div
@@ -125,16 +125,16 @@
                                     </svg>
                                 </div>
 
-                                <!-- Badge de data sobre a imagem -->
+                                <!-- Badge de data -->
                                 <div
-                                    v-if="item.event.date_start"
+                                    v-if="group.event.date_start"
                                     class="absolute top-2 left-2 bg-background-dark/90 backdrop-blur-sm rounded-lg px-2 py-1 text-center leading-none"
                                 >
                                     <div class="text-[10px] font-bold text-primary uppercase">
-                                        {{ formatMonth(item.event.date_start) }}
+                                        {{ formatMonth(group.event.date_start) }}
                                     </div>
                                     <div class="text-lg font-black text-white">
-                                        {{ formatDay(item.event.date_start) }}
+                                        {{ formatDay(group.event.date_start) }}
                                     </div>
                                 </div>
                             </div>
@@ -143,96 +143,48 @@
                             <div class="flex-1 p-5 flex flex-col sm:flex-row sm:items-center gap-4">
                                 <div class="flex-1 min-w-0">
                                     <h3 class="text-base font-bold text-white mb-1 truncate">
-                                        {{ item.event.title }}
+                                        {{ group.event.title }}
                                     </h3>
-                                    <p class="text-sm font-semibold text-primary mb-2">
-                                        <span v-if="item.category?.distance">
-                                            {{ formatDistance(item.category.distance) }} –
-                                        </span>
-                                        {{ item.category?.name || item.ticket_type.name }}
-                                    </p>
-                                    <p class="text-xs text-slate-400 flex items-center gap-1.5 uppercase tracking-wide">
+                                    <p v-if="group.event.city" class="text-xs text-slate-400 flex items-center gap-1 mb-2">
                                         <svg class="w-3.5 h-3.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                                            <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" />
+                                            <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd" />
                                         </svg>
-                                        Participante: {{ item.participant?.name || "—" }}
+                                        {{ group.event.city }}{{ group.event.state ? `, ${group.event.state}` : "" }}
                                     </p>
+                                    <!-- Badge de quantidade de ingressos -->
+                                    <div class="flex items-center gap-2 flex-wrap">
+                                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-bold">
+                                            <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
+                                                <path d="M2 6a2 2 0 012-2h12a2 2 0 012 2v2a2 2 0 100 4v2a2 2 0 01-2 2H4a2 2 0 01-2-2v-2a2 2 0 100-4V6z" />
+                                            </svg>
+                                            {{ group.tickets.length }} Ingresso{{ group.tickets.length !== 1 ? "s" : "" }}
+                                        </span>
+                                        <span
+                                            v-for="cat in uniqueCategories(group.tickets)"
+                                            :key="cat"
+                                            class="px-2 py-0.5 rounded bg-slate-700 text-slate-300 text-xs"
+                                        >
+                                            {{ cat }}
+                                        </span>
+                                    </div>
                                 </div>
 
-                                <!-- Botão QR -->
-                                <button
-                                    @click="openQr(item)"
+                                <!-- Botão Ver Comprovante -->
+                                <router-link
+                                    :to="{ name: 'event-tickets', params: { eventId: group.event.id } }"
                                     class="flex items-center justify-center gap-2 px-5 py-2.5 bg-primary text-background-dark font-bold text-sm rounded-lg hover:bg-primary/90 transition-colors whitespace-nowrap flex-shrink-0"
                                 >
                                     <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                                         <path fill-rule="evenodd" d="M3 4a1 1 0 011-1h3a1 1 0 011 1v3a1 1 0 01-1 1H4a1 1 0 01-1-1V4zm2 2V5h1v1H5zm7-2a1 1 0 00-1 1v3a1 1 0 001 1h3a1 1 0 001-1V4a1 1 0 00-1-1h-3zm1 2v1h1V5h-1zM3 12a1 1 0 011-1h3a1 1 0 011 1v3a1 1 0 01-1 1H4a1 1 0 01-1-1v-3zm2 2v-1h1v1H5zm5-2a1 1 0 011-1h3a1 1 0 110 2h-1v1a1 1 0 11-2 0v-1h-1a1 1 0 01-1-1zm4 2a1 1 0 102 0 1 1 0 00-2 0z" clip-rule="evenodd" />
                                     </svg>
-                                    Ver Comprovante / QR Code
-                                </button>
+                                    Ver Comprovante
+                                </router-link>
                             </div>
                         </div>
                     </div>
                 </template>
             </template>
         </main>
-
-        <!-- Modal do QR Code -->
-        <Teleport to="body">
-            <div
-                v-if="qrModal.open"
-                class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
-                @click.self="closeQr"
-            >
-                <div class="bg-surface-dark border border-border-dark rounded-2xl p-6 max-w-sm w-full shadow-2xl">
-                    <!-- Cabeçalho -->
-                    <div class="flex items-start justify-between mb-4">
-                        <div>
-                            <h3 class="text-lg font-bold text-white">Comprovante</h3>
-                            <p class="text-sm text-slate-400">{{ qrModal.item?.event?.title }}</p>
-                        </div>
-                        <button @click="closeQr" class="text-slate-400 hover:text-white transition-colors">
-                            <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
-                            </svg>
-                        </button>
-                    </div>
-
-                    <!-- QR Code -->
-                    <div class="flex items-center justify-center bg-white rounded-xl p-4 mb-4">
-                        <img
-                            v-if="qrModal.item?.ticket?.qr_url"
-                            :src="qrModal.item.ticket.qr_url"
-                            :alt="`QR Code`"
-                            class="size-56 object-contain"
-                        />
-                        <div v-else class="size-56 flex flex-col items-center justify-center gap-2">
-                            <svg class="w-12 h-12 text-slate-300" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd" />
-                            </svg>
-                            <p class="text-sm text-center text-slate-400">QR Code sendo gerado...</p>
-                        </div>
-                    </div>
-
-                    <!-- Detalhes -->
-                    <div class="space-y-2 text-sm">
-                        <div class="flex justify-between">
-                            <span class="text-slate-400">Participante</span>
-                            <span class="text-white font-semibold">{{ qrModal.item?.participant?.name }}</span>
-                        </div>
-                        <div class="flex justify-between">
-                            <span class="text-slate-400">Categoria</span>
-                            <span class="text-white">
-                                <span v-if="qrModal.item?.category?.distance">{{ formatDistance(qrModal.item.category.distance) }} – </span>{{ qrModal.item?.category?.name || qrModal.item?.ticket_type?.name }}
-                            </span>
-                        </div>
-                        <div class="flex justify-between">
-                            <span class="text-slate-400">Código</span>
-                            <span class="text-white font-mono text-xs">{{ qrModal.item?.ticket?.code?.slice(0, 8).toUpperCase() }}</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </Teleport>
 
         <Footer />
     </div>
@@ -253,27 +205,47 @@ const tabs = [
     { key: "past", label: "Histórico de Provas" },
 ];
 
-const qrModal = ref({ open: false, item: null });
+const totalTickets = computed(() => tickets.value.length);
 
-const confirmedCount = computed(
-    () => tickets.value.filter((t) => t.ticket.status === "active").length,
-);
+// Agrupa tickets por evento
+const groupedByEvent = computed(() => {
+    const map = {};
+    for (const item of tickets.value) {
+        const id = item.event.id;
+        if (!map[id]) {
+            map[id] = { event: item.event, tickets: [] };
+        }
+        map[id].tickets.push(item);
+    }
+    return Object.values(map);
+});
 
-function isUpcoming(item) {
-    if (!item.event?.date_start) return true;
-    return new Date(item.event.date_start) >= new Date();
+function isUpcoming(group) {
+    if (!group.event?.date_start) return true;
+    return new Date(group.event.date_start) >= new Date();
 }
 
-const filteredTickets = computed(() =>
-    tickets.value.filter((t) =>
-        activeTab.value === "upcoming" ? isUpcoming(t) : !isUpcoming(t),
+const filteredGroups = computed(() =>
+    groupedByEvent.value.filter((g) =>
+        activeTab.value === "upcoming" ? isUpcoming(g) : !isUpcoming(g),
     ),
 );
 
 function tabCount(key) {
-    return tickets.value.filter((t) =>
-        key === "upcoming" ? isUpcoming(t) : !isUpcoming(t),
+    return groupedByEvent.value.filter((g) =>
+        key === "upcoming" ? isUpcoming(g) : !isUpcoming(g),
     ).length;
+}
+
+function uniqueCategories(ticketList) {
+    const names = ticketList
+        .map((t) => {
+            const dist = t.category?.distance ? `${parseFloat(t.category.distance)}km` : null;
+            const name = t.category?.name || t.ticket_type?.name || null;
+            return dist && name ? `${dist} – ${name}` : name || dist;
+        })
+        .filter(Boolean);
+    return [...new Set(names)];
 }
 
 function formatMonth(dateStr) {
@@ -282,19 +254,6 @@ function formatMonth(dateStr) {
 
 function formatDay(dateStr) {
     return new Date(dateStr).getDate().toString().padStart(2, "0");
-}
-
-function formatDistance(distance) {
-    const n = parseFloat(distance);
-    return Number.isInteger(n) ? `${n}km` : `${n}km`;
-}
-
-function openQr(item) {
-    qrModal.value = { open: true, item };
-}
-
-function closeQr() {
-    qrModal.value = { open: false, item: null };
 }
 
 onMounted(async () => {

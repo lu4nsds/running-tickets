@@ -141,13 +141,6 @@
                     >
                         Meus Ingressos
                     </router-link>
-                    <router-link
-                        to="/meus-pedidos"
-                        class="block w-full text-center rounded-lg bg-surface-dark px-4 py-2 text-sm font-semibold text-white"
-                        @click="showMobileMenu = false"
-                    >
-                        Meus Pedidos
-                    </router-link>
                     <button
                         @click="handleLogout"
                         class="block w-full rounded-lg border border-border-dark px-4 py-2 text-sm font-semibold text-slate-300"
@@ -280,10 +273,9 @@ function toggleMobileMenu() {
     showMobileMenu.value = !showMobileMenu.value;
 }
 
-async function handleLogout() {
-    await authStore.logout();
+function handleLogout() {
     showMobileMenu.value = false;
     showUserMenu.value = false;
-    router.push({ name: "home" });
+    router.push({ name: "logout" });
 }
 </script>

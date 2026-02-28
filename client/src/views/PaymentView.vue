@@ -687,12 +687,20 @@
 
                             <!-- Total -->
                             <div
-                                class="flex justify-between items-baseline mb-6"
+                                class="flex justify-between items-end mb-6"
                             >
-                                <span
-                                    class="text-slate-400 font-bold uppercase text-xs tracking-widest"
-                                    >Total</span
-                                >
+                                <div>
+                                    <span
+                                        class="text-slate-400 font-bold uppercase text-xs tracking-widest"
+                                        >Total</span
+                                    >
+                                    <p
+                                        v-if="activeTab === 'credit' && selectedInstallment && selectedInstallment.installments > 1"
+                                        class="text-xs text-slate-500 mt-0.5"
+                                    >
+                                        {{ selectedInstallment.recommended_message }}
+                                    </p>
+                                </div>
                                 <span
                                     class="text-3xl font-black text-primary tracking-tighter"
                                     style="
@@ -700,7 +708,11 @@
                                             rgba(0, 230, 118, 0.5);
                                     "
                                 >
-                                    {{ formatPrice(orderData.total_cents) }}
+                                    {{
+                                        activeTab === 'credit' && selectedInstallment?.total_amount
+                                            ? formatPrice(selectedInstallment.total_amount * 100)
+                                            : formatPrice(orderData.total_cents)
+                                    }}
                                 </span>
                             </div>
 

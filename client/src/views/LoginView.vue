@@ -1,8 +1,21 @@
 <template>
     <div
-        class="min-h-screen bg-background-dark text-slate-100 flex items-center justify-center"
+        class="min-h-screen text-slate-100 flex items-center justify-center relative overflow-hidden"
+        style="background-color: #080B10;"
     >
-        <div class="w-full max-w-md px-4">
+        <!-- Glows atmosféricos -->
+        <div class="absolute inset-0 pointer-events-none">
+            <div class="absolute top-0 left-1/4 w-96 h-96 rounded-full opacity-20"
+                style="background: radial-gradient(circle, #00e677 0%, transparent 70%); filter: blur(80px); transform: translate(-50%, -40%);"
+            ></div>
+            <div class="absolute bottom-0 right-1/4 w-80 h-80 rounded-full opacity-10"
+                style="background: radial-gradient(circle, #00cc6a 0%, transparent 70%); filter: blur(100px); transform: translate(30%, 40%);"
+            ></div>
+            <div class="absolute top-1/2 right-0 w-64 h-64 rounded-full opacity-8"
+                style="background: radial-gradient(circle, #00e677 0%, transparent 70%); filter: blur(90px); transform: translate(40%, -50%);"
+            ></div>
+        </div>
+        <div class="relative z-10 w-full max-w-md px-4">
             <div
                 class="bg-surface-dark rounded-2xl border border-border-dark p-8 shadow-lg"
             >
@@ -114,6 +127,7 @@
             </div>
         </div>
     </div>
+
 </template>
 
 <script setup>
