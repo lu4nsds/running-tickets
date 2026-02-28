@@ -25,8 +25,7 @@ const router = createRouter({
         {
             path: "/checkout/identificacao",
             name: "checkout-identificacao",
-            component: () =>
-                import("../views/CheckoutIdentificacaoView.vue"),
+            component: () => import("../views/CheckoutIdentificacaoView.vue"),
         },
         // Checkout - Informações dos participantes
         {
@@ -88,6 +87,29 @@ const router = createRouter({
             path: "/auth/callback",
             name: "auth-callback",
             component: () => import("../views/AuthCallbackView.vue"),
+        },
+        // Redefinição de Senha
+        {
+            path: "/esqueceu-senha",
+            name: "esqueceu-senha",
+            component: () => import("../views/ForgotPasswordView.vue"),
+        },
+        {
+            path: "/redefinir-senha",
+            name: "redefinir-senha",
+            component: () => import("../views/ResetPasswordView.vue"),
+        },
+        // Verificação de Email
+        {
+            path: "/verificar-email",
+            name: "verificar-email",
+            component: () => import("../views/VerifyEmailView.vue"),
+            meta: { requiresAuth: true },
+        },
+        {
+            path: "/email/verificar/:id/:hash",
+            name: "email-verificado",
+            component: () => import("../views/EmailVerifiedView.vue"),
         },
     ],
     scrollBehavior(to, from, savedPosition) {

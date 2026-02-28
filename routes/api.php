@@ -3,6 +3,8 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\EventController;
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\PasswordResetController;
+use App\Http\Controllers\Api\EmailVerificationController;
 use App\Http\Controllers\Api\Admin\OrganizerController as AdminOrganizerController;
 use App\Http\Controllers\Api\Admin\EventController as AdminEventController;
 use App\Http\Controllers\Api\Admin\CategoryController as AdminCategoryController;
@@ -29,6 +31,15 @@ Route::post('/auth/login', [AuthController::class, 'login']);
 Route::get('/auth/google', [AuthController::class, 'redirectToGoogle']);
 Route::get('/auth/google/callback', [AuthController::class, 'handleGoogleCallback']);
 
+// Password Reset
+Route::post('/password/forgot', [PasswordResetController::class, 'sendResetLink'])->middleware('throttle:3,60');
+Route::post('/password/reset', [PasswordResetController::class, 'reset']);
+
+// Email Verification - rota pública para verificar (com assinatura)
+Route::get('/email/verify/{id}/{hash}', [EmailVerificationController::class, 'verify'])
+    ->middleware('signed')
+    ->name('verification.verify');
+
 // Eventos públicos
 Route::get('/events', [EventController::class, 'index']);
 Route::get('/events/cities', [EventController::class, 'cities']);
@@ -51,6 +62,10 @@ Route::middleware('auth:sanctum')->group(function () {
     // Auth
     Route::post('/auth/logout', [AuthController::class, 'logout']);
     Route::get('/auth/me', [AuthController::class, 'me']);
+    
+    // Email Verification
+    Route::post('/email/resend', [EmailVerificationController::class, 'resend'])->middleware('throttle:3,60');
+    Route::get('/email/status', [EmailVerificationController::class, 'status']);
     
     // Pedidos do usuário autenticado
     Route::get('/orders', [OrderController::class, 'index']);

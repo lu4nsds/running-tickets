@@ -4,7 +4,7 @@
 $domains = [];
 
 foreach (explode(',', env('ALLOWED_ORIGINS', 'http://localhost:5173')) as $domain) {
-    $domains[] = $domain;
+    $domains[] = trim($domain);
 }
 
 return [

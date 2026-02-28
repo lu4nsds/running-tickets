@@ -229,12 +229,14 @@
                             </div>
                         </div>
                         <div class="space-y-2">
-                            <h2 class="text-2xl font-bold text-white sm:text-3xl">
+                            <h2
+                                class="text-2xl font-bold text-white sm:text-3xl"
+                            >
                                 Inscrição realizada!
                             </h2>
                             <p class="max-w-sm text-slate-400">
-                                Obrigado por se juntar a nós. Em breve você receberá
-                                nossas novidades no seu e-mail.
+                                Obrigado por se juntar a nós. Em breve você
+                                receberá nossas novidades no seu e-mail.
                             </p>
                         </div>
                     </template>
@@ -251,13 +253,15 @@
                         </div>
 
                         <div class="space-y-2">
-                            <h2 class="text-2xl font-bold text-white sm:text-3xl">
+                            <h2
+                                class="text-2xl font-bold text-white sm:text-3xl"
+                            >
                                 Não perca nenhuma largada
                             </h2>
                             <p class="max-w-2xl text-slate-400">
-                                Inscreva-se na nossa newsletter para receber alertas
-                                de novas corridas, descontos exclusivos e dicas de
-                                treino.
+                                Inscreva-se na nossa newsletter para receber
+                                alertas de novas corridas, descontos exclusivos
+                                e dicas de treino.
                             </p>
                         </div>
 
@@ -312,13 +316,6 @@ onMounted(async () => {
 
 function goToEvents() {
     router.push({ name: "events" });
-}
-
-function scrollToEvents() {
-    const eventsSection = document.getElementById("events");
-    if (eventsSection) {
-        eventsSection.scrollIntoView({ behavior: "smooth" });
-    }
 }
 
 function handleNewsletter() {
