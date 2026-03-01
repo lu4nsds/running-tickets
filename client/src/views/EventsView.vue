@@ -25,9 +25,32 @@
 
             <!-- Content -->
             <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
+                <!-- Mobile Filter Toggle -->
+                <div class="lg:hidden mb-4">
+                    <button
+                        @click="showMobileFilters = !showMobileFilters"
+                        class="flex items-center gap-2 px-4 py-2.5 rounded-lg border border-border-dark bg-surface-dark text-sm font-medium text-white hover:border-primary hover:text-primary transition-all"
+                    >
+                        <span class="material-symbols-outlined text-[18px]">tune</span>
+                        Filtros
+                        <span
+                            v-if="activeFiltersCount > 0"
+                            class="inline-flex items-center justify-center h-5 min-w-[1.25rem] px-1 rounded-full bg-primary text-background-dark text-xs font-bold"
+                        >
+                            {{ activeFiltersCount }}
+                        </span>
+                        <span
+                            class="material-symbols-outlined text-[18px] transition-transform duration-200"
+                            :class="showMobileFilters ? 'rotate-180' : ''"
+                        >
+                            expand_more
+                        </span>
+                    </button>
+                </div>
+
                 <div class="flex flex-col lg:flex-row gap-8">
                     <!-- Sidebar Filters -->
-                    <aside class="w-full lg:w-1/4 flex-shrink-0 space-y-6">
+                    <aside :class="['w-full lg:w-1/4 flex-shrink-0 space-y-6', showMobileFilters ? 'block' : 'hidden lg:block']">
                         <!-- Estado -->
                         <div>
                             <h3
@@ -126,6 +149,13 @@
                                 class="w-full accent-primary"
                             />
                         </div>
+
+                        <button
+                            @click="showMobileFilters = false"
+                            class="lg:hidden w-full rounded-lg bg-primary py-3 text-sm font-bold text-background-dark transition-all hover:bg-primary-dark"
+                        >
+                            Ver Resultados
+                        </button>
 
                         <button
                             @click="clearFilters"
@@ -348,6 +378,8 @@ const distances = ref([
     { value: "42", label: "42km" },
 ]);
 
+const showMobileFilters = ref(false);
+
 const hasActiveFilters = computed(() => {
     return (
         filters.value.search ||
@@ -357,6 +389,16 @@ const hasActiveFilters = computed(() => {
         filters.value.distance ||
         filters.value.price_range < 500
     );
+});
+
+const activeFiltersCount = computed(() => {
+    let count = 0;
+    if (filters.value.search) count++;
+    if (filters.value.state) count++;
+    if (filters.value.date_from || filters.value.date_to) count++;
+    if (filters.value.distance) count++;
+    if (filters.value.price_range < 500) count++;
+    return count;
 });
 
 const visiblePages = computed(() => {
