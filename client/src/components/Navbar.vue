@@ -136,9 +136,10 @@
                 <template v-else>
                     <router-link
                         to="/meus-ingressos"
-                        class="block w-full text-center rounded-lg bg-surface-dark px-4 py-2 text-sm font-semibold text-white"
+                        class="flex items-center justify-center gap-2 w-full rounded-lg border border-primary/40 bg-primary/10 px-4 py-2 text-sm font-semibold text-primary transition-all hover:bg-primary/20"
                         @click="showMobileMenu = false"
                     >
+                        <span class="material-symbols-outlined text-base">confirmation_number</span>
                         Meus Ingressos
                     </router-link>
                     <button

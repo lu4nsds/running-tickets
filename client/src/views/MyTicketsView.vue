@@ -10,7 +10,7 @@
                 </h1>
                 <span
                     v-if="!loading && totalTickets > 0"
-                    class="px-3 py-1 rounded-full bg-primary/10 border border-primary/30 text-primary text-xs font-bold"
+                    class="inline-flex flex-col items-center justify-center px-3 py-1 rounded-full bg-primary/10 border border-primary/30 text-primary text-xs font-bold text-center"
                 >
                     {{ totalTickets }} Ingresso{{ totalTickets !== 1 ? "s" : "" }}
                 </span>
