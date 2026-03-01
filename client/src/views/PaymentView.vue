@@ -59,8 +59,8 @@
                             </h2>
                         </div>
 
-                        <div class="grid grid-cols-2 gap-6">
-                            <div class="col-span-2">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                            <div class="col-span-1 sm:col-span-2">
                                 <label
                                     class="block text-sm font-medium text-slate-400 mb-2"
                                     >Nome Completo</label
