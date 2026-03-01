@@ -130,12 +130,8 @@ router.beforeEach((to) => {
     }
 
     // Redirecionar para identificação se o usuário não está autenticado
-    // e não escolheu continuar como convidado
-    if (to.name === "checkout") {
-        const guestOk = sessionStorage.getItem("checkoutGuest");
-        if (!token && !guestOk) {
-            return { name: "checkout-identificacao" };
-        }
+    if (to.name === "checkout" && !token) {
+        return { name: "checkout-identificacao" };
     }
 });
 

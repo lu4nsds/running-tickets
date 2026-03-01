@@ -59,178 +59,60 @@
                 </div>
             </div>
 
-            <!-- Cards -->
-            <div class="w-full max-w-3xl flex flex-col sm:grid sm:grid-cols-2 gap-4 sm:gap-5">
-                <!-- Card: Já sou corredor -->
+            <!-- Card único -->
+            <div class="w-full max-w-sm bg-surface-dark border-2 border-primary rounded-2xl p-6 sm:p-8 flex flex-col items-center text-center">
+                <!-- Ícone cadeado -->
                 <div
-                    class="bg-surface-dark border-2 border-primary rounded-2xl p-5 sm:p-7 flex flex-col"
+                    class="w-14 h-14 rounded-full bg-primary/10 border border-primary/30 flex items-center justify-center mb-5"
                 >
-                    <!-- Ícone -->
-                    <div
-                        class="w-10 h-10 rounded-full bg-primary/10 border border-primary/30 flex items-center justify-center mb-4 sm:mb-5"
-                    >
-                        <svg
-                            class="w-5 h-5 text-primary"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                        >
-                            <path
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                                stroke-width="2"
-                                d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                            />
-                        </svg>
-                    </div>
-
-                    <h2 class="text-lg sm:text-xl font-bold text-white mb-1">
-                        Já sou corredor
-                    </h2>
-                    <p class="text-slate-400 text-sm mb-5 sm:mb-6">
-                        Acesse sua conta para uma experiência personalizada.
-                    </p>
-
-                    <!-- Benefícios -->
-                    <ul class="space-y-2 sm:space-y-2.5 mb-6 sm:mb-8">
-                        <li
-                            v-for="benefit in loggedBenefits"
-                            :key="benefit"
-                            class="flex items-center gap-2.5 text-sm text-slate-300"
-                        >
-                            <span
-                                class="w-5 h-5 rounded-full bg-primary/20 border border-primary flex items-center justify-center flex-shrink-0"
-                            >
-                                <svg
-                                    class="w-3 h-3 text-primary"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                >
-                                    <path
-                                        stroke-linecap="round"
-                                        stroke-linejoin="round"
-                                        stroke-width="3"
-                                        d="M5 13l4 4L19 7"
-                                    />
-                                </svg>
-                            </span>
-                            {{ benefit }}
-                        </li>
-                    </ul>
-
-                    <div class="mt-auto space-y-3">
-                        <!-- Botão primário: Login -->
-                        <button
-                            @click="goToLogin"
-                            class="w-full py-3.5 bg-primary text-background-dark font-bold rounded-xl hover:bg-primary/90 active:scale-95 transition-all flex items-center justify-center gap-2 text-sm sm:text-base"
-                        >
-                            Entrar com minha conta
-                            <svg
-                                class="w-4 h-4"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                            >
-                                <path
-                                    stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                    stroke-width="2"
-                                    d="M17 8l4 4m0 0l-4 4m4-4H3"
-                                />
-                            </svg>
-                        </button>
-
-                        <!-- Botão secundário: Criar conta -->
-                        <button
-                            @click="goToRegister"
-                            class="w-full py-3 border border-primary/40 text-primary text-sm font-medium rounded-xl hover:bg-primary/10 active:scale-95 transition-all"
-                        >
-                            Criar conta
-                        </button>
-                    </div>
+                    <span class="material-symbols-outlined text-primary text-3xl">lock</span>
                 </div>
 
-                <!-- Card: Continuar como convidado -->
-                <div
-                    class="bg-surface-dark border border-border-dark rounded-2xl p-5 sm:p-7 flex flex-col"
-                >
-                    <!-- Ícone -->
-                    <div
-                        class="w-10 h-10 rounded-full bg-slate-800 border border-border-dark flex items-center justify-center mb-4 sm:mb-5"
-                    >
-                        <svg
-                            class="w-5 h-5 text-slate-400"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                        >
-                            <path
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                                stroke-width="2"
-                                d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                            />
-                        </svg>
-                    </div>
+                <h2 class="text-xl sm:text-2xl font-bold text-white mb-2">
+                    Acesse sua conta para continuar
+                </h2>
+                <p class="text-slate-400 text-sm mb-6">
+                    Garanta sua participação na prova com segurança e agilidade.
+                </p>
 
-                    <h2 class="text-lg sm:text-xl font-bold text-white mb-1">
-                        Continuar como convidado
-                    </h2>
-                    <p class="text-slate-400 text-sm mb-5 sm:mb-6">
-                        Prossiga sem a necessidade de criar uma conta agora.
+                <!-- Box de benefícios -->
+                <div class="w-full bg-surface-darker rounded-xl p-4 mb-6 text-left">
+                    <p class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">
+                        Vantagens de estar logado:
                     </p>
-
-                    <!-- Características -->
-                    <ul class="space-y-2 sm:space-y-2.5 mb-6 sm:mb-8">
+                    <ul class="space-y-2.5">
                         <li
-                            v-for="feature in guestFeatures"
-                            :key="feature"
-                            class="flex items-center gap-2.5 text-sm text-slate-400"
+                            v-for="benefit in benefits"
+                            :key="benefit.text"
+                            class="flex items-center gap-3 text-sm text-slate-300"
                         >
-                            <span
-                                class="w-5 h-5 rounded-full bg-slate-800 border border-border-dark flex items-center justify-center flex-shrink-0"
-                            >
-                                <svg
-                                    class="w-3 h-3 text-slate-500"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                >
-                                    <path
-                                        stroke-linecap="round"
-                                        stroke-linejoin="round"
-                                        stroke-width="3"
-                                        d="M5 13l4 4L19 7"
-                                    />
-                                </svg>
+                            <span class="material-symbols-outlined text-primary text-[20px] flex-shrink-0">
+                                {{ benefit.icon }}
                             </span>
-                            {{ feature }}
+                            {{ benefit.text }}
                         </li>
                     </ul>
-
-                    <div class="mt-auto">
-                        <button
-                            @click="continueAsGuest"
-                            class="w-full py-3.5 bg-transparent border border-slate-600 text-white font-bold rounded-xl hover:border-slate-400 hover:bg-white/5 active:scale-95 transition-all flex items-center justify-center gap-2 text-sm sm:text-base"
-                        >
-                            Seguir sem login
-                            <svg
-                                class="w-4 h-4"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                            >
-                                <path
-                                    stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                    stroke-width="2"
-                                    d="M17 8l4 4m0 0l-4 4m4-4H3"
-                                />
-                            </svg>
-                        </button>
-                    </div>
                 </div>
+
+                <!-- Botão primário -->
+                <button
+                    @click="goToLogin"
+                    class="w-full py-3.5 bg-primary text-background-dark font-bold rounded-xl hover:bg-primary/90 active:scale-95 transition-all flex items-center justify-center gap-2 text-sm sm:text-base mb-4"
+                >
+                    Entrar com minha conta
+                    <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
+                </button>
+
+                <!-- Link de cadastro -->
+                <p class="text-sm text-slate-400">
+                    Ainda não tenho conta?
+                    <button
+                        @click="goToRegister"
+                        class="text-primary font-medium hover:underline ml-1"
+                    >
+                        Cadastre-se
+                    </button>
+                </p>
             </div>
         </div>
     </div>
@@ -245,18 +127,13 @@ import Navbar from "../components/Navbar.vue";
 const router = useRouter();
 const authStore = useAuthStore();
 
-const loggedBenefits = [
-    "Acesso rápido aos tickets",
-    "Histórico de eventos",
-    "Dados pré-preenchidos",
+const benefits = [
+    { icon: "local_activity", text: "Acesso rápido aos tickets" },
+    { icon: "history",        text: "Histórico de eventos" },
+    { icon: "edit_note",      text: "Dados pré-preenchidos" },
 ];
 
-const guestFeatures = ["Compra rápida sem senha", "Identificação manual"];
-
 onMounted(() => {
-    // Sempre limpa a flag de guest ao entrar nesta tela (novo fluxo de compra)
-    sessionStorage.removeItem("checkoutGuest");
-
     // Se já está autenticado, não precisa desta tela
     if (authStore.isAuthenticated) {
         router.replace({ name: "checkout" });
@@ -275,10 +152,5 @@ function goToLogin() {
 
 function goToRegister() {
     router.push({ name: "register", query: { redirect: "/checkout" } });
-}
-
-function continueAsGuest() {
-    sessionStorage.setItem("checkoutGuest", "true");
-    router.push({ name: "checkout" });
 }
 </script>
