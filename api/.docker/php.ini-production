@@ -1,0 +1,56 @@
+; =============================================================================
+; PHP — Configuração de produção otimizada
+; =============================================================================
+
+; --- Opcache ------------------------------------------------------------------
+; Habilita o cache de bytecode para melhor performance
+opcache.enable=1
+opcache.enable_cli=0
+
+; Memória reservada para o cache (em MB)
+opcache.memory_consumption=256
+
+; Número máximo de arquivos no cache
+opcache.max_accelerated_files=20000
+
+; Em produção os arquivos não mudam: desabilita re-validação de timestamps
+opcache.validate_timestamps=0
+opcache.revalidate_freq=0
+
+; Salva comentários de doc (necessário para algumas annotations/atributos PHP)
+opcache.save_comments=1
+
+; --- Limites de recursos ------------------------------------------------------
+memory_limit=256M
+max_execution_time=60
+max_input_time=60
+upload_max_filesize=20M
+post_max_size=20M
+
+; --- Segurança ----------------------------------------------------------------
+; Oculta versão do PHP em headers HTTP
+expose_php=Off
+
+; Desabilita funções potencialmente perigosas
+disable_functions=passthru,shell_exec,system,popen,parse_ini_file,show_source
+
+; --- Sessões (gerenciadas pelo Redis, mas por segurança) ----------------------
+session.cookie_httponly=1
+session.cookie_secure=1
+session.use_strict_mode=1
+
+; --- Zend / Segurança de stack traces ----------------------------------------
+; Descompila assertions completamente (zero overhead em prod)
+zend.assertions=-1
+
+; Não inclui valores de argumentos nos stack traces (evita vazar dados sensíveis)
+zend.exception_ignore_args=On
+
+; Complementar ao anterior: reduz tamanho de strings em stack traces a zero
+zend.exception_string_param_max_len=0
+
+; --- Logs --------------------------------------------------------------------
+; Em produção, erros vão para o log (não exibidos)
+display_errors=Off
+log_errors=On
+error_reporting=E_ALL & ~E_DEPRECATED & ~E_STRICT
