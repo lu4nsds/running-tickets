@@ -3,17 +3,6 @@
 # =============================================================================
 FROM composer:2 AS vendor
 
-# Instala dependências necessárias para extensões
-RUN apk add --no-cache \
-        autoconf \
-        gcc \
-        g++ \
-        make \
-        linux-headers
-
-# Instala pcntl no ambiente do composer
-RUN docker-php-ext-install pcntl
-
 WORKDIR /app
 
 COPY composer.json composer.lock ./
@@ -23,7 +12,8 @@ RUN composer install \
     --no-interaction \
     --no-scripts \
     --prefer-dist \
-    --optimize-autoloader
+    --optimize-autoloader \
+    --ignore-platform-reqs
 
 # =============================================================================
 # Stage 2: PHP-FPM + Nginx - Ambiente de execução
@@ -94,11 +84,16 @@ RUN addgroup -S www \
 
 WORKDIR /var/www
 
-# Copia vendor do stage anterior
-COPY --from=vendor /app/vendor ./vendor
-
 # Copia código
 COPY . .
+
+# Verifica se as dependências de sistema (extensões) estão instaladas
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+RUN composer check-platform-reqs --no-dev
+RUN rm -f /usr/bin/composer
+
+# Copia vendor do stage anterior
+COPY --from=vendor /app/vendor ./vendor
 
 # Permissões Laravel
 RUN mkdir -p storage/framework/{cache,sessions,views} \

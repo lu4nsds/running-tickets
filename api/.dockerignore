@@ -1,21 +1,52 @@
-/node_modules
-/public/hot
-/public/storage
-/storage/*.key
-/vendor
-.env
-.env.backup
-.phpunit.result.cache
-Homestead.json
-Homestead.yaml
-npm-debug.log
-yarn-error.log
-/.idea
-/.vscode
+# =============================================================================
+# .dockerignore — exclui arquivos desnecessários à execução em produção
+# Arquivos listados aqui nunca entram no build context (mais eficiente que
+# copiar e apagar depois).
+# =============================================================================
+
+# --- Git ---------------------------------------------------------------------
 .git
 .gitignore
 .gitattributes
-README.md
-docker-compose.yml
-compose.yaml
-*.log
+
+# --- Ambiente ----------------------------------------------------------------
+.env
+.env.*
+!.env.example
+
+# --- Dependências (gerenciadas pelo stage "vendor") --------------------------
+vendor/
+
+# --- Testes ------------------------------------------------------------------
+tests/
+phpunit.xml
+phpunit.xml.dist
+.phpunit.result.cache
+.phpunit.cache/
+
+# --- Ferramentas de qualidade de código --------------------------------------
+.php-cs-fixer.php
+.php-cs-fixer.cache
+phpstan.neon
+phpstan.neon.dist
+.editorconfig
+.styleci.yml
+
+# --- IDEs e editores ---------------------------------------------------------
+.idea/
+.vscode/
+*.sublime-project
+*.sublime-workspace
+
+# --- Docker (os Dockerfiles não precisam estar dentro da imagem) -------------
+Dockerfile
+Dockerfile.*
+
+# --- Logs e cache gerados localmente -----------------------------------------
+storage/logs/*.log
+bootstrap/cache/*.php
+
+# --- Documentação ------------------------------------------------------------
+*.md
+CHANGELOG
+LICENSE
