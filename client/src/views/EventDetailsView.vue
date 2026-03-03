@@ -588,7 +588,7 @@
 <script setup>
 import { ref, computed, onMounted, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import axios from "axios";
+import axios from "@/api/axios";
 import Navbar from "../components/Navbar.vue";
 import Footer from "../components/Footer.vue";
 import EventDetailsSkeleton from "../components/EventDetailsSkeleton.vue";
@@ -698,7 +698,7 @@ async function fetchEvent() {
         quantities.value = {}; // Limpar quantidades
 
         const response = await axios.get(
-            `http://localhost:8000/api/events/${targetSlug}`,
+            `/events/${targetSlug}`,
         );
         event.value = response.data.data;
     } catch (error) {

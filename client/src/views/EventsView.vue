@@ -350,7 +350,7 @@
 <script setup>
 import { ref, computed, onMounted } from "vue";
 import { useRoute } from "vue-router";
-import axios from "axios";
+import axios from "@/api/axios";
 import { useEventsStore } from "../stores/events";
 import Navbar from "../components/Navbar.vue";
 import Footer from "../components/Footer.vue";
@@ -433,7 +433,7 @@ onMounted(async () => {
 async function fetchStates() {
     try {
         const response = await axios.get(
-            "http://localhost:8000/api/events/states",
+            "/events/states",
         );
         states.value = response.data;
     } catch (error) {
