@@ -503,7 +503,7 @@ let searchTimeout = null;
 const statusTabs = [
     { label: "Todos", value: "" },
     { label: "Ativos", value: "active" },
-    { label: "Inativos", value: "blocked" },
+    { label: "Inativos", value: "inactive" },
 ];
 
 // Computed
