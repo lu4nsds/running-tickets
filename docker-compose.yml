@@ -35,6 +35,18 @@
             timeout: 5s
             retries: 10
 
+    # Redis
+    redis:
+        image: redis:alpine
+        container_name: running-tickets-redis
+        restart: unless-stopped
+        ports:
+        - "6379:6379"
+        volumes:
+        - redis-data:/data
+        networks:
+        - running-tickets-network
+
     # Aplicação Laravel
     api:
         build:
@@ -121,4 +133,6 @@ networks:
 
 volumes:
     mysql-data:
+        driver: local
+    redis-data:
         driver: local
