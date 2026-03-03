@@ -653,6 +653,7 @@ const loadOrganizers = async () => {
 
 // Lifecycle
 onMounted(async () => {
+    store.clearFilters();
     await Promise.all([store.fetchEvents(), loadOrganizers()]);
     localPagination.value = { ...store.pagination };
     hasLoadedOnce.value = true;

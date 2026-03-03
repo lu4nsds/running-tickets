@@ -645,6 +645,7 @@ const openCreateModal = () => {
 
 // Lifecycle
 onMounted(async () => {
+    store.clearFilters();
     await store.fetchOrganizers();
     localPagination.value = { ...store.pagination };
     hasLoadedOnce.value = true;
