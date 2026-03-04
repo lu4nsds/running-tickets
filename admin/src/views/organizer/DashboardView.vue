@@ -404,7 +404,7 @@ import { useLoading } from "@/composables/useLoading";
 import LoadingState from "@/components/ui/LoadingState.vue";
 import ErrorState from "@/components/ui/ErrorState.vue";
 import SkeletonCard from "@/components/ui/SkeletonCard.vue";
-import VueApexCharts from "vue3-apexcharts";
+import apexchart from "vue3-apexcharts";
 
 const { getVisualStatus, getStatusClass } = useEventStatus();
 const { isLoading, error, withLoading } = useLoading(true);

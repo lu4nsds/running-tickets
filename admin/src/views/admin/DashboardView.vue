@@ -1001,7 +1001,7 @@
 import { onMounted, ref, computed } from "vue";
 import { useDashboardStore } from "@/stores/dashboard";
 import { useCurrency } from "@/composables/useCurrency";
-import VueApexCharts from "vue3-apexcharts";
+import apexchart from "vue3-apexcharts";
 import DateRangeSelector from "@/components/dashboard/DateRangeSelector.vue";
 
 const dashboardStore = useDashboardStore();

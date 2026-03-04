@@ -87,6 +87,9 @@
 
 <script setup>
 import { ref, watch, onMounted, onUnmounted, computed } from "vue";
+import { setupCalendar, DatePicker as VDatePicker } from "v-calendar";
+import "v-calendar/style.css";
+setupCalendar({});
 
 const emit = defineEmits(["filter-change"]);
 
