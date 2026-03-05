@@ -45,6 +45,7 @@ Dockerfile.*
 # --- Logs e cache gerados localmente -----------------------------------------
 storage/logs/*.log
 bootstrap/cache/*.php
+public/storage
 
 # --- Documentação ------------------------------------------------------------
 *.md
