@@ -4,6 +4,7 @@ namespace App\Http\Resources;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Facades\Storage;
 
 class TicketResource extends JsonResource
 {
@@ -17,7 +18,7 @@ class TicketResource extends JsonResource
         return [
             'id' => $this->id,
             'code' => $this->code,
-            'qr_url' => $this->qr_path ? asset('storage/' . $this->qr_path) : null,
+            'qr_url' => $this->qr_path ? Storage::url($this->qr_path) : null,
             'status' => $this->status->value,
             'status_label' => $this->status->label(),
             'status_color' => $this->status->color(),

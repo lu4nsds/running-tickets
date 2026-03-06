@@ -91,7 +91,7 @@ class GenerateOrderTicketsJob implements ShouldQueue
             $path = 'tickets/' . $ticket->code . '.svg';
 
             // Salva o arquivo no storage
-            Storage::disk('public')->put($path, $qrCode);
+            Storage::put($path, $qrCode);
 
             // Atualiza o ticket com o caminho do QR Code
             $ticket->update([

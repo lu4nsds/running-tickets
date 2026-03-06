@@ -103,12 +103,12 @@ class TicketController extends Controller
             abort(403, 'Você não tem permissão para acessar este ticket.');
         }
 
-        if (!$ticket->qr_path || !Storage::disk('public')->exists($ticket->qr_path)) {
+        if (!$ticket->qr_path || !Storage::exists($ticket->qr_path)) {
             abort(404, 'QR Code não encontrado');
         }
 
-        $file = Storage::disk('public')->get($ticket->qr_path);
-        $mimeType = Storage::disk('public')->mimeType($ticket->qr_path);
+        $file = Storage::get($ticket->qr_path);
+        $mimeType = Storage::mimeType($ticket->qr_path);
 
         return response($file, 200)->header('Content-Type', $mimeType);
     }

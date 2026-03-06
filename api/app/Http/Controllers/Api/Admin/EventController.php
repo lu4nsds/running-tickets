@@ -52,7 +52,7 @@ class EventController extends Controller
         
         // Processar upload do banner
         if ($request->hasFile('banner')) {
-            $data['banner_url'] = $request->file('banner')->store('events/banners', 'public');
+            $data['banner_url'] = $request->file('banner')->store('events/banners');
         }
         
         // Gerar slug se não fornecido
@@ -157,9 +157,9 @@ class EventController extends Controller
         if ($request->hasFile('banner')) {
             // Deletar banner anterior se for path local
             if ($event->banner_url && !str_starts_with($event->banner_url, 'http')) {
-                Storage::disk('public')->delete($event->banner_url);
+                Storage::delete($event->banner_url);
             }
-            $data['banner_url'] = $request->file('banner')->store('events/banners', 'public');
+            $data['banner_url'] = $request->file('banner')->store('events/banners');
         }
         
         // Atualizar slug se title mudou
