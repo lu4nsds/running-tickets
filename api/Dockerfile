@@ -1,6 +1,6 @@
 FROM php:8.4-fpm
 
-# Instalar dependências do sistema
+# Instala dependências do sistema
 RUN apt-get update && apt-get install -y \
     git \
     curl \
@@ -11,22 +11,26 @@ RUN apt-get update && apt-get install -y \
     unzip \
     libzip-dev
 
-# Limpar cache
+# Limpa cache
 RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Instalar extensões PHP
+# Instala extensões PHP
 RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd zip
 
-# Instalar redis
+# Instala redis
 RUN pecl install redis && docker-php-ext-enable redis
 
-# Obter o Composer
+# Obtem o Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# Definir diretório de trabalho
+# Substitui as configurações do Docker para suprimir o registro de acesso.
+COPY .docker/docker.conf /usr/local/etc/php-fpm.d/docker.conf
+
+# Define diretório de trabalho
 WORKDIR /var/www
 
-# Expor porta 9000 e iniciar servidor php-fpm
+# Expõe porta 9000
 EXPOSE 9000
 
+# Inicia servidor php-fpm
 CMD ["php-fpm"]

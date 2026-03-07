@@ -63,6 +63,9 @@ RUN apk add --no-cache \
 # -------------------------------------------------------------------------
 COPY .docker/php.ini-production /usr/local/etc/php/conf.d/99-production.ini
 
+# Substitui as configurações do Docker para suprimir o registro de acesso.
+COPY .docker/docker.conf /usr/local/etc/php-fpm.d/docker.conf
+
 # -------------------------------------------------------------------------
 # Configuração Nginx
 # -------------------------------------------------------------------------
