@@ -40,7 +40,7 @@ class TicketController extends Controller
                         'id'         => $ticket->orderItem->order->event->id,
                         'title'      => $ticket->orderItem->order->event->title,
                         'date_start' => $ticket->orderItem->order->event->date_start,
-                        'banner_url' => $ticket->orderItem->order->event->banner_url,
+                        'banner_url' => $ticket->orderItem->order->event->banner_full_url,
                         'city'       => $ticket->orderItem->order->event->city,
                         'state'      => $ticket->orderItem->order->event->state,
                     ],

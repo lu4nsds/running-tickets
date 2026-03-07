@@ -18,7 +18,7 @@ class TicketResource extends JsonResource
         return [
             'id' => $this->id,
             'code' => $this->code,
-            'qr_url' => $this->qr_path ? Storage::url($this->qr_path) : null,
+            'qr_url' => $this->qr_path ? url('/api/storage/' . $this->qr_path) : null,
             'status' => $this->status->value,
             'status_label' => $this->status->label(),
             'status_color' => $this->status->color(),
