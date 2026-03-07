@@ -49,8 +49,8 @@ class Event extends Model
             return $this->banner_url;
         }
 
-        // Gera URL via Storage (funciona tanto com disco local quanto S3)
-        return Storage::url($this->banner_url);
+        // Serve via proxy do Laravel (evita problemas de ACL no bucket S3)
+        return url('/api/storage/' . $this->banner_url);
     }
 
     /**

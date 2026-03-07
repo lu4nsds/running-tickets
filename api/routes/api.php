@@ -19,6 +19,7 @@ use App\Http\Controllers\Api\TicketController;
 use App\Http\Controllers\Api\MercadoPagoWebhookController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\AdminDashboardController;
+use App\Http\Controllers\Api\StorageController;
 
 // Health check
 Route::get('/health', function () {
@@ -39,6 +40,9 @@ Route::post('/password/reset', [PasswordResetController::class, 'reset']);
 Route::get('/email/verify/{id}/{hash}', [EmailVerificationController::class, 'verify'])
     ->middleware('signed')
     ->name('verification.verify');
+
+// Proxy de arquivos do storage (S3)
+Route::get('/storage/{path}', [StorageController::class, 'serve'])->where('path', '.+');
 
 // Eventos públicos
 Route::get('/events', [EventController::class, 'index']);
