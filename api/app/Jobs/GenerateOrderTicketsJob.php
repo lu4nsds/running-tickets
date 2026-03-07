@@ -77,15 +77,12 @@ class GenerateOrderTicketsJob implements ShouldQueue
     private function generateQrCode(Ticket $ticket): void
     {
         try {
-            // Gera a URL do ticket (será usada para validação)
-            $ticketUrl = config('app.url') . '/api/tickets/' . $ticket->code;
-
-            // Gera o QR Code como SVG (não precisa de extensões de imagem)
+            // Gera o QR Code como SVG codificando apenas o código do ticket
             $qrCode = QrCode::format('svg')
                 ->size(300)
                 ->margin(1)
                 ->errorCorrection('H')
-                ->generate($ticketUrl);
+                ->generate($ticket->code);
 
             // Define o caminho do arquivo
             $path = 'tickets/' . $ticket->code . '.svg';

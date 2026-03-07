@@ -791,11 +791,11 @@ const startScanning = async () => {
 // Callback quando QR Code é lido com sucesso
 const onScanSuccess = (decodedText) => {
     stopScanning();
-    validateTicket(decodedText);
+    validateTicket(decodedText.trim());
 };
 
 // Callback para erros de scan (pode ser ignorado, ocorre quando não detecta QR)
-const onScanError = (error) => {
+const onScanError = () => {
     // Silencioso - erros de scan são normais quando não há QR code no frame
 };
 
