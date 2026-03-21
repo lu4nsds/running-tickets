@@ -23,6 +23,9 @@ RUN pecl install redis && docker-php-ext-enable redis
 # Obtem o Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
+# Configuração PHP para desenvolvimento
+COPY .docker/php.ini-development /usr/local/etc/php/conf.d/99-development.ini
+
 # Substitui as configurações do Docker para suprimir o registro de acesso.
 COPY .docker/docker.conf /usr/local/etc/php-fpm.d/docker.conf
 

@@ -1,0 +1,21 @@
+; =============================================================================
+; PHP — Configuração de desenvolvimento
+; =============================================================================
+
+; --- Output buffering ---------------------------------------------------------
+; Essencial para que PHP-FPM envie o header Status: correto via FastCGI.
+; Sem isso, qualquer output antes dos headers faz o nginx assumir status 200.
+output_buffering=4096
+
+; --- Limites de recursos ------------------------------------------------------
+memory_limit=256M
+max_execution_time=60
+max_input_time=60
+upload_max_filesize=20M
+post_max_size=20M
+
+; --- Logs --------------------------------------------------------------------
+; Erros vão para stderr (visível em `docker logs`), nunca para o browser.
+display_errors=Off
+log_errors=On
+error_reporting=E_ALL
