@@ -6,6 +6,7 @@ use App\Enums\OrderStatus;
 use App\Models\Order;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Log;
 
 class CancelExpiredOrdersCommand extends Command
 {
@@ -54,20 +55,35 @@ class CancelExpiredOrdersCommand extends Command
         $cancelledCount = 0;
 
         foreach ($expiredOrders as $order) {
-            // Atualiza o status para CANCELLED e adiciona informação no metadata
-            $metadata = $order->metadata ?? [];
-            $metadata['cancelled_reason'] = 'expired';
-            $metadata['cancelled_at'] = now()->toIso8601String();
-            $metadata['expired_after_minutes'] = $minutes;
+            try {
+                $metadata = $order->metadata ?? [];
+                $metadata['cancelled_reason'] = 'expired';
+                $metadata['cancelled_at'] = now()->toIso8601String();
+                $metadata['expired_after_minutes'] = $minutes;
 
-            $order->update([
-                'status' => OrderStatus::CANCELLED,
-                'metadata' => $metadata,
-            ]);
+                $order->update([
+                    'status' => OrderStatus::CANCELLED,
+                    'metadata' => $metadata,
+                ]);
 
-            $cancelledCount++;
+                $cancelledCount++;
 
-            $this->line("  - Pedido #{$order->order_number} cancelado (criado em {$order->created_at->format('d/m/Y H:i:s')})");
+                $this->line("  - Pedido {$order->reference} cancelado (criado em {$order->created_at->format('d/m/Y H:i:s')})");
+
+                Log::info('Pedido expirado cancelado', [
+                    'order_id'  => $order->id,
+                    'reference' => $order->reference,
+                    'created_at' => $order->created_at,
+                ]);
+            } catch (\Exception $e) {
+                $this->error("  - Erro ao cancelar pedido {$order->reference}: {$e->getMessage()}");
+
+                Log::error('Erro ao cancelar pedido expirado', [
+                    'order_id'  => $order->id,
+                    'reference' => $order->reference,
+                    'error'     => $e->getMessage(),
+                ]);
+            }
         }
 
         $this->info("✓ {$cancelledCount} pedido(s) cancelado(s) com sucesso.");
