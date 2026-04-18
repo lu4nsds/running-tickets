@@ -490,11 +490,12 @@
 
 <script setup>
 import { ref, computed, onMounted, watch } from "vue";
-import { useRouter } from "vue-router";
+import { useRouter, useRoute } from "vue-router";
 import { useEventsStore } from "@/stores/events";
 import { useToast } from "@/composables/useToast";
 
 const router = useRouter();
+const route = useRoute();
 const store = useEventsStore();
 const toast = useToast();
 
@@ -654,6 +655,10 @@ const loadOrganizers = async () => {
 // Lifecycle
 onMounted(async () => {
     store.clearFilters();
+    if (route.query.organizer_id) {
+        selectedOrganizer.value = route.query.organizer_id;
+        store.setFilters({ organizer_id: route.query.organizer_id });
+    }
     await Promise.all([store.fetchEvents(), loadOrganizers()]);
     localPagination.value = { ...store.pagination };
     hasLoadedOnce.value = true;

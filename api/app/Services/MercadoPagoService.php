@@ -248,6 +248,10 @@ class MercadoPagoService
                 'payment_method_id' => $payment->payment_method_id,
                 'payment_type_id' => $payment->payment_type_id,
                 'installments' => $payment->installments ?? 1,
+                'transaction_details' => [
+                    'net_received_amount' => $payment->transaction_details->net_received_amount ?? null,
+                    'total_paid_amount'   => $payment->transaction_details->total_paid_amount ?? null,
+                ],
                 'payer' => [
                     'email' => $payment->payer->email ?? null,
                     'identification' => [

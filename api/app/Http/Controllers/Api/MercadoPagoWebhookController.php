@@ -150,13 +150,20 @@ class MercadoPagoWebhookController extends Controller
 
         switch ($status) {
             case 'approved':
+                $netReceived = $payment['transaction_details']['net_received_amount'] ?? null;
                 $order->update([
-                    'status' => OrderStatus::PAID,
-                    'payment_gateway' => 'mercadopago',
-                    'payment_id' => $payment['id'],
+                    'status'           => OrderStatus::PAID,
+                    'payment_gateway'  => 'mercadopago',
+                    'payment_id'       => $payment['id'],
+                    'fee_cents'        => $netReceived !== null
+                        ? (int) round(($payment['transaction_amount'] - $netReceived) * 100)
+                        : null,
+                    'net_amount_cents' => $netReceived !== null
+                        ? (int) round($netReceived * 100)
+                        : null,
                     'metadata' => array_merge($order->metadata ?? [], [
-                        'payment_method' => $payment['payment_method_id'],
-                        'payment_type' => $payment['payment_type_id'],
+                        'payment_method'     => $payment['payment_method_id'],
+                        'payment_type'       => $payment['payment_type_id'],
                         'transaction_amount' => $payment['transaction_amount'],
                     ]),
                 ]);

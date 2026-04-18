@@ -135,9 +135,13 @@ class EventController extends Controller
             ->get()
             ->sum('items_count');
             
-        $event->total_revenue = $event->orders()
+        $paidOrders = $event->orders()
             ->where('status', 'paid')
-            ->sum('total_cents');
+            ->selectRaw('SUM(total_cents) as total, SUM(COALESCE(net_amount_cents, 0)) as net')
+            ->first();
+
+        $event->total_revenue     = $paidOrders->total ?? 0;
+        $event->total_net_revenue = $paidOrders->net   ?? 0;
         
         // Estatísticas de tickets (validação)
         $event->ticket_stats = $event->getTicketStatistics();

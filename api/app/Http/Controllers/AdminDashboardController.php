@@ -65,7 +65,9 @@ class AdminDashboardController extends Controller
                     SUM(CASE WHEN status = 'paid' THEN 1 ELSE 0 END) as paid_orders,
                     SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending_orders,
                     SUM(CASE WHEN status = 'paid' THEN total_cents ELSE 0 END) as total_revenue,
-                    SUM(CASE WHEN status = 'pending' THEN total_cents ELSE 0 END) as pending_revenue
+                    SUM(CASE WHEN status = 'pending' THEN total_cents ELSE 0 END) as pending_revenue,
+                    SUM(CASE WHEN status = 'paid' THEN COALESCE(net_amount_cents, 0) ELSE 0 END) as total_net_revenue,
+                    SUM(CASE WHEN status = 'paid' THEN COALESCE(fee_cents, 0) ELSE 0 END) as total_fees
                 ")->first();
 
             // Estatísticas de eventos e organizadores - filtrado por período
@@ -134,10 +136,10 @@ class AdminDashboardController extends Controller
                         ->where('event_payout_settings.payout_mode', '=', 'platform');
                 })
                 ->join('organizers', 'events.organizer_id', '=', 'organizers.id')
-                ->leftJoin(DB::raw('(SELECT organizer_id, MIN(date_start) as nearest_event_date 
-                    FROM events 
-                    WHERE date_start >= NOW() 
-                    GROUP BY organizer_id) as nearest_events'), 
+                ->leftJoin(DB::raw('(SELECT organizer_id, MIN(date_start) as nearest_event_date
+                    FROM events
+                    WHERE date_start >= NOW()
+                    GROUP BY organizer_id) as nearest_events'),
                     'organizers.id', '=', 'nearest_events.organizer_id')
                 ->where('orders.status', 'paid')
                 ->select(
@@ -150,6 +152,30 @@ class AdminDashboardController extends Controller
                 ->groupBy('organizers.id', 'organizers.name', 'nearest_events.nearest_event_date')
                 ->orderByDesc('amount_to_transfer')
                 ->get();
+
+            // Calcular taxa média por organizador e estimar valor líquido dos repasses
+            $organizerIds = $pendingPayouts->pluck('organizer_id')->filter()->toArray();
+            if (!empty($organizerIds)) {
+                $feeRates = DB::table('orders')
+                    ->join('events', 'orders.event_id', '=', 'events.id')
+                    ->whereIn('events.organizer_id', $organizerIds)
+                    ->where('orders.status', 'paid')
+                    ->whereNotNull('orders.fee_cents')
+                    ->groupBy('events.organizer_id')
+                    ->select(
+                        'events.organizer_id',
+                        DB::raw('SUM(orders.fee_cents) / SUM(orders.total_cents) as avg_fee_rate')
+                    )
+                    ->get()
+                    ->keyBy('organizer_id');
+
+                $pendingPayouts = $pendingPayouts->map(function ($payout) use ($feeRates) {
+                    $rate = $feeRates[$payout->organizer_id]->avg_fee_rate ?? 0;
+                    $payout->estimated_net_amount = (int) round($payout->amount_to_transfer * (1 - $rate));
+                    $payout->avg_fee_rate = round($rate * 100, 2);
+                    return $payout;
+                });
+            }
 
             // Saúde da plataforma - filtrado por período
             $platformHealth = Order::whereBetween('created_at', [$startDate, $endDate])

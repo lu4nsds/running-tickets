@@ -102,6 +102,25 @@
                     }}
                 </h3>
                 <div
+                    v-if="dashboardStore.summary.total_net_revenue > 0"
+                    class="mt-2 flex items-center gap-1 text-xs"
+                >
+                    <span class="text-slate-500">Líquido:</span>
+                    <span class="text-green-400 font-bold">
+                        {{ formatCurrency(dashboardStore.summary.total_net_revenue || 0) }}
+                    </span>
+                    <div class="group relative ml-auto">
+                        <span class="material-symbols-outlined text-slate-500 text-xs cursor-help">info</span>
+                        <div class="absolute bottom-full right-0 mb-2 hidden group-hover:block z-10">
+                            <div class="bg-slate-900 text-white text-xs rounded-lg px-3 py-2 w-52 shadow-xl border border-slate-700">
+                                <p class="font-bold mb-1">Receita Líquida</p>
+                                <p class="text-slate-300">Após taxas do Mercado Pago ({{ formatCurrency(dashboardStore.summary.total_fees || 0) }} em taxas)</p>
+                            </div>
+                            <div class="w-2 h-2 bg-slate-900 border-b border-r border-slate-700 absolute top-0 right-2 translate-y-1/2 rotate-45"></div>
+                        </div>
+                    </div>
+                </div>
+                <div
                     class="mt-4 flex items-center justify-between text-xs border-t border-border-dark pt-4"
                 >
                     <span class="text-slate-500">Pendente:</span>
@@ -712,7 +731,17 @@
                             class="material-symbols-outlined text-orange-400 text-xl"
                             >pending_actions</span
                         >
-                        Pagamentos Pendentes
+                        Repasses Pendentes
+                        <div class="group relative">
+                            <span class="material-symbols-outlined text-slate-500 text-sm cursor-help">info</span>
+                            <div class="absolute bottom-full left-0 mb-2 hidden group-hover:block z-10">
+                                <div class="bg-slate-900 text-white text-xs rounded-lg px-3 py-2 w-56 shadow-xl border border-slate-700">
+                                    <p class="font-bold mb-1">Valor Líquido Estimado</p>
+                                    <p class="text-slate-300">Valor a ser repassado ao organizador após dedução das taxas do Mercado Pago, calculado com base na taxa média histórica de cada organizador.</p>
+                                </div>
+                                <div class="w-2 h-2 bg-slate-900 border-b border-r border-slate-700 absolute top-0 left-2 translate-y-1/2 rotate-45"></div>
+                            </div>
+                        </div>
                     </h4>
                     <span
                         class="text-[10px] bg-white/5 px-2 py-0.5 rounded text-slate-400"
@@ -779,9 +808,15 @@
                                     >
                                         {{
                                             formatCurrency(
-                                                payout.amount_to_transfer,
+                                                payout.estimated_net_amount ?? payout.amount_to_transfer,
                                             )
                                         }}
+                                    </p>
+                                    <p
+                                        v-if="payout.avg_fee_rate > 0"
+                                        class="text-[10px] text-slate-500 mt-0.5"
+                                    >
+                                        taxa {{ payout.avg_fee_rate }}%
                                     </p>
                                 </div>
                             </div>

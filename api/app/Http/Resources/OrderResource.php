@@ -22,6 +22,8 @@ class OrderResource extends JsonResource
             'user_id' => $this->user_id,
             'total_cents' => $this->total_cents,
             'total_formatted' => 'R$ ' . number_format($this->total_cents / 100, 2, ',', '.'),
+            'fee_cents' => $this->fee_cents,
+            'net_amount_cents' => $this->net_amount_cents,
             'currency' => $this->currency,
             'status' => $this->status->value,
             'status_label' => $this->status->label(),

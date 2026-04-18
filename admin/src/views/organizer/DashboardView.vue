@@ -164,6 +164,25 @@
                             trending_up
                         </span>
                     </div>
+                    <div
+                        v-if="dashboardData.summary?.total_net_revenue > 0"
+                        class="flex items-center gap-1 text-sm text-text-muted border-t border-surface-elevated pt-3"
+                    >
+                        <span>Líquido:</span>
+                        <span class="text-green-400 font-semibold">
+                            {{ formatCurrency(dashboardData.summary.total_net_revenue) }}
+                        </span>
+                        <div class="group relative ml-auto">
+                            <span class="material-symbols-outlined text-text-muted text-sm cursor-help">info</span>
+                            <div class="absolute bottom-full right-0 mb-2 hidden group-hover:block z-10">
+                                <div class="bg-slate-900 text-white text-xs rounded-lg px-3 py-2 w-52 shadow-xl border border-slate-700">
+                                    <p class="font-bold mb-1">Receita Líquida</p>
+                                    <p class="text-slate-300">Valor após dedução das taxas do Mercado Pago ({{ formatCurrency(dashboardData.summary.total_fees || 0) }} em taxas)</p>
+                                </div>
+                                <div class="w-2 h-2 bg-slate-900 border-b border-r border-slate-700 absolute top-0 right-2 translate-y-1/2 rotate-45"></div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -247,6 +266,20 @@
                     :options="ticketTypesChartOptions"
                     :series="ticketTypesChartSeries"
                 ></apexchart>
+                <div class="flex justify-center items-center gap-6 mt-2">
+                    <div class="flex items-center gap-2">
+                        <span class="w-3 h-3 rounded-sm inline-block" style="background:#00E676"></span>
+                        <span class="text-xs text-gray-400">Quantidade Vendida</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="w-3 h-3 rounded-sm inline-block" style="background:#00B8D4"></span>
+                        <span class="text-xs text-gray-400">Receita (R$)</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="w-3 h-3 rounded-sm inline-block" style="background:#FF6B35"></span>
+                        <span class="text-xs text-gray-400">Líquido (R$)</span>
+                    </div>
+                </div>
             </div>
 
             <!-- Events Overview -->
@@ -294,6 +327,11 @@
                                     class="pb-3 text-xs font-semibold text-text-muted uppercase tracking-wider"
                                 >
                                     Receita
+                                </th>
+                                <th
+                                    class="pb-3 text-xs font-semibold text-text-muted uppercase tracking-wider"
+                                >
+                                    Líquido
                                 </th>
                                 <th
                                     class="pb-3 text-xs font-semibold text-text-muted uppercase tracking-wider"
@@ -354,6 +392,15 @@
                                             {{ formatCurrency(event.revenue) }}
                                         </span>
                                     </div>
+                                </td>
+                                <td class="py-4">
+                                    <span
+                                        v-if="event.net_revenue > 0"
+                                        class="text-green-400 font-medium text-sm"
+                                    >
+                                        {{ formatCurrency(event.net_revenue) }}
+                                    </span>
+                                    <span v-else class="text-text-muted text-sm">—</span>
                                 </td>
                                 <td
                                     class="py-4 text-text-secondary text-sm font-medium"
@@ -544,15 +591,11 @@ const ticketTypesChartOptions = ref({
             horizontal: false,
             columnWidth: "55%",
             borderRadius: 6,
-            dataLabels: {
-                position: "top",
-            },
+            dataLabels: { position: "top" },
         },
     },
-    dataLabels: {
-        enabled: false,
-    },
-    colors: ["#00E676", "#00B8D4"],
+    dataLabels: { enabled: false },
+    colors: ["#00E676", "#00B8D4", "#FF6B35"],
     stroke: {
         show: true,
         width: 2,
@@ -565,15 +608,14 @@ const ticketTypesChartOptions = ref({
     xaxis: {
         categories: [],
         labels: {
-            style: {
-                colors: "#6B7280",
-            },
+            style: { colors: "#6B7280" },
             rotate: -45,
             rotateAlways: true,
         },
     },
     yaxis: [
         {
+            seriesName: "Quantidade Vendida",
             title: {
                 text: "Quantidade Vendida",
                 style: { color: "#6B7280" },
@@ -584,6 +626,7 @@ const ticketTypesChartOptions = ref({
             },
         },
         {
+            seriesName: "Receita (R$)",
             opposite: true,
             title: {
                 text: "Receita (R$)",
@@ -591,46 +634,40 @@ const ticketTypesChartOptions = ref({
             },
             labels: {
                 style: { colors: "#6B7280" },
-                formatter: (value) => {
-                    return "R$ " + value.toLocaleString("pt-BR");
-                },
+                formatter: (value) => "R$ " + value.toLocaleString("pt-BR"),
+            },
+        },
+        {
+            seriesName: "Receita (R$)",
+            opposite: true,
+            show: false,
+            labels: {
+                style: { colors: "#6B7280" },
+                formatter: (value) => "R$ " + value.toLocaleString("pt-BR"),
             },
         },
     ],
-    legend: {
-        labels: {
-            colors: "#6B7280",
-        },
-    },
+    legend: { show: false },
     tooltip: {
         theme: "dark",
         y: [
+            { formatter: (value) => value + " ingressos" },
             {
-                formatter: (value) => value + " ingressos",
+                formatter: (value) =>
+                    "R$ " + value.toLocaleString("pt-BR", { minimumFractionDigits: 2 }),
             },
             {
-                formatter: (value) => {
-                    return (
-                        "R$ " +
-                        value.toLocaleString("pt-BR", {
-                            minimumFractionDigits: 2,
-                        })
-                    );
-                },
+                formatter: (value) =>
+                    "R$ " + value.toLocaleString("pt-BR", { minimumFractionDigits: 2 }),
             },
         ],
     },
 });
 
 const ticketTypesChartSeries = ref([
-    {
-        name: "Quantidade Vendida",
-        data: [],
-    },
-    {
-        name: "Receita (R$)",
-        data: [],
-    },
+    { name: "Quantidade Vendida", data: [] },
+    { name: "Receita (R$)", data: [] },
+    { name: "Líquido (R$)", data: [] },
 ]);
 
 // Methods
@@ -644,7 +681,8 @@ const fetchDashboardData = async () => {
         if (response.data.sales_trend) {
             chartOptions.value.xaxis.categories = response.data.sales_trend.map(
                 (item) => {
-                    const date = new Date(item.date);
+                    const [y, m, d] = item.date.split("-");
+                    const date = new Date(y, m - 1, d);
                     return date.toLocaleDateString("pt-BR", {
                         day: "2-digit",
                         month: "short",
@@ -667,6 +705,10 @@ const fetchDashboardData = async () => {
             ticketTypesChartSeries.value[1].data =
                 response.data.ticket_types_sales.map((item) =>
                     parseFloat(item.total_revenue || 0),
+                );
+            ticketTypesChartSeries.value[2].data =
+                response.data.ticket_types_sales.map((item) =>
+                    parseFloat(item.net_revenue || 0),
                 );
         }
     });

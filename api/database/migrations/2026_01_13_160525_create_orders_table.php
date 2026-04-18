@@ -32,6 +32,8 @@ return new class extends Migration
 
             // Valor total
             $table->bigInteger('total_cents')->default(0);
+            $table->unsignedInteger('fee_cents')->nullable();
+            $table->unsignedInteger('net_amount_cents')->nullable();
             $table->string('currency', 10)->default('BRL');
 
             // Status da compra

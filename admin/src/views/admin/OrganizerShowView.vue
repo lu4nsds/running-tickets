@@ -242,6 +242,9 @@
                     <p class="text-3xl font-bold text-black">
                         {{ formatCurrency(stats.totalSales || 0) }}
                     </p>
+                    <p class="text-xs text-black/60 mt-1">
+                        Líquido: <span class="font-semibold text-black/80">{{ formatCurrency(stats.totalNetSales || 0) }}</span>
+                    </p>
                 </div>
 
                 <!-- Users Count -->
@@ -638,6 +641,7 @@ const error = ref(null);
 const organizer = ref(null);
 const stats = ref({
     totalSales: 0,
+    totalNetSales: 0,
 });
 const recentEvents = ref([]);
 const showUnlinkModal = ref(false);
@@ -656,8 +660,8 @@ const fetchOrganizer = async () => {
         if (result.success) {
             organizer.value = result.data;
             recentEvents.value = result.data.events?.slice(0, 3) || [];
-            // Total de vendas vem do backend em centavos
-            stats.value.totalSales = (result.data.total_sales || 0) / 100;
+            stats.value.totalSales    = (result.data.total_sales     || 0) / 100;
+            stats.value.totalNetSales = (result.data.total_net_sales || 0) / 100;
         } else {
             error.value = result.error;
         }
@@ -730,8 +734,7 @@ const unlinkUser = async () => {
 };
 
 const viewAllEvents = () => {
-    // TODO: Navigate to events filtered by organizer
-    toast.info("Navegação para eventos será implementada");
+    router.push({ path: "/admin/events", query: { organizer_id: organizer.value.id } });
 };
 
 // Formatters

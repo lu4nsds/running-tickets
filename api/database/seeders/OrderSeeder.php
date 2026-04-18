@@ -56,22 +56,29 @@ class OrderSeeder extends Seeder
                 $daysAgo = $this->getRandomDaysAgo();
                 $createdAt = now()->subDays($daysAgo);
 
+                // Taxa do Mercado Pago: entre 2.49% e 3.99% dependendo do método
+                $feeRate = rand(249, 399) / 10000;
+                $feeCents = (int) round($totalCents * $feeRate);
+                $netAmountCents = $totalCents - $feeCents;
+
                 $order = Order::create([
-                    'event_id' => $event->id,
-                    'organizer_id' => $event->organizer_id,
-                    'reference' => 'ORD-' . strtoupper(Str::random(10)),
-                    'user_id' => null, // Guest
-                    'total_cents' => $totalCents,
-                    'currency' => Currency::BRL->value,
-                    'status' => OrderStatus::PAID->value,
-                    'payment_gateway' => PaymentGateway::MERCADOPAGO->value,
-                    'payment_id' => 'MP-' . rand(100000, 999999),
-                    'metadata' => [
-                        'ip' => '192.168.1.' . rand(1, 255),
+                    'event_id'         => $event->id,
+                    'organizer_id'     => $event->organizer_id,
+                    'reference'        => 'ORD-' . strtoupper(Str::random(10)),
+                    'user_id'          => null,
+                    'total_cents'      => $totalCents,
+                    'fee_cents'        => $feeCents,
+                    'net_amount_cents' => $netAmountCents,
+                    'currency'         => Currency::BRL->value,
+                    'status'           => OrderStatus::PAID->value,
+                    'payment_gateway'  => PaymentGateway::MERCADOPAGO->value,
+                    'payment_id'       => 'MP-' . rand(100000, 999999),
+                    'metadata'         => [
+                        'ip'         => '192.168.1.' . rand(1, 255),
                         'user_agent' => 'Mozilla/5.0',
                     ],
-                    'created_at' => $createdAt,
-                    'updated_at' => $createdAt,
+                    'created_at'  => $createdAt,
+                    'updated_at'  => $createdAt,
                 ]);
 
                 // Criar order items e tickets

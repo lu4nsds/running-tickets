@@ -144,7 +144,7 @@
                     </p>
                 </div>
 
-                <!-- Receita Estimada -->
+                <!-- Receita-->
                 <div
                     class="bg-card-bg border border-surface-elevated rounded-xl p-6"
                 >
@@ -159,11 +159,25 @@
                         <p
                             class="text-text-muted text-xs uppercase tracking-wider"
                         >
-                            Receita Estimada
+                            Receita
                         </p>
                     </div>
                     <p class="text-3xl font-bold text-white">
                         {{ formatCurrency(stats.totalRevenue || 0) }}
+                    </p>
+                    <p class="text-xs mt-1 flex items-center gap-1">
+                        <span class="text-text-muted">Líquido:</span>
+                        <span class="font-semibold text-white/80">{{ formatCurrency(stats.totalNetRevenue || 0) }}</span>
+                        <div class="group relative">
+                            <span class="material-symbols-outlined text-slate-500 text-sm cursor-help">info</span>
+                            <div class="absolute bottom-full left-0 mb-2 hidden group-hover:block z-10">
+                                <div class="bg-slate-900 text-white text-xs rounded-lg px-3 py-2 w-56 shadow-xl border border-slate-700">
+                                    <p class="font-bold mb-1">Valor Líquido Estimado</p>
+                                    <p class="text-slate-300">Valor após dedução das taxas do Mercado Pago, calculado com base nos pedidos já pagos deste evento.</p>
+                                </div>
+                                <div class="w-2 h-2 bg-slate-900 border-b border-r border-slate-700 absolute top-0 left-2 translate-y-1/2 rotate-45"></div>
+                            </div>
+                        </div>
                     </p>
                     <p class="text-text-muted text-xs mt-1">
                         Ticket Médio:
@@ -1061,9 +1075,12 @@ const calculateStats = () => {
     const participants = event.value.participants_count || 0;
     const revenue = event.value.total_revenue || 0;
 
+    const netRevenue = event.value.total_net_revenue || 0;
+
     stats.value = {
         totalParticipants: participants,
         totalRevenue: revenue / 100,
+        totalNetRevenue: netRevenue / 100,
         avgTicketPrice: participants > 0 ? revenue / 100 / participants : 0,
     };
 };

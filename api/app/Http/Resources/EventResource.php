@@ -33,7 +33,8 @@ class EventResource extends JsonResource
             
             // Estatísticas (quando carregadas via withCount/aggregate)
             'participants_count' => $this->when(isset($this->participants_count), $this->participants_count ?? 0),
-            'total_revenue' => $this->when(isset($this->total_revenue), $this->total_revenue ?? 0),
+            'total_revenue'     => $this->when(isset($this->total_revenue), $this->total_revenue ?? 0),
+            'total_net_revenue' => $this->when(isset($this->total_net_revenue), $this->total_net_revenue ?? 0),
             'remaining_spots' => $this->when(
                 isset($this->participants_count) && $this->max_participants,
                 fn() => max(0, $this->max_participants - ($this->participants_count ?? 0))

@@ -52,11 +52,13 @@ class OrganizerController extends Controller
             ->loadCount('events');
         
         // Calcular total de vendas (apenas pedidos pagos)
-        $totalSales = $organizer->orders()
+        $paidOrders = $organizer->orders()
             ->where('status', OrderStatus::PAID)
-            ->sum('total_cents');
-        
-        $organizer->total_sales = $totalSales;
+            ->selectRaw('SUM(total_cents) as total, SUM(COALESCE(net_amount_cents, 0)) as net')
+            ->first();
+
+        $organizer->total_sales = $paidOrders->total ?? 0;
+        $organizer->total_net_sales = $paidOrders->net ?? 0;
         
         return new OrganizerResource($organizer);
     }

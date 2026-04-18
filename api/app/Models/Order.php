@@ -17,6 +17,8 @@ class Order extends Model
         'reference',
         'user_id',
         'total_cents',
+        'fee_cents',
+        'net_amount_cents',
         'currency',
         'status',
         'buyer_email',
@@ -26,8 +28,10 @@ class Order extends Model
     ];
 
     protected $casts = [
-        'status' => OrderStatus::class,
-        'metadata' => 'array',
+        'status'           => OrderStatus::class,
+        'metadata'         => 'array',
+        'fee_cents'        => 'integer',
+        'net_amount_cents' => 'integer',
     ];
 
     /**

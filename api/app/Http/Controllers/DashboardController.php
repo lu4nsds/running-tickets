@@ -36,19 +36,43 @@ class DashboardController extends Controller
                         $query->where('status', OrderStatus::PAID->value);
                     }
                 ], 'total_cents')
+                ->withSum([
+                    'orders as total_net_revenue' => function ($query) {
+                        $query->where('status', OrderStatus::PAID->value);
+                    }
+                ], 'net_amount_cents')
+                ->withSum([
+                    'orders as total_fees' => function ($query) {
+                        $query->where('status', OrderStatus::PAID->value);
+                    }
+                ], 'fee_cents')
+                ->withSum([
+                    'orders as pending_total_cents' => function ($query) {
+                        $query->where('status', OrderStatus::PENDING->value);
+                    }
+                ], 'total_cents')
                 ->get();
+
+            $totalGross = $events->sum('total_revenue') ?? 0;
+            $totalFees = $events->sum('total_fees') ?? 0;
+            $totalNetRevenue = $events->sum('total_net_revenue') ?? 0;
+            $pendingTotal = $events->sum('pending_total_cents') ?? 0;
+            $avgFeeRate = $totalGross > 0 ? $totalFees / $totalGross : 0;
 
             // Resumo geral
             $summary = [
-                'total_events' => $events->count(),
-                'active_events' => $events->count(),
-                'total_revenue' => $events->sum('total_revenue') / 100,
-                'total_paid_orders' => $events->sum('paid_orders'),
-                'total_pending_orders' => $events->sum(fn($e) => $e->total_orders - $e->paid_orders),
+                'total_events'                  => $events->count(),
+                'active_events'                 => $events->count(),
+                'total_revenue'                 => $totalGross / 100,
+                'total_net_revenue'             => $totalNetRevenue / 100,
+                'total_fees'                    => $totalFees / 100,
+                'pending_net_revenue_estimated' => (int) round($pendingTotal * (1 - $avgFeeRate)) / 100,
+                'total_paid_orders'             => $events->sum('paid_orders'),
+                'total_pending_orders'          => $events->sum(fn($e) => $e->total_orders - $e->paid_orders),
             ];
 
             // Performance de vendas por evento (top 5)
-            $topEvents = $events->sortByDesc('total_revenue')->take(5)->map(function ($event) {
+            $topEvents = $events->sortByDesc('total_revenue')->take(5)->map(function ($event) use ($avgFeeRate) {
                 // Buscar capacidade total do evento
                 $totalCapacity = DB::table('ticket_types')
                     ->where('event_id', $event->id)
@@ -63,6 +87,8 @@ class DashboardController extends Controller
                     ->where('orders.status', OrderStatus::PAID->value)
                     ->count();
 
+                $eventNetRevenue = $event->total_net_revenue ?? 0;
+
                 return [
                     'id' => $event->id,
                     'name' => $event->title,
@@ -71,12 +97,13 @@ class DashboardController extends Controller
                     'date_end' => $event->date_end,
                     'status' => $event->status->value,
                     'revenue' => ($event->total_revenue ?? 0) / 100,
+                    'net_revenue' => $eventNetRevenue / 100,
                     'orders' => $event->paid_orders,
                     'tickets_sold' => $ticketsSold,
                     'capacity' => $totalCapacity,
                     'occupancy_rate' => $totalCapacity > 0 ? round(($ticketsSold / $totalCapacity) * 100, 2) : 0,
-                    'conversion_rate' => $event->total_orders > 0 
-                        ? round(($event->paid_orders / $event->total_orders) * 100, 2) 
+                    'conversion_rate' => $event->total_orders > 0
+                        ? round(($event->paid_orders / $event->total_orders) * 100, 2)
                         : 0,
                 ];
             })->values();
@@ -110,7 +137,11 @@ class DashboardController extends Controller
                 ->groupBy('ticket_types.name')
                 ->orderByDesc('quantity_sold')
                 ->limit(10)
-                ->get();
+                ->get()
+                ->map(function ($type) use ($avgFeeRate) {
+                    $type->net_revenue = round($type->total_revenue * (1 - $avgFeeRate), 2);
+                    return $type;
+                });
 
             return [
                 'summary' => $summary,
@@ -145,9 +176,19 @@ class DashboardController extends Controller
                     SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending_orders,
                     SUM(CASE WHEN status = 'cancelled' THEN 1 ELSE 0 END) as cancelled_orders,
                     SUM(CASE WHEN status = 'paid' THEN total_cents ELSE 0 END) / 100 as total_revenue,
-                    SUM(CASE WHEN status = 'pending' THEN total_cents ELSE 0 END) / 100 as pending_revenue
+                    SUM(CASE WHEN status = 'pending' THEN total_cents ELSE 0 END) / 100 as pending_revenue,
+                    SUM(CASE WHEN status = 'paid' THEN COALESCE(net_amount_cents, 0) ELSE 0 END) / 100 as total_net_revenue,
+                    SUM(CASE WHEN status = 'paid' THEN COALESCE(fee_cents, 0) ELSE 0 END) / 100 as total_fees,
+                    SUM(CASE WHEN status = 'paid' THEN total_cents ELSE 0 END) as paid_total_cents_raw,
+                    SUM(CASE WHEN status = 'pending' THEN total_cents ELSE 0 END) as pending_total_cents_raw
                 ")
                 ->first();
+
+            // Taxa média para estimativa de pending
+            $avgFeeRate = $summary->paid_total_cents_raw > 0
+                ? ($summary->total_fees * 100) / $summary->paid_total_cents_raw
+                : 0;
+            $pendingNetEstimated = round($summary->pending_revenue * (1 - $avgFeeRate), 2);
 
             // Funil de conversão
             $conversionFunnel = [
@@ -181,11 +222,12 @@ class DashboardController extends Controller
                 )
                 ->groupBy('ticket_types.id', 'ticket_types.name', 'ticket_types.price_cents', 'ticket_types.quota')
                 ->get()
-                ->map(function ($type) {
+                ->map(function ($type) use ($avgFeeRate) {
                     $type->available = $type->total_quantity - $type->sold;
-                    $type->sold_percentage = $type->total_quantity > 0 
-                        ? round(($type->sold / $type->total_quantity) * 100, 2) 
+                    $type->sold_percentage = $type->total_quantity > 0
+                        ? round(($type->sold / $type->total_quantity) * 100, 2)
                         : 0;
+                    $type->net_revenue = round($type->revenue * (1 - $avgFeeRate), 2);
                     return $type;
                 });
 
@@ -210,7 +252,7 @@ class DashboardController extends Controller
                 $daysSinceCreated = now()->diffInDays($event->created_at);
                 $avgOrdersPerDay = $daysSinceCreated > 0 ? $summary->paid_orders / $daysSinceCreated : 0;
                 
-                $ticketTypes->each(function ($type) use (&$projection, $avgOrdersPerDay, $daysUntilEvent) {
+                $ticketTypes->each(function ($type) use (&$projection, $avgOrdersPerDay, $daysUntilEvent, $avgFeeRate) {
                     if (!$projection) $projection = [];
                     
                     $avgTicketsPerDay = $type->sold / max(now()->diffInDays($type->created_at ?? now()), 1);
@@ -219,11 +261,13 @@ class DashboardController extends Controller
                         $type->total_quantity
                     );
                     
+                    $projectedRevenue = round($projectedSales * ($type->price_cents / 100), 2);
                     $projection[] = [
-                        'ticket_type' => $type->name,
-                        'current_sold' => $type->sold,
-                        'projected_sold' => round($projectedSales),
-                        'projected_revenue' => round($projectedSales * ($type->price_cents / 100), 2),
+                        'ticket_type'             => $type->name,
+                        'current_sold'            => $type->sold,
+                        'projected_sold'          => round($projectedSales),
+                        'projected_revenue'       => $projectedRevenue,
+                        'projected_net_revenue'   => round($projectedRevenue * (1 - $avgFeeRate), 2),
                     ];
                 });
             }
@@ -296,11 +340,14 @@ class DashboardController extends Controller
                     'days_until_event' => max($daysUntilEvent, 0),
                 ],
                 'summary' => [
-                    'total_revenue' => $summary->total_revenue,
-                    'pending_revenue' => $summary->pending_revenue,
-                    'total_orders' => $summary->total_orders,
-                    'paid_orders' => $summary->paid_orders,
-                    'pending_orders' => $summary->pending_orders,
+                    'total_revenue'                 => $summary->total_revenue,
+                    'total_net_revenue'             => $summary->total_net_revenue,
+                    'total_fees'                    => $summary->total_fees,
+                    'pending_revenue'               => $summary->pending_revenue,
+                    'pending_net_revenue_estimated' => $pendingNetEstimated,
+                    'total_orders'                  => $summary->total_orders,
+                    'paid_orders'                   => $summary->paid_orders,
+                    'pending_orders'                => $summary->pending_orders,
                 ],
                 'conversion_funnel' => $conversionFunnel,
                 'ticket_types' => $ticketTypes,

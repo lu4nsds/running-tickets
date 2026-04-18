@@ -71,7 +71,27 @@
                         )
                     "
                     icon="payments"
-                />
+                >
+                    <div
+                        v-if="dashboardData.summary?.total_net_revenue > 0"
+                        class="flex items-center gap-1 mt-2 text-sm"
+                    >
+                        <span class="text-text-muted">Líquido:</span>
+                        <span class="text-green-400 font-semibold">
+                            {{ formatCurrency(dashboardData.summary.total_net_revenue * 100) }}
+                        </span>
+                        <div class="group relative ml-1">
+                            <span class="material-symbols-outlined text-text-muted text-sm cursor-help">info</span>
+                            <div class="absolute bottom-full left-0 mb-2 hidden group-hover:block z-10">
+                                <div class="bg-slate-900 text-white text-xs rounded-lg px-3 py-2 w-52 shadow-xl border border-slate-700">
+                                    <p class="font-bold mb-1">Receita Líquida</p>
+                                    <p class="text-slate-300">Após taxas do Mercado Pago ({{ formatCurrency(dashboardData.summary.total_fees * 100 || 0) }} em taxas)</p>
+                                </div>
+                                <div class="w-2 h-2 bg-slate-900 border-b border-r border-slate-700 absolute top-0 left-2 translate-y-1/2 rotate-45"></div>
+                            </div>
+                        </div>
+                    </div>
+                </MetricCard>
 
                 <!-- Total Orders -->
                 <MetricCard
@@ -232,6 +252,11 @@
                                 >
                                     Receita
                                 </th>
+                                <th
+                                    class="py-3 px-4 text-text-muted font-medium text-sm"
+                                >
+                                    Líquido
+                                </th>
                             </tr>
                         </thead>
                         <tbody>
@@ -287,6 +312,15 @@
                                             formatCurrency(ticket.revenue * 100)
                                         }}
                                     </p>
+                                </td>
+                                <td class="py-4 px-4">
+                                    <p
+                                        v-if="ticket.net_revenue > 0"
+                                        class="text-green-400 font-semibold"
+                                    >
+                                        {{ formatCurrency(ticket.net_revenue * 100) }}
+                                    </p>
+                                    <p v-else class="text-text-muted">—</p>
                                 </td>
                             </tr>
                         </tbody>
@@ -351,6 +385,15 @@
                                             proj.projected_revenue * 100,
                                         )
                                     }}
+                                </span>
+                            </div>
+                            <div
+                                v-if="proj.projected_net_revenue > 0"
+                                class="flex justify-between"
+                            >
+                                <span class="text-text-muted text-sm">Líquido Proj.:</span>
+                                <span class="text-green-400 font-semibold text-sm">
+                                    {{ formatCurrency(proj.projected_net_revenue * 100) }}
                                 </span>
                             </div>
                         </div>
@@ -681,7 +724,8 @@ const salesVelocityOptions = computed(() => ({
     },
     xaxis: {
         categories: (dashboardData.value?.sales_velocity || []).map((item) => {
-            const date = new Date(item.date);
+            const [y, m, d] = item.date.split("-");
+            const date = new Date(y, m - 1, d);
             return date.toLocaleDateString("pt-BR", {
                 day: "2-digit",
                 month: "short",
