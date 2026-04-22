@@ -118,7 +118,7 @@ class TicketController extends Controller
      */
     public function validate(Request $request, string $code): JsonResponse
     {
-        $ticket = Ticket::with(['orderItem.order.event.organizer', 'orderItem.ticketType'])
+        $ticket = Ticket::with(['orderItem.order.event.organizer', 'orderItem.ticketType', 'orderItem.category'])
             ->where('code', $code)
             ->firstOrFail();
 
@@ -134,10 +134,22 @@ class TicketController extends Controller
 
         if (!$ticket->canBeUsed()) {
             return response()->json([
-                'valid' => false,
-                'message' => 'Ticket já foi utilizado ou está inválido.',
-                'status' => $ticket->status->value,
+                'valid'        => false,
+                'message'      => 'Ticket já foi utilizado ou está inválido.',
+                'status'       => $ticket->status->value,
                 'status_label' => $ticket->status->label(),
+                'participant'  => $ticket->orderItem->participant_data,
+                'ticket_type'  => [
+                    'id'   => $ticket->orderItem->ticketType->id,
+                    'name' => $ticket->orderItem->ticketType->name,
+                ],
+                'category' => $ticket->orderItem->category ? [
+                    'id'   => $ticket->orderItem->category->id,
+                    'name' => $ticket->orderItem->category->name,
+                ] : null,
+                'used_at' => $ticket->status->value === 'used'
+                    ? $ticket->updated_at->toIso8601String()
+                    : null,
             ], 422);
         }
 
@@ -145,12 +157,20 @@ class TicketController extends Controller
         $ticket->markAsUsed();
 
         return response()->json([
-            'valid' => true,
-            'message' => 'Ticket validado com sucesso!',
-            'ticket' => TicketResource::make($ticket->fresh()),
+            'valid'       => true,
+            'message'     => 'Ticket validado com sucesso!',
+            'ticket'      => TicketResource::make($ticket->fresh()),
             'participant' => $ticket->orderItem->participant_data,
+            'ticket_type' => [
+                'id'   => $ticket->orderItem->ticketType->id,
+                'name' => $ticket->orderItem->ticketType->name,
+            ],
+            'category' => $ticket->orderItem->category ? [
+                'id'   => $ticket->orderItem->category->id,
+                'name' => $ticket->orderItem->category->name,
+            ] : null,
             'event' => [
-                'id' => $event->id,
+                'id'    => $event->id,
                 'title' => $event->title,
             ],
         ]);

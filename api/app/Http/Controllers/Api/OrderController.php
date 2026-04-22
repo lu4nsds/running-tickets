@@ -346,6 +346,11 @@ class OrderController extends Controller
 
             if ($paymentStatus === 'approved') {
                 $updateData['status'] = OrderStatus::PAID;
+                $netReceived = $paymentData['transaction_details']['net_received_amount'] ?? null;
+                if ($netReceived !== null && $netReceived > 0) {
+                    $updateData['net_amount_cents'] = (int) round($netReceived * 100);
+                    $updateData['fee_cents'] = (int) round(($paymentData['transaction_amount'] - $netReceived) * 100);
+                }
             } elseif (in_array($paymentStatus, ['pending', 'in_process', 'authorized'])) {
                 $updateData['status'] = OrderStatus::PENDING;
             } elseif (in_array($paymentStatus, ['rejected', 'cancelled'])) {
