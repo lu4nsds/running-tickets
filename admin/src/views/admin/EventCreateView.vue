@@ -577,7 +577,7 @@ const form = reactive({
     date_end: "",
     max_participants: null,
     payout_mode: "platform",
-    status: "ativo",
+    status: "inativo",
 });
 
 const errors = reactive({
