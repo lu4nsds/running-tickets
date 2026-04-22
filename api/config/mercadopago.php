@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 
 return [
     'platform_access_token' => env('MERCADOPAGO_PLATFORM_ACCESS_TOKEN'),
