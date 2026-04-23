@@ -132,15 +132,27 @@ class StoreOrderRequest extends FormRequest
 
             foreach ($ticketTypeIds as $ticketTypeId) {
                 $ticketType = \App\Models\TicketType::find($ticketTypeId);
-                if ($ticketType && $ticketType->event_id != $eventId) {
+                if (!$ticketType) {
+                    continue;
+                }
+
+                if ($ticketType->event_id != $eventId) {
                     $validator->errors()->add(
                         'items',
                         "O tipo de ingresso ID {$ticketTypeId} não pertence ao evento selecionado."
                     );
+                    continue;
+                }
+
+                if (!$ticketType->isAvailableForPurchase()) {
+                    $validator->errors()->add(
+                        'items',
+                        "O tipo de ingresso \"{$ticketType->name}\" não está disponível para compra."
+                    );
                 }
             }
 
-            // Valida que todas as categorias pertencem ao evento
+            // Valida que todas as categorias pertencem ao evento e estão ativas
             $categoryIds = collect($this->input('items'))
                 ->pluck('category_id')
                 ->filter()
@@ -148,10 +160,22 @@ class StoreOrderRequest extends FormRequest
 
             foreach ($categoryIds as $categoryId) {
                 $category = \App\Models\Category::find($categoryId);
-                if ($category && $category->event_id != $eventId) {
+                if (!$category) {
+                    continue;
+                }
+
+                if ($category->event_id != $eventId) {
                     $validator->errors()->add(
                         'items',
                         "A categoria ID {$categoryId} não pertence ao evento selecionado."
+                    );
+                    continue;
+                }
+
+                if (!$category->active) {
+                    $validator->errors()->add(
+                        'items',
+                        "A categoria \"{$category->name}\" não está disponível."
                     );
                 }
             }

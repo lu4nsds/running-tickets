@@ -385,14 +385,14 @@ const handleSubmit = async () => {
         if (isEditMode.value) {
             // Update
             await axios.put(
-                `/api/admin/events/${props.eventId}/ticket-types/${props.ticketType.id}`,
+                `/admin/events/${props.eventId}/ticket-types/${props.ticketType.id}`,
                 payload,
             );
             showToast("Tipo de ingresso atualizado com sucesso!", "success");
         } else {
             // Create
             await axios.post(
-                `/api/admin/events/${props.eventId}/ticket-types`,
+                `/admin/events/${props.eventId}/ticket-types`,
                 payload,
             );
             showToast("Tipo de ingresso criado com sucesso!", "success");

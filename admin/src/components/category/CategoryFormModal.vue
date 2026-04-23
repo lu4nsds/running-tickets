@@ -357,14 +357,14 @@ const handleSubmit = async () => {
         if (isEditMode.value) {
             // Update
             await axios.put(
-                `/api/admin/events/${props.eventId}/categories/${props.category.id}`,
+                `/admin/events/${props.eventId}/categories/${props.category.id}`,
                 payload,
             );
             showToast("Categoria atualizada com sucesso!", "success");
         } else {
             // Create
             await axios.post(
-                `/api/admin/events/${props.eventId}/categories`,
+                `/admin/events/${props.eventId}/categories`,
                 payload,
             );
             showToast("Categoria criada com sucesso!", "success");

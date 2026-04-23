@@ -26,6 +26,7 @@ class TicketType extends Model
         'attributes' => 'array',
         'start_sale' => 'datetime',
         'end_sale' => 'datetime',
+        'active' => 'boolean',
     ];
 
     /**

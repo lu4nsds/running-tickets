@@ -16,9 +16,11 @@ class EventController extends Controller
     public function index(Request $request)
     {
         $events = Event::with([
-            'categories',
+            'categories' => fn($q) => $q->where('active', true)->orderBy('name'),
             'ticketTypes' => function ($query) {
-                $query->where('active', true);
+                $query->where('active', true)
+                    ->where(fn($q) => $q->whereNull('start_sale')->orWhere('start_sale', '<=', now()))
+                    ->where(fn($q) => $q->whereNull('end_sale')->orWhere('end_sale', '>=', now()));
             },
         ])
         ->where('status', EventStatus::ATIVO)
@@ -89,9 +91,11 @@ class EventController extends Controller
     public function show(string $slug)
     {
         $event = Event::with([
-            'categories',
+            'categories' => fn($q) => $q->where('active', true)->orderBy('name'),
             'ticketTypes' => function ($query) {
                 $query->where('active', true)
+                    ->where(fn($q) => $q->whereNull('start_sale')->orWhere('start_sale', '<=', now()))
+                    ->where(fn($q) => $q->whereNull('end_sale')->orWhere('end_sale', '>=', now()))
                     ->withCount([
                         'orderItems as sold_count' => function ($q) {
                             $q->whereHas('order', function ($oq) {

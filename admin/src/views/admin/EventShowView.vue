@@ -415,6 +415,7 @@
                                         <th class="pb-3">Distância</th>
                                         <th class="pb-3">Nome</th>
                                         <th class="pb-3">Inscritos</th>
+                                        <th class="pb-3">Status</th>
                                         <th class="pb-3 text-right">Ações</th>
                                     </tr>
                                 </thead>
@@ -451,6 +452,13 @@
                                                 category.participants_count || 0
                                             }}
                                             inscritos
+                                        </td>
+                                        <td class="py-3">
+                                            <span
+                                                :class="getCategoryStatusClass(category.active)"
+                                            >
+                                                {{ getCategoryStatusLabel(category.active) }}
+                                            </span>
                                         </td>
                                         <td class="py-3 text-right">
                                             <div
@@ -1266,6 +1274,13 @@ const getStatusBadgeClass = (status) => {
     };
     return classes[status] || classes.inativo;
 };
+
+const getCategoryStatusLabel = (active) => active ? "Ativa" : "Inativa";
+
+const getCategoryStatusClass = (active) =>
+    active
+        ? "px-2 py-0.5 rounded text-xs font-medium bg-primary/10 text-primary"
+        : "px-2 py-0.5 rounded text-xs font-medium bg-red-500/10 text-red-400";
 
 const getTicketStatusLabel = (status) => {
     const labels = {
