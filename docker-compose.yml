@@ -47,6 +47,17 @@
         networks:
         - running-tickets-network
 
+    # Mailpit
+    mailpit:
+        image: axllent/mailpit:latest
+        container_name: running-tickets-mailpit
+        restart: unless-stopped
+        ports:
+            - "1025:1025"
+            - "8025:8025"
+        networks:
+            - running-tickets-network
+
     # Aplicação Laravel
     api:
         build:
