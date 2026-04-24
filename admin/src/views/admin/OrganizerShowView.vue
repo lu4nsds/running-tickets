@@ -300,9 +300,10 @@
                     <!-- Users List -->
                     <div v-if="organizer.users?.length" class="space-y-0">
                         <div
-                            class="grid grid-cols-3 gap-4 text-xs text-text-muted uppercase tracking-wider pb-3 border-b border-surface-elevated"
+                            class="grid gap-4 text-xs text-text-muted uppercase tracking-wider pb-3 border-b border-surface-elevated" style="grid-template-columns: 1.5fr 2fr 1fr auto"
                         >
                             <span>Nome</span>
+                            <span>E-mail</span>
                             <span>Cargo</span>
                             <span class="text-right">Ações</span>
                         </div>
@@ -310,15 +311,18 @@
                         <div
                             v-for="user in organizer.users"
                             :key="user.id"
-                            class="grid grid-cols-3 gap-4 items-center py-4 border-b border-surface-elevated last:border-0"
+                            class="grid gap-4 items-center py-4 border-b border-surface-elevated last:border-0" style="grid-template-columns: 1.5fr 2fr 1fr auto"
                         >
                             <div class="flex items-center gap-3">
                                 <div
-                                    class="w-8 h-8 rounded-full bg-surface-elevated flex items-center justify-center text-text-muted text-sm font-medium"
+                                    class="w-8 h-8 rounded-full bg-surface-elevated flex items-center justify-center text-text-muted text-sm font-medium shrink-0"
                                 >
                                     {{ getInitials(user.name) }}
                                 </div>
-                                <span class="text-white">{{ user.name }}</span>
+                                <span class="text-white truncate">{{ user.name }}</span>
+                            </div>
+                            <div>
+                                <span class="text-text-muted text-sm truncate block">{{ user.email }}</span>
                             </div>
                             <div>
                                 <span

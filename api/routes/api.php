@@ -35,6 +35,7 @@ Route::get('/auth/google/callback', [AuthController::class, 'handleGoogleCallbac
 // Password Reset
 Route::post('/password/forgot', [PasswordResetController::class, 'sendResetLink'])->middleware('throttle:3,60');
 Route::post('/password/reset', [PasswordResetController::class, 'reset']);
+Route::post('/password/activate', [PasswordResetController::class, 'activate']);
 
 // Email Verification - rota pública para verificar (com assinatura)
 Route::get('/email/verify/{id}/{hash}', [EmailVerificationController::class, 'verify'])

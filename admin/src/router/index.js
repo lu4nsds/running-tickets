@@ -12,6 +12,12 @@ const router = createRouter({
             meta: { requiresAuth: false, title: "Login" },
         },
         {
+            path: "/ativar-conta",
+            name: "activate-account",
+            component: () => import("@/views/auth/ActivateAccountView.vue"),
+            meta: { requiresAuth: false, title: "Ativar Conta" },
+        },
+        {
             path: "/",
             redirect: (to) => {
                 // Redireciona baseado no tipo de usuário

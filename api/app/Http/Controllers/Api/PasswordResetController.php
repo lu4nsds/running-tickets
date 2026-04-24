@@ -155,4 +155,65 @@ class PasswordResetController extends Controller
             'message' => 'Senha redefinida com sucesso!',
         ], 200);
     }
+
+    /**
+     * Ativar conta de usuário criado pelo super admin (expiração de 48 horas)
+     */
+    public function activate(Request $request)
+    {
+        $request->validate([
+            'token'    => ['required', 'string'],
+            'email'    => ['required', 'email'],
+            'password' => [
+                'required',
+                'string',
+                'confirmed',
+                Password::min(8)
+                    ->letters()
+                    ->mixedCase()
+                    ->numbers()
+            ],
+        ], [
+            'password.confirmed' => 'A confirmação da senha não confere.',
+        ]);
+
+        $user = User::where('email', $request->email)->first();
+
+        if (!$user) {
+            return response()->json([
+                'message' => 'Link de ativação inválido.',
+                'errors'  => ['token' => ['Link de ativação inválido.']],
+            ], 422);
+        }
+
+        $passwordReset = DB::table('password_reset_tokens')
+            ->where('email', $request->email)
+            ->first();
+
+        if (!$passwordReset || !Hash::check($request->token, $passwordReset->token)) {
+            return response()->json([
+                'message' => 'Link de ativação inválido ou expirado.',
+                'errors'  => ['token' => ['Link de ativação inválido ou expirado.']],
+            ], 422);
+        }
+
+        // Expiração de 48 horas (2880 minutos) para links de ativação
+        if (now()->diffInMinutes($passwordReset->created_at) > 2880) {
+            DB::table('password_reset_tokens')->where('email', $request->email)->delete();
+            return response()->json([
+                'message' => 'Link de ativação expirado.',
+                'errors'  => ['token' => ['Link de ativação expirado. Solicite ao administrador que adicione você novamente.']],
+            ], 410);
+        }
+
+        $user->password = Hash::make($request->password);
+        $user->save();
+
+        DB::table('password_reset_tokens')->where('email', $request->email)->delete();
+        $user->tokens()->delete();
+
+        return response()->json([
+            'message' => 'Conta ativada com sucesso! Faça login para acessar o sistema.',
+        ], 200);
+    }
 }

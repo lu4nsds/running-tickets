@@ -229,51 +229,12 @@
                     </p>
                 </div>
 
-                <!-- Senha Inicial -->
-                <div class="space-y-2">
-                    <label
-                        for="password"
-                        class="block text-sm font-medium text-text-muted"
-                    >
-                        Senha Inicial
-                    </label>
-                    <div class="relative">
-                        <div
-                            class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"
-                        >
-                            <span
-                                class="material-symbols-outlined text-text-muted"
-                                >lock</span
-                            >
-                        </div>
-                        <input
-                            id="password"
-                            v-model="form.password"
-                            :type="showPassword ? 'text' : 'password'"
-                            placeholder="••••••••"
-                            class="block w-full pl-10 pr-10 py-3 bg-surface border border-surface-elevated rounded-lg text-white placeholder-text-muted focus:outline-none focus:border-primary transition-all"
-                            :class="{ 'border-red-500': errors.password }"
-                        />
-                        <button
-                            type="button"
-                            @click="showPassword = !showPassword"
-                            class="absolute inset-y-0 right-0 pr-3 flex items-center text-text-muted hover:text-white transition-colors"
-                        >
-                            <span class="material-symbols-outlined text-[20px]">
-                                {{
-                                    showPassword
-                                        ? "visibility_off"
-                                        : "visibility"
-                                }}
-                            </span>
-                        </button>
-                    </div>
-                    <p class="text-xs text-text-muted">
-                        O usuário será solicitado a alterar a senha no primeiro
-                        acesso.
-                    </p>
-                    <p v-if="errors.password" class="text-xs text-red-500">
-                        {{ errors.password[0] }}
+                <!-- Aviso de ativação -->
+                <div class="flex items-start gap-3 p-4 bg-primary/5 border border-primary/20 rounded-lg">
+                    <span class="material-symbols-outlined text-primary text-[20px] mt-0.5 shrink-0">mark_email_unread</span>
+                    <p class="text-sm text-text-muted">
+                        Um e-mail de ativação será enviado ao usuário com um link para ele definir a própria senha.
+                        O link expira em <strong class="text-white">48 horas</strong>.
                     </p>
                 </div>
             </form>
@@ -328,12 +289,10 @@ const form = ref({
     name: "",
     email: "",
     role: "staff",
-    password: "",
 });
 
 const errors = ref({});
 const isSubmitting = ref(false);
-const showPassword = ref(false);
 
 onMounted(async () => {
     const result = await organizersStore.fetchOrganizer(organizerId);
@@ -359,11 +318,6 @@ const handleSubmit = async () => {
     if (!form.value.email.trim()) {
         errors.value.email = ["O e-mail é obrigatório"];
     }
-    if (!form.value.password.trim()) {
-        errors.value.password = ["A senha é obrigatória"];
-    } else if (form.value.password.length < 6) {
-        errors.value.password = ["A senha deve ter no mínimo 6 caracteres"];
-    }
 
     if (Object.keys(errors.value).length > 0) {
         return;
@@ -378,7 +332,6 @@ const handleSubmit = async () => {
                 name: form.value.name,
                 email: form.value.email,
                 role: form.value.role,
-                password: form.value.password,
             },
         );
 

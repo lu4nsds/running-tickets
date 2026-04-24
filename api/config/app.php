@@ -56,6 +56,8 @@ return [
 
     'client_url' => env('CLIENT_URL', 'http://localhost:5173'),
 
+    'admin_url' => env('ADMIN_URL', 'http://localhost:5174'),
+
     /*
     |--------------------------------------------------------------------------
     | Application Timezone

@@ -4,11 +4,15 @@ namespace App\Http\Controllers\Api\Admin;
 
 use App\Enums\OrganizerRole;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\StoreOrganizerUserRequest;
+use App\Jobs\SendOrganizerWelcomeJob;
 use App\Models\Organizer;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 
 class OrganizerUserController extends Controller
@@ -39,52 +43,51 @@ class OrganizerUserController extends Controller
     /**
      * Adiciona usuário ao organizador (cria se não existir)
      */
-    public function store(Request $request, Organizer $organizer): JsonResponse
+    public function store(StoreOrganizerUserRequest $request, Organizer $organizer): JsonResponse
     {
-        $request->validate([
-            'email' => 'required|email|max:255',
-            'role' => ['required', Rule::in(OrganizerRole::values())],
-        ]);
+        $isNewUser = false;
+        $user = User::where('email', $request->validated('email'))->first();
 
-        // Busca usuário existente
-        $user = User::where('email', $request->email)->first();
-
-        // Se não existe, valida campos adicionais e cria
         if (!$user) {
-            $request->validate([
-                'name' => 'required|string|max:255',
-                'password' => 'required|string|min:6',
-            ]);
-
+            $isNewUser = true;
             $user = User::create([
-                'name' => $request->name,
-                'email' => $request->email,
-                'password' => Hash::make($request->password),
+                'name'     => $request->validated('name'),
+                'email'    => $request->validated('email'),
+                'password' => Hash::make(Str::random(32)),
             ]);
         }
 
-        // Verifica se já está vinculado
         if ($organizer->users()->where('user_id', $user->id)->exists()) {
             return response()->json([
                 'message' => 'User already belongs to this organizer.',
             ], 422);
         }
 
-        // Vincula usuário ao organizador
         $organizer->users()->attach($user->id, [
-            'role' => $request->role,
+            'role' => $request->validated('role'),
         ]);
+
+        if ($isNewUser) {
+            DB::table('password_reset_tokens')->where('email', $user->email)->delete();
+            $token = Str::random(64);
+            DB::table('password_reset_tokens')->insert([
+                'email'      => $user->email,
+                'token'      => Hash::make($token),
+                'created_at' => now(),
+            ]);
+            SendOrganizerWelcomeJob::dispatch($user, $organizer, $token);
+        }
 
         return response()->json([
             'message' => 'User added to organizer successfully.',
             'data' => [
                 'user' => [
-                    'id' => $user->id,
-                    'name' => $user->name,
+                    'id'    => $user->id,
+                    'name'  => $user->name,
                     'email' => $user->email,
                 ],
-                'role' => $request->role,
-                'added_at' => now(),
+                'role'      => $request->validated('role'),
+                'added_at'  => now(),
             ],
         ], 201);
     }
