@@ -629,6 +629,7 @@ import { useToast } from "@/composables/useToast";
 import api from "@/api/axios";
 import ErrorState from "@/components/ui/ErrorState.vue";
 import Modal from "@/components/ui/Modal.vue";
+import { EVENT_STATUS } from "@/constants/eventStatus";
 
 const route = useRoute();
 const router = useRouter();
@@ -852,8 +853,8 @@ const getEventStatusLabel = (event) => {
     const start = new Date(event.date_start);
     const end = new Date(event.date_end);
 
-    if (event.status !== "active") return "Inativo";
-    if (now < start) return "Em breve";
+    if (event.status !== EVENT_STATUS.ATIVO) return "Inativo";
+    if (now < start) return "Inscrições abertas";
     if (now >= start && now <= end) return "Em andamento";
     return "Encerrado";
 };
@@ -863,11 +864,11 @@ const getEventStatusClass = (event) => {
     const start = new Date(event.date_start);
     const end = new Date(event.date_end);
 
-    if (event.status !== "active") {
+    if (event.status !== EVENT_STATUS.ATIVO) {
         return "text-text-muted text-xs";
     }
     if (now < start) {
-        return "text-text-muted text-xs";
+        return "border border-primary text-primary text-xs font-medium px-2 py-0.5 rounded";
     }
     if (now >= start && now <= end) {
         return "text-primary text-xs font-medium";
