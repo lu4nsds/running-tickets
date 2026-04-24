@@ -302,6 +302,11 @@ const reaisToCents = (reais) => {
     return Math.round(parseFloat(reais || 0) * 100);
 };
 
+const toUTCString = (localStr) => {
+    if (!localStr) return undefined;
+    return new Date(localStr).toISOString();
+};
+
 // Formatar datetime para datetime-local input
 const formatDatetimeLocal = (datetime) => {
     if (!datetime) return "";
@@ -377,8 +382,8 @@ const handleSubmit = async () => {
             description: form.value.description || undefined,
             price_cents: reaisToCents(priceInReais.value),
             quota: form.value.quota || undefined,
-            start_sale: form.value.start_sale || undefined,
-            end_sale: form.value.end_sale || undefined,
+            start_sale: toUTCString(form.value.start_sale),
+            end_sale: toUTCString(form.value.end_sale),
             active: form.value.active,
         };
 

@@ -682,6 +682,11 @@ const validate = () => {
     return isValid;
 };
 
+const toUTCString = (localStr) => {
+    if (!localStr) return undefined;
+    return new Date(localStr).toISOString();
+};
+
 // Submit
 const handleSubmit = async () => {
     if (!validate()) {
@@ -701,9 +706,9 @@ const handleSubmit = async () => {
         formData.append("state", form.state);
         formData.append("city", form.city);
         formData.append("venue", form.venue);
-        formData.append("date_start", form.date_start);
+        formData.append("date_start", toUTCString(form.date_start));
         if (form.date_end) {
-            formData.append("date_end", form.date_end);
+            formData.append("date_end", toUTCString(form.date_end));
         }
         if (form.max_participants) {
             formData.append("max_participants", form.max_participants);
