@@ -8,7 +8,11 @@ import { STORAGE_KEYS } from "@/constants/storageKeys";
 export const useAuthStore = defineStore("auth", () => {
     // State
     const user = ref(null);
-    const token = ref(localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN) || null);
+    const token = ref(
+        localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN) ||
+        sessionStorage.getItem(STORAGE_KEYS.AUTH_TOKEN) ||
+        null
+    );
     const isLoading = ref(false);
     const error = ref(null);
 
@@ -74,7 +78,7 @@ export const useAuthStore = defineStore("auth", () => {
     };
 
     // Actions
-    const login = async (email, password) => {
+    const login = async (email, password, remember = false) => {
         isLoading.value = true;
         error.value = null;
 
@@ -82,12 +86,19 @@ export const useAuthStore = defineStore("auth", () => {
             const response = await api.post(API_ENDPOINTS.AUTH.LOGIN, {
                 email,
                 password,
+                remember,
+                source: "admin",
             });
             const { access_token, user: userData } = response.data;
 
             token.value = access_token;
             user.value = userData;
-            localStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, access_token);
+
+            if (remember) {
+                localStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, access_token);
+            } else {
+                sessionStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, access_token);
+            }
 
             return { success: true };
         } catch (err) {
@@ -107,6 +118,7 @@ export const useAuthStore = defineStore("auth", () => {
             token.value = null;
             user.value = null;
             localStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
+            sessionStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
         }
     };
 

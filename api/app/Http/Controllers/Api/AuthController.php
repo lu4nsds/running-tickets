@@ -11,6 +11,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Laravel\Socialite\Facades\Socialite;
 
@@ -54,8 +55,10 @@ class AuthController extends Controller
     public function login(Request $request)
     {
         $request->validate([
-            'email' => 'required|email',
+            'email'    => 'required|email',
             'password' => 'required',
+            'remember' => 'boolean',
+            'source'   => ['nullable', 'string', Rule::in(['admin', 'client'])],
         ]);
 
         $user = User::where('email', $request->email)->first();
@@ -66,12 +69,20 @@ class AuthController extends Controller
             ]);
         }
 
-        $token = $user->createToken('auth_token')->plainTextToken;
+        if ($request->source === 'client') {
+            $expiresAt = now()->addDays(30);
+        } elseif ($request->boolean('remember')) {
+            $expiresAt = now()->addDays(7);
+        } else {
+            $expiresAt = now()->addHours(8);
+        }
+
+        $token = $user->createToken('auth_token', ['*'], $expiresAt)->plainTextToken;
 
         return response()->json([
-            'user' => $user->load('roles', 'organizers'),
+            'user'         => $user->load('roles', 'organizers'),
             'access_token' => $token,
-            'token_type' => 'Bearer',
+            'token_type'   => 'Bearer',
         ]);
     }
 

@@ -290,6 +290,7 @@ const handleLogin = async () => {
         const result = await authStore.login(
             form.value.email,
             form.value.password,
+            form.value.remember,
         );
 
         if (result.success) {

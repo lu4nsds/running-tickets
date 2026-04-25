@@ -11,3 +11,6 @@ Artisan::command('inspire', function () {
 // Agendar cancelamento de pedidos expirados a cada 5 minutos
 // Por padrão cancela pedidos pendentes há mais de 30 minutos
 Schedule::command('orders:cancel-expired --minutes=30')->everyFiveMinutes();
+
+// Remover tokens Sanctum expirados do banco diariamente
+Schedule::command('sanctum:prune-expired --hours=8')->daily();
