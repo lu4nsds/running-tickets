@@ -67,7 +67,7 @@
                             v-for="tab in tabs"
                             :key="tab.key"
                             @click="activeTab = tab.key"
-                            class="px-5 py-3 text-sm font-semibold transition-colors relative"
+                            class="px-5 py-3 text-sm font-semibold transition-colors relative focus:outline-none"
                             :class="
                                 activeTab === tab.key
                                     ? 'text-primary'

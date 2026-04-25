@@ -102,14 +102,25 @@
                                 Esqueceu sua senha?
                             </router-link>
                         </div>
-                        <input
-                            id="password"
-                            v-model="form.password"
-                            type="password"
-                            required
-                            class="block w-full rounded-lg border border-border-dark bg-background-dark px-4 py-3 text-white placeholder-slate-500 focus:border-primary focus:ring-1 focus:ring-primary"
-                            placeholder="••••••••"
-                        />
+                        <div class="relative">
+                            <input
+                                id="password"
+                                v-model="form.password"
+                                :type="showPassword ? 'text' : 'password'"
+                                required
+                                class="block w-full rounded-lg border border-border-dark bg-background-dark px-4 py-3 pr-11 text-white placeholder-slate-500 focus:border-primary focus:ring-1 focus:ring-primary"
+                                placeholder="••••••••"
+                            />
+                            <button
+                                type="button"
+                                @click="showPassword = !showPassword"
+                                class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-500 hover:text-slate-300 transition-colors focus:outline-none"
+                            >
+                                <span class="material-symbols-outlined text-[20px]">
+                                    {{ showPassword ? 'visibility_off' : 'visibility' }}
+                                </span>
+                            </button>
+                        </div>
                     </div>
 
                     <div v-if="error" class="text-red-400 text-sm text-center">
@@ -192,6 +203,7 @@ const form = ref({
 
 const loading = ref(false);
 const error = ref(null);
+const showPassword = ref(false);
 
 async function handleLogin() {
     loading.value = true;
