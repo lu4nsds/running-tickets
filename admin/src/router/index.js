@@ -18,6 +18,12 @@ const router = createRouter({
             meta: { requiresAuth: false, title: "Ativar Conta" },
         },
         {
+            path: "/redefinir-senha",
+            name: "reset-password",
+            component: () => import("@/views/auth/ResetPasswordView.vue"),
+            meta: { requiresAuth: false, title: "Redefinir Senha" },
+        },
+        {
             path: "/",
             redirect: (to) => {
                 // Redireciona baseado no tipo de usuário

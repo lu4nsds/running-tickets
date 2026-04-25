@@ -18,7 +18,8 @@ class PasswordResetMail extends Mailable
      */
     public function __construct(
         public User $user,
-        public string $token
+        public string $token,
+        public string $source = 'client',
     ) {}
 
     /**
@@ -49,8 +50,11 @@ class PasswordResetMail extends Mailable
      */
     private function getResetUrl(): string
     {
-        $frontendUrl = config('app.client_url', 'http://localhost:5173');
-        return $frontendUrl . '/redefinir-senha?token=' . $this->token . '&email=' . urlencode($this->user->email);
+        $base = $this->source === 'admin'
+            ? config('app.admin_url', 'http://localhost:5174')
+            : config('app.client_url', 'http://localhost:5173');
+
+        return $base . '/redefinir-senha?token=' . $this->token . '&email=' . urlencode($this->user->email);
     }
 
     /**

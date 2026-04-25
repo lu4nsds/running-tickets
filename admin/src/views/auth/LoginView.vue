@@ -192,64 +192,61 @@
         <!-- Modal Esqueceu a Senha -->
         <Modal
             v-model="showForgotPasswordModal"
-            title="Esqueceu sua senha?"
-            subtitle="Entre em contato com o suporte"
+            title="Recuperar senha"
+            subtitle="Enviaremos um link para o seu e-mail"
+            @update:model-value="onModalClose"
         >
-            <div class="space-y-4">
-                <p class="text-text-secondary">
-                    Para recuperar o acesso à sua conta, entre em contato com
-                    nossa equipe de suporte através dos seguintes canais:
+            <!-- Estado: sucesso -->
+            <div v-if="forgotSuccess" class="space-y-4 text-center py-2">
+                <span class="material-symbols-outlined text-primary text-5xl">mark_email_read</span>
+                <p class="text-white font-semibold">Link enviado!</p>
+                <p class="text-text-muted text-sm">
+                    Enviamos as instruções para
+                    <strong class="text-white">{{ forgotEmail }}</strong>.
+                    Verifique sua caixa de entrada.
                 </p>
+            </div>
 
-                <div class="bg-surface rounded-lg p-4 space-y-3">
-                    <div class="flex items-center gap-3">
-                        <span
-                            class="material-symbols-outlined text-primary text-[20px]"
-                        >
+            <!-- Estado: formulário -->
+            <div v-else class="space-y-4">
+                <p class="text-text-muted text-sm">
+                    Digite o e-mail da sua conta e enviaremos um link para redefinir sua senha.
+                </p>
+                <div class="relative group">
+                    <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                        <span class="material-symbols-outlined text-gray-500 text-[20px] group-focus-within:text-primary transition-colors">
                             mail
                         </span>
-                        <div>
-                            <p class="text-sm text-text-muted">E-mail</p>
-                            <a
-                                href="mailto:suporte@runningtickets.com.br"
-                                class="text-white hover:text-primary transition-colors"
-                            >
-                                suporte@runningtickets.com.br
-                            </a>
-                        </div>
                     </div>
-
-                    <div class="flex items-center gap-3">
-                        <span
-                            class="material-symbols-outlined text-primary text-[20px]"
-                        >
-                            phone
-                        </span>
-                        <div>
-                            <p class="text-sm text-text-muted">WhatsApp</p>
-                            <a
-                                href="https://wa.me/5511999999999"
-                                target="_blank"
-                                class="text-white hover:text-primary transition-colors"
-                            >
-                                (11) 99999-9999
-                            </a>
-                        </div>
-                    </div>
+                    <input
+                        v-model="forgotEmail"
+                        type="email"
+                        placeholder="seu@email.com"
+                        class="w-full pl-11 pr-4 py-3 bg-input-bg border border-input-border text-white rounded-lg focus:ring-1 focus:ring-primary focus:border-primary transition-all placeholder:text-gray-500 outline-none"
+                        :class="{ 'border-red-500': forgotError }"
+                        :disabled="forgotLoading"
+                        @keyup.enter="handleForgotSubmit"
+                    />
                 </div>
-
-                <p class="text-sm text-text-muted">
-                    Nossa equipe responderá em até
-                    <strong class="text-white">24 horas úteis</strong>.
-                </p>
+                <p v-if="forgotError" class="text-xs text-red-400">{{ forgotError }}</p>
             </div>
 
             <template #footer>
                 <button
+                    v-if="forgotSuccess"
                     @click="showForgotPasswordModal = false"
                     class="w-full py-3 bg-primary text-background-dark font-bold rounded-lg hover:brightness-110 transition-all"
                 >
-                    Entendi
+                    Fechar
+                </button>
+                <button
+                    v-else
+                    @click="handleForgotSubmit"
+                    :disabled="forgotLoading || !forgotEmail.trim()"
+                    class="w-full py-3 bg-primary text-background-dark font-bold rounded-lg hover:brightness-110 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                    <span v-if="forgotLoading" class="material-symbols-outlined animate-spin text-[18px]">progress_activity</span>
+                    {{ forgotLoading ? 'Enviando...' : 'Enviar link de recuperação' }}
                 </button>
             </template>
         </Modal>
@@ -262,6 +259,8 @@ import { useRouter } from "vue-router";
 import { useAuthStore } from "@/stores/auth";
 import Modal from "@/components/ui/Modal.vue";
 import LoadingSpinner from "@/components/ui/LoadingSpinner.vue";
+import api from "@/api/axios";
+import { API_ENDPOINTS } from "@/constants/apiEndpoints";
 
 const router = useRouter();
 const authStore = useAuthStore();
@@ -277,6 +276,12 @@ const errorMessage = ref("");
 const isLoading = ref(false);
 const showForgotPasswordModal = ref(false);
 
+// Forgot password state
+const forgotEmail = ref("");
+const forgotLoading = ref(false);
+const forgotError = ref("");
+const forgotSuccess = ref(false);
+
 const handleLogin = async () => {
     isLoading.value = true;
     errorMessage.value = "";
@@ -288,7 +293,6 @@ const handleLogin = async () => {
         );
 
         if (result.success) {
-            // Redireciona baseado no tipo de usuário
             if (authStore.isSuperAdmin) {
                 router.push("/admin/dashboard");
             } else if (authStore.hasOrganizers) {
@@ -310,5 +314,35 @@ const handleLogin = async () => {
 
 const handleForgotPassword = () => {
     showForgotPasswordModal.value = true;
+};
+
+const handleForgotSubmit = async () => {
+    if (!forgotEmail.value.trim()) return;
+
+    forgotLoading.value = true;
+    forgotError.value = "";
+
+    try {
+        await api.post(API_ENDPOINTS.AUTH.FORGOT_PASSWORD, {
+            email: forgotEmail.value,
+            source: "admin",
+        });
+        forgotSuccess.value = true;
+    } catch (err) {
+        forgotError.value =
+            err.response?.data?.errors?.email?.[0] ||
+            err.response?.data?.message ||
+            "Erro ao enviar o link. Tente novamente.";
+    } finally {
+        forgotLoading.value = false;
+    }
+};
+
+const onModalClose = (open) => {
+    if (!open) {
+        forgotEmail.value = "";
+        forgotError.value = "";
+        forgotSuccess.value = false;
+    }
 };
 </script>

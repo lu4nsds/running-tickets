@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
 
 class PasswordResetController extends Controller
@@ -20,7 +21,8 @@ class PasswordResetController extends Controller
     public function sendResetLink(Request $request)
     {
         $request->validate([
-            'email' => ['required', 'email'],
+            'email'  => ['required', 'email'],
+            'source' => ['nullable', 'string', Rule::in(['client', 'admin'])],
         ]);
 
         $email = $request->email;
@@ -65,7 +67,7 @@ class PasswordResetController extends Controller
         ]);
 
         // Enviar email
-        Mail::to($user->email)->send(new PasswordResetMail($user, $token));
+        Mail::to($user->email)->send(new PasswordResetMail($user, $token, $request->source ?? 'client'));
 
         return response()->json([
             'message' => 'Link de redefinição de senha enviado para seu email.',
