@@ -135,6 +135,15 @@
                         </label>
                     </div>
 
+                    <!-- Sessão expirada -->
+                    <div
+                        v-if="sessionExpired"
+                        class="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-3 flex items-center gap-2"
+                    >
+                        <span class="material-symbols-outlined text-yellow-400 text-[18px]">schedule</span>
+                        <p class="text-yellow-400 text-sm">Sua sessão expirou. Faça login para continuar.</p>
+                    </div>
+
                     <!-- Error Message -->
                     <div
                         v-if="errorMessage"
@@ -254,16 +263,19 @@
 </template>
 
 <script setup>
-import { ref } from "vue";
-import { useRouter } from "vue-router";
+import { ref, computed } from "vue";
+import { useRouter, useRoute } from "vue-router";
 import { useAuthStore } from "@/stores/auth";
 import Modal from "@/components/ui/Modal.vue";
 import LoadingSpinner from "@/components/ui/LoadingSpinner.vue";
 import api from "@/api/axios";
 import { API_ENDPOINTS } from "@/constants/apiEndpoints";
 
-const router = useRouter();
+const router    = useRouter();
+const route     = useRoute();
 const authStore = useAuthStore();
+
+const sessionExpired = computed(() => route.query.reason === 'expired');
 
 const form = ref({
     email: "",
@@ -294,7 +306,10 @@ const handleLogin = async () => {
         );
 
         if (result.success) {
-            if (authStore.isSuperAdmin) {
+            const redirect = route.query.redirect;
+            if (redirect && redirect.startsWith('/')) {
+                router.push(redirect);
+            } else if (authStore.isSuperAdmin) {
                 router.push("/admin/dashboard");
             } else if (authStore.hasOrganizers) {
                 router.push("/organizer/dashboard");

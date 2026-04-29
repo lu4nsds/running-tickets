@@ -93,6 +93,17 @@
                 <!-- Actions -->
                 <div class="flex items-center gap-3">
                     <button
+                        @click="downloadReport"
+                        :disabled="isExporting"
+                        class="flex items-center gap-2 px-4 py-2.5 border border-surface-elevated text-text-muted rounded-lg font-medium hover:border-primary hover:text-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        <span
+                            class="material-symbols-outlined text-[20px]"
+                            :class="{ 'animate-spin': isExporting }"
+                        >{{ isExporting ? 'progress_activity' : 'description' }}</span>
+                        {{ isExporting ? 'Exportando...' : 'Baixar Relatório' }}
+                    </button>
+                    <button
                         @click="editEvent"
                         class="flex items-center gap-2 px-4 py-2.5 bg-primary text-black rounded-lg font-medium hover:brightness-110 transition-colors"
                     >
@@ -998,6 +1009,7 @@ import { useRoute, useRouter } from "vue-router";
 import { useEventsStore } from "@/stores/events";
 import { useToast } from "@/composables/useToast";
 import api from "@/api/axios";
+import { adminEventsApi } from "@/api/events";
 import ErrorState from "@/components/ui/ErrorState.vue";
 import Modal from "@/components/ui/Modal.vue";
 
@@ -1007,6 +1019,7 @@ const store = useEventsStore();
 const toast = useToast();
 
 // State
+const isExporting = ref(false);
 const isLoading = ref(true);
 const error = ref(null);
 const event = ref(null);
@@ -1129,6 +1142,23 @@ const deleteEvent = async () => {
 
 const editEvent = () => {
     router.push(`/admin/events/${event.value.id}/edit`);
+};
+
+const downloadReport = async () => {
+    isExporting.value = true;
+    try {
+        const response = await adminEventsApi.exportParticipants(event.value.id);
+        const url = URL.createObjectURL(response.data);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `${event.value.title}.xlsx`;
+        link.click();
+        URL.revokeObjectURL(url);
+    } catch {
+        toast.error("Erro ao exportar relatório de inscritos");
+    } finally {
+        isExporting.value = false;
+    }
 };
 
 // Category delete methods

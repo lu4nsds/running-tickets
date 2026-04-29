@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\Admin\EventController as AdminEventController;
 use App\Http\Controllers\Api\Admin\CategoryController as AdminCategoryController;
 use App\Http\Controllers\Api\Admin\TicketTypeController as AdminTicketTypeController;
 use App\Http\Controllers\Api\Admin\PayoutController as AdminPayoutController;
+use App\Http\Controllers\Api\Admin\ReportController as AdminReportController;
 use App\Http\Controllers\Api\Organizer\EventController as OrganizerEventController;
 use App\Http\Controllers\Api\Organizer\PayoutController;
 use App\Http\Controllers\Api\Organizer\CategoryController as OrganizerCategoryController;
@@ -113,6 +114,9 @@ Route::middleware('auth:sanctum')->group(function () {
         
         // CRUD de Tipos de Ingresso (nested em eventos)
         Route::apiResource('events.ticket-types', AdminTicketTypeController::class);
+
+        // Exportar relatório de inscritos
+        Route::get('/events/{event}/report', [AdminReportController::class, 'exportParticipants']);
     });
     
     // Organizers (contexto específico)
@@ -124,6 +128,9 @@ Route::middleware('auth:sanctum')->group(function () {
         // Visualizar eventos (read-only)
         Route::get('/events', [OrganizerEventController::class, 'index']);
         Route::get('/events/{event}', [OrganizerEventController::class, 'show']);
+
+        // Exportar relatório de inscritos
+        Route::get('/events/{event}/report', [AdminReportController::class, 'exportParticipants']);
         
         // Configurações de pagamento
         Route::get('/payment-settings', [PayoutController::class, 'index']);

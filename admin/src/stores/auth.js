@@ -13,6 +13,9 @@ export const useAuthStore = defineStore("auth", () => {
         sessionStorage.getItem(STORAGE_KEYS.AUTH_TOKEN) ||
         null
     );
+    const tokenExpiresAt = ref(
+        parseInt(localStorage.getItem(STORAGE_KEYS.EXPIRES_AT) || sessionStorage.getItem(STORAGE_KEYS.EXPIRES_AT)) || null
+    );
     const isLoading = ref(false);
     const error = ref(null);
 
@@ -91,14 +94,14 @@ export const useAuthStore = defineStore("auth", () => {
             });
             const { access_token, user: userData } = response.data;
 
+            const expiresAt = Date.now() + (remember ? 7 * 24 * 60 * 60 * 1000 : 8 * 60 * 60 * 1000);
+
             token.value = access_token;
             user.value = userData;
+            tokenExpiresAt.value = expiresAt;
 
-            if (remember) {
-                localStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, access_token);
-            } else {
-                sessionStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, access_token);
-            }
+            localStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, access_token);
+            localStorage.setItem(STORAGE_KEYS.EXPIRES_AT, expiresAt.toString());
 
             return { success: true };
         } catch (err) {
@@ -117,8 +120,11 @@ export const useAuthStore = defineStore("auth", () => {
         } finally {
             token.value = null;
             user.value = null;
+            tokenExpiresAt.value = null;
             localStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
+            localStorage.removeItem(STORAGE_KEYS.EXPIRES_AT);
             sessionStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
+            sessionStorage.removeItem(STORAGE_KEYS.EXPIRES_AT);
         }
     };
 
@@ -146,6 +152,7 @@ export const useAuthStore = defineStore("auth", () => {
         // State
         user,
         token,
+        tokenExpiresAt,
         isLoading,
         error,
         // Getters

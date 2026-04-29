@@ -219,11 +219,13 @@ router.beforeEach(async (to, from, next) => {
     );
 
     if (requiresAuth && !authStore.isAuthenticated) {
-        // Tenta recuperar sessão do localStorage
+        const hadToken = !!authStore.token;
         await authStore.initAuth();
 
         if (!authStore.isAuthenticated) {
-            next("/login");
+            const query = { redirect: to.fullPath };
+            if (hadToken) query.reason = 'expired';
+            next({ path: '/login', query });
             return;
         }
     }

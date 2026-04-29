@@ -67,6 +67,8 @@ class StoreOrderRequest extends FormRequest
             ],
             'items.*.participant_data.birthdate' => ['required', 'date', 'before:today'],
             'items.*.participant_data.shirt_size' => ['nullable', 'string', 'in:PP,P,M,G,GG,XG'],
+            'items.*.participant_data.city' => ['nullable', 'string', 'max:255'],
+            'items.*.participant_data.team' => ['nullable', 'string', 'max:255'],
             'items.*.participant_data.emergency_contact' => ['nullable', 'string', 'max:255'],
             'items.*.participant_data.rg' => ['nullable', 'string', 'max:20'],
         ];

@@ -32,6 +32,17 @@
 
                 <div class="flex items-center gap-3">
                     <button
+                        @click="downloadReport"
+                        :disabled="isExporting"
+                        class="flex items-center gap-2 px-4 py-2 border border-surface-elevated text-text-muted rounded-lg font-medium hover:border-primary hover:text-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        <span
+                            class="material-symbols-outlined text-[20px]"
+                            :class="{ 'animate-spin': isExporting }"
+                        >{{ isExporting ? 'progress_activity' : 'description' }}</span>
+                        {{ isExporting ? 'Exportando...' : 'Baixar Relatório' }}
+                    </button>
+                    <button
                         @click="viewDashboard"
                         class="px-4 py-2 bg-primary text-background-dark font-semibold rounded-lg hover:brightness-110 transition-all flex items-center gap-2"
                     >
@@ -633,6 +644,7 @@ import { ref, onMounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useAuthStore } from "@/stores/auth";
 import api from "@/api/axios";
+import { organizerEventsApi } from "@/api/events";
 import { API_ENDPOINTS } from "@/constants/apiEndpoints";
 import { useEventStatus } from "@/composables/useEventStatus";
 import { useLoading } from "@/composables/useLoading";
@@ -649,6 +661,7 @@ const { formatNumber, formatCurrency } = useCurrency();
 
 const event = ref(null);
 const payoutSettings = ref(null);
+const isExporting = ref(false);
 
 const fetchEventDetails = async () => {
     console.log("Starting fetchEventDetails...");
@@ -687,6 +700,23 @@ const fetchEventDetails = async () => {
         "event:",
         event.value,
     );
+};
+
+const downloadReport = async () => {
+    isExporting.value = true;
+    try {
+        const response = await organizerEventsApi.exportParticipants(event.value.id);
+        const url = URL.createObjectURL(response.data);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `${event.value.title}.xlsx`;
+        link.click();
+        URL.revokeObjectURL(url);
+    } catch {
+        console.error("Erro ao exportar relatório de inscritos");
+    } finally {
+        isExporting.value = false;
+    }
 };
 
 const formatDate = (dateString) => {

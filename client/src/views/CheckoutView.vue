@@ -297,6 +297,29 @@
                                         <option value="XG">XG</option>
                                     </select>
                                 </div>
+
+                                <div>
+                                    <label
+                                        class="block text-sm font-medium text-slate-300 mb-2"
+                                    >
+                                        Cidade
+                                    </label>
+                                    <CityAutocomplete v-model="participant.city" />
+                                </div>
+
+                                <div>
+                                    <label
+                                        class="block text-sm font-medium text-slate-300 mb-2"
+                                    >
+                                        Equipe / Assessoria
+                                    </label>
+                                    <input
+                                        v-model="participant.team"
+                                        type="text"
+                                        placeholder="Ex: Run Team RN"
+                                        class="w-full px-4 py-3 bg-surface-darker border border-border-dark rounded-lg text-white focus:outline-none focus:border-primary transition-colors placeholder:text-slate-500"
+                                    />
+                                </div>
                             </div>
 
                             <!-- Botão para próximo participante -->
@@ -442,6 +465,7 @@ import api from "../api/axios";
 import Navbar from "../components/Navbar.vue";
 import Footer from "../components/Footer.vue";
 import CheckoutFormSkeleton from "../components/CheckoutFormSkeleton.vue";
+import CityAutocomplete from "../components/CityAutocomplete.vue";
 import { useAuthStore } from "../stores/auth";
 
 const router = useRouter();
@@ -582,6 +606,8 @@ function initializeParticipants() {
                 cpf: "",
                 birthdate: "",
                 shirt_size: "",
+                city: "",
+                team: "",
                 emergency_contact: "",
                 rg: "",
             });
@@ -669,6 +695,8 @@ async function proceedToPayment() {
                     cpf: p.cpf.replace(/\D/g, ""), // Remove formatação do CPF
                     birthdate: p.birthdate,
                     shirt_size: p.shirt_size || null,
+                    city: p.city || null,
+                    team: p.team || null,
                 },
             })),
         };

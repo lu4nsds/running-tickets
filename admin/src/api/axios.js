@@ -1,5 +1,6 @@
 import axios from "axios";
 import { useAuthStore } from "@/stores/auth";
+import router from "@/router";
 
 const api = axios.create({
     baseURL: import.meta.env.VITE_API_URL || "http://localhost:8000/api",
@@ -12,7 +13,7 @@ const api = axios.create({
 // Request interceptor - adiciona token
 api.interceptors.request.use(
     (config) => {
-        const token = localStorage.getItem("auth_token");
+        const { token } = useAuthStore();
         if (token) {
             config.headers.Authorization = `Bearer ${token}`;
         }
@@ -33,8 +34,16 @@ api.interceptors.response.use(
             // 401 Unauthorized - token inválido/expirado
             if (status === 401) {
                 const authStore = useAuthStore();
-                authStore.logout();
-                window.location.href = "/login";
+                if (authStore.token) {
+                    authStore.logout();
+                    // /auth/me → guard já trata o redirect com to.fullPath correto
+                    // /auth/logout → best-effort, não deve gerar redirect loop
+                    const skipRedirect = ['/auth/me', '/auth/logout'].includes(error.config?.url);
+                    if (!skipRedirect) {
+                        const redirect = router.currentRoute.value.fullPath;
+                        router.push({ path: '/login', query: { redirect, reason: 'expired' } });
+                    }
+                }
             }
 
             // 403 Forbidden - sem permissão
