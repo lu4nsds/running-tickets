@@ -173,7 +173,7 @@
                                 pagamento.
                             </p>
                             <a
-                                href="https://wa.me/5584999999999"
+                                href="https://wa.me/5584998011385"
                                 target="_blank"
                                 class="text-primary text-xs font-bold mt-2 inline-flex items-center gap-1 hover:underline"
                             >
