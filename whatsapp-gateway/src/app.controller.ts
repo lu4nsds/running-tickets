@@ -1,86 +1,54 @@
 import {
-  Controller,
-  Post,
-  Get,
-  Delete,
-  Param,
   Body,
+  Controller,
+  Delete,
+  Get,
   HttpCode,
-  HttpStatus,
-  UnauthorizedException,
-  BadRequestException,
-  Headers,
+  Param,
+  Post,
 } from '@nestjs/common';
-import { AppService } from './app.service';
+import { AppService } from '@src/app.service';
+import { SendMessageDto } from '@src/dtos/send-message.dto';
+import type { GatewayStatus } from '@src/types/whatsapp.type';
 
-@Controller('tenants/:tenantId')
+@Controller('tenants/:tenantUuid')
 export class AppController {
   constructor(private readonly appService: AppService) {}
 
-  // ── Auth guard ──────────────────────────────────────────────────────────────
-
-  private guard(apiKey: string | undefined): void {
-    const expected = process.env.WHATSAPP_API_KEY;
-    if (expected && apiKey !== expected) {
-      throw new UnauthorizedException('Invalid API key');
-    }
-  }
-
-  // ── Session ─────────────────────────────────────────────────────────────────
-
   @Post('session/connect')
   async connect(
-    @Param('tenantId') tenantId: string,
-    @Headers('x-api-key') apiKey: string,
-  ) {
-    this.guard(apiKey);
-    return this.appService.connect(tenantId);
+    @Param('tenantUuid') tenantUuid: string,
+  ): Promise<{ status: GatewayStatus; qr: string | null }> {
+    return this.appService.connect(tenantUuid);
   }
 
   @Get('session/status')
-  async status(
-    @Param('tenantId') tenantId: string,
-    @Headers('x-api-key') apiKey: string,
-  ) {
-    this.guard(apiKey);
-    return this.appService.status(tenantId);
+  status(@Param('tenantUuid') tenantUuid: string): {
+    status: GatewayStatus;
+    qr: string | null;
+  } {
+    return this.appService.getStatus(tenantUuid);
   }
 
   @Get('session/qr')
-  async qr(
-    @Param('tenantId') tenantId: string,
-    @Headers('x-api-key') apiKey: string,
-  ) {
-    this.guard(apiKey);
-    const s = this.appService.status(tenantId);
-    return { qr: (await s).qr };
+  qr(@Param('tenantUuid') tenantUuid: string): { qr: string | null } {
+    return { qr: this.appService.getStatus(tenantUuid).qr };
   }
 
   @Delete('session')
-  @HttpCode(HttpStatus.NO_CONTENT)
-  async disconnect(
-    @Param('tenantId') tenantId: string,
-    @Headers('x-api-key') apiKey: string,
-  ) {
-    this.guard(apiKey);
-    await this.appService.disconnect(tenantId);
+  @HttpCode(204)
+  async remove(@Param('tenantUuid') tenantUuid: string): Promise<void> {
+    return this.appService.removeSession(tenantUuid);
   }
-
-  // ── Messages ─────────────────────────────────────────────────────────────────
 
   @Post('messages/send')
   async send(
-    @Param('tenantId') tenantId: string,
-    @Headers('x-api-key') apiKey: string,
-    @Body() body: { phone: string; message: string },
-  ) {
-    this.guard(apiKey);
-
-    if (!body.phone || !body.message) {
-      throw new BadRequestException('phone and message are required');
-    }
-
-    const phone = await this.appService.send(tenantId, body.phone, body.message);
-    return { ok: true, phone };
+    @Param('tenantUuid') tenantUuid: string,
+    @Body() body: SendMessageDto,
+  ): Promise<{ ok: true; phone: string }> {
+    return this.appService.sendMessage(tenantUuid, {
+      phone: body.phone,
+      message: body.message,
+    });
   }
 }

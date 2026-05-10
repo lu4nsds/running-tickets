@@ -21,6 +21,7 @@ use App\Http\Controllers\Api\MercadoPagoWebhookController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\AdminDashboardController;
 use App\Http\Controllers\Api\StorageController;
+use App\Http\Controllers\Api\WhatsAppController;
 
 // Health check
 Route::get('/health', function () {
@@ -120,9 +121,9 @@ Route::middleware('auth:sanctum')->group(function () {
 
         // WhatsApp Gateway
         Route::prefix('whatsapp')->group(function () {
-            Route::post('connect', [\App\Http\Controllers\Api\WhatsAppController::class, 'connect']);
-            Route::get('status', [\App\Http\Controllers\Api\WhatsAppController::class, 'status']);
-            Route::delete('session', [\App\Http\Controllers\Api\WhatsAppController::class, 'disconnect']);
+            Route::post('connect', [WhatsAppController::class, 'connect']);
+            Route::get('status', [WhatsAppController::class, 'status']);
+            Route::delete('session', [WhatsAppController::class, 'disconnect']);
         });
     });
     

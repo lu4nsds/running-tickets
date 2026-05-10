@@ -1,226 +1,317 @@
-import { Injectable, Logger, InternalServerErrorException, BadRequestException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Inject,
+  Injectable,
+  InternalServerErrorException,
+  Logger,
+  OnModuleInit,
+} from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import makeWASocket, {
   DisconnectReason,
-  useMultiFileAuthState,
-  WASocket,
-  makeCacheableSignalKeyStore,
   fetchLatestBaileysVersion,
-  Browsers,
 } from '@whiskeysockets/baileys';
-import { Boom } from '@hapi/boom';
-import Redis from 'ioredis';
-import * as fs from 'fs';
-import * as path from 'path';
-import pino from 'pino';
-
-type SessionStatus = 'connecting' | 'open' | 'closed' | 'error';
-
-interface SessionState {
-  socket: WASocket | null;
-  status: SessionStatus;
-  qr: string | null;
-}
-
-const SESSIONS_KEY = 'running-tickets:whatsapp:sessions';
-const AUTH_DIR = path.join(process.cwd(), '.whatsapp-auth');
-const CONNECT_TIMEOUT_MS = parseInt(process.env.WHATSAPP_CONNECT_TIMEOUT_MS ?? '30000', 10);
-
-const logger = pino({ level: 'silent' });
+import type Redis from 'ioredis';
+import { BaileysLoggerAdapter } from '@src/adapters/baileys-logger.adapter';
+import { REDIS_CLIENT } from '@src/providers/redis.provider';
+import {
+  SESSION_KEY_PREFIX,
+  authPattern,
+  useRedisAuthState,
+} from '@src/states/redis-auth.state';
+import {
+  cacheMessage,
+  loadCachedMessage,
+  messagesPattern,
+} from '@src/states/redis-message.state';
+import type {
+  GatewayStatus,
+  SendMessageInput,
+  TenantSession,
+} from '@src/types/whatsapp.type';
 
 @Injectable()
-export class AppService {
-  private readonly log = new Logger(AppService.name);
-  private readonly redis: Redis;
-  private readonly sessions = new Map<string, SessionState>();
+export class AppService implements OnModuleInit {
+  private readonly sessions = new Map<string, TenantSession>();
 
-  constructor() {
-    this.redis = new Redis(process.env.REDIS_URL ?? 'redis://localhost:6379');
-    fs.mkdirSync(AUTH_DIR, { recursive: true });
+  constructor(
+    @Inject(REDIS_CLIENT) private readonly redis: Redis,
+    private readonly config: ConfigService,
+  ) {}
+
+  async onModuleInit(): Promise<void> {
+    const uuids = await this.redis.smembers(SESSION_KEY_PREFIX);
+
+    for (const uuid of uuids) {
+      await this.connect(uuid).catch((error: unknown) => {
+        const message = error instanceof Error ? error.message : String(error);
+        new Logger(`${AppService.name}:${uuid}`).error(
+          `Auto-connect failed: ${message}`,
+        );
+      });
+    }
   }
 
-  // ── Public API ───────────────────────────────────────────────────────────────
+  async connect(
+    tenantUuid: string,
+  ): Promise<{ status: GatewayStatus; qr: string | null }> {
+    const existing = this.sessions.get(tenantUuid);
 
-  async connect(tenantId: string): Promise<{ status: SessionStatus; qr: string | null }> {
-    const existing = this.sessions.get(tenantId);
-
-    if (existing?.status === 'open') {
-      return { status: 'open', qr: null };
+    if (existing?.status === 'open' || existing?.isConnecting) {
+      return this.getStatus(tenantUuid);
     }
 
-    if (existing?.status === 'connecting') {
-      return { status: 'connecting', qr: existing.qr };
+    const session: TenantSession = {
+      socket: null,
+      status: 'connecting',
+      lastQr: null,
+      isConnecting: true,
+    };
+
+    this.sessions.set(tenantUuid, session);
+
+    try {
+      const [{ state, saveCreds }, { version }] = await Promise.all([
+        useRedisAuthState(this.redis, tenantUuid),
+        fetchLatestBaileysVersion(),
+      ]);
+
+      new Logger(`${AppService.name}:${tenantUuid}`).log(
+        `Connecting WhatsApp (WA version: ${version.join('.')})`,
+      );
+
+      const logLevel = this.config
+        .get<string>('WHATSAPP_BAILEYS_LOG_LEVEL')
+        ?.trim();
+
+      session.socket = makeWASocket({
+        version,
+        auth: state,
+        logger: new BaileysLoggerAdapter(
+          new Logger(`${AppService.name}:${tenantUuid}`),
+          logLevel,
+        ).build(),
+        connectTimeoutMs: this.connectTimeoutMs(),
+        defaultQueryTimeoutMs: this.connectTimeoutMs(),
+        markOnlineOnConnect: true,
+        browser: ['NeoBarber', 'Chrome', '1.0.0'],
+        getMessage: (key) =>
+          loadCachedMessage(this.redis, tenantUuid, key.remoteJid, key.id),
+      });
+
+      session.socket.ev.on('creds.update', () => void saveCreds());
+      session.socket.ev.on('messages.upsert', ({ messages }) => {
+        for (const msg of messages) {
+          void cacheMessage(
+            this.redis,
+            tenantUuid,
+            msg.key?.remoteJid,
+            msg.key?.id,
+            msg.message,
+          );
+        }
+      });
+      session.socket.ev.on('connection.update', (update) => {
+        const { connection, qr, lastDisconnect } = update;
+
+        if (qr) {
+          session.lastQr = qr;
+          new Logger(`${AppService.name}:${tenantUuid}`).log(
+            `QR code generated (len=${qr.length})`,
+          );
+        }
+
+        if (connection === 'open') {
+          session.status = 'open';
+          session.lastQr = null;
+          new Logger(`${AppService.name}:${tenantUuid}`).log(
+            `WhatsApp connected`,
+          );
+          void this.redis.sadd(SESSION_KEY_PREFIX, tenantUuid);
+          return;
+        }
+
+        if (connection === 'close') {
+          const statusCode = (
+            lastDisconnect?.error as
+              | { output?: { statusCode?: number } }
+              | undefined
+          )?.output?.statusCode;
+
+          if (statusCode === DisconnectReason.loggedOut) {
+            session.status = 'closed';
+            new Logger(`${AppService.name}:${tenantUuid}`).warn(
+              `WhatsApp logged out; clearing credentials`,
+            );
+            void this.clearAuthKeys(tenantUuid);
+            return;
+          }
+
+          if (statusCode === DisconnectReason.restartRequired) {
+            new Logger(`${AppService.name}:${tenantUuid}`).warn(
+              `WhatsApp restart required; reconnecting...`,
+            );
+            this.reconnect(tenantUuid).catch((err: unknown) => {
+              const msg = err instanceof Error ? err.message : String(err);
+              new Logger(`${AppService.name}:${tenantUuid}`).error(
+                `Reconnect failed: ${msg}`,
+              );
+            });
+            return;
+          }
+
+          session.status = 'closed';
+          new Logger(`${AppService.name}:${tenantUuid}`).warn(
+            `WhatsApp disconnected (status=${statusCode ?? 'unknown'})`,
+          );
+        }
+      });
+
+      return this.getStatus(tenantUuid);
+    } catch (error) {
+      session.status = 'error';
+      const message = error instanceof Error ? error.message : String(error);
+      throw new InternalServerErrorException(
+        `Failed to connect WhatsApp for tenant ${tenantUuid}: ${message}`,
+      );
+    } finally {
+      session.isConnecting = false;
     }
-
-    await this.startSession(tenantId);
-
-    // Aguarda QR ou conexão (até 20s para dar tempo ao fetchLatestBaileysVersion)
-    await this.waitFor(tenantId, (s) => s.qr !== null || s.status === 'open', 20_000);
-
-    const state = this.sessions.get(tenantId);
-    return { status: state?.status ?? 'error', qr: state?.qr ?? null };
   }
 
-  async status(tenantId: string): Promise<{ status: SessionStatus; qr: string | null }> {
-    const state = this.sessions.get(tenantId);
-    if (!state) return { status: 'closed', qr: null };
-    return { status: state.status, qr: state.qr };
-  }
+  async sendMessage(
+    tenantUuid: string,
+    input: SendMessageInput,
+  ): Promise<{ ok: true; phone: string }> {
+    const phone = this.normalizePhone(input.phone);
+    const message = input.message?.trim();
 
-  async disconnect(tenantId: string): Promise<void> {
-    const state = this.sessions.get(tenantId);
-    if (state?.socket) {
-      await state.socket.logout().catch(() => {});
-      state.socket.end(undefined);
-    }
-    this.sessions.delete(tenantId);
-    await this.redis.srem(SESSIONS_KEY, tenantId);
-    this.removeAuthFiles(tenantId);
-    this.log.log(`Tenant ${tenantId} disconnected`);
-  }
-
-  async send(tenantId: string, phone: string, message: string): Promise<string> {
-    const normalized = this.normalizePhone(phone);
-    const jid = `${normalized}@s.whatsapp.net`;
-
-    let state = this.sessions.get(tenantId);
-    if (!state || state.status !== 'open') {
-      await this.startSession(tenantId);
-      await this.waitFor(tenantId, (s) => s.status === 'open', CONNECT_TIMEOUT_MS);
-      state = this.sessions.get(tenantId);
+    if (!phone || !message) {
+      throw new BadRequestException('phone and message are required');
     }
 
-    if (!state?.socket || state.status !== 'open') {
-      throw new InternalServerErrorException('WhatsApp session not connected');
+    const session = this.sessions.get(tenantUuid);
+
+    if (!session || session.status !== 'open' || !session.socket) {
+      await this.connect(tenantUuid);
+      await this.waitUntilOpen(tenantUuid, this.connectTimeoutMs());
     }
 
-    const [result] = await state.socket.onWhatsApp(normalized);
-    if (!result?.exists) {
-      throw new BadRequestException(`Phone ${normalized} does not have WhatsApp`);
-    }
+    const active = this.sessions.get(tenantUuid);
 
-    await state.socket.sendMessage(jid, { text: message });
-    return jid;
-  }
-
-  async reconnectAll(): Promise<void> {
-    const tenants = await this.redis.smembers(SESSIONS_KEY);
-    this.log.log(`Reconnecting ${tenants.length} tenant(s)...`);
-
-    for (const tenantId of tenants) {
-      // Só reconecta se existirem credenciais válidas salvas
-      const credsFile = path.join(AUTH_DIR, tenantId, 'creds.json');
-      if (!fs.existsSync(credsFile)) {
-        this.log.warn(`Tenant ${tenantId}: no credentials found, skipping auto-reconnect`);
-        await this.redis.srem(SESSIONS_KEY, tenantId);
-        continue;
-      }
-
-      await this.startSession(tenantId).catch((e) =>
-        this.log.warn(`Failed to reconnect ${tenantId}: ${e.message}`),
+    if (!active?.socket || active.status !== 'open') {
+      throw new InternalServerErrorException(
+        `WhatsApp session for tenant ${tenantUuid} is not connected. Pair with QR and retry.`,
       );
     }
-  }
 
-  // ── Private ──────────────────────────────────────────────────────────────────
+    const onWhatsApp = await active.socket.onWhatsApp(
+      `${phone}@s.whatsapp.net`,
+    );
+    const result = onWhatsApp?.[0];
 
-  private async startSession(tenantId: string): Promise<void> {
-    const authDir = path.join(AUTH_DIR, tenantId);
-    fs.mkdirSync(authDir, { recursive: true });
-
-    const { state, saveCreds } = await useMultiFileAuthState(authDir);
-
-    this.sessions.set(tenantId, { socket: null, status: 'connecting', qr: null });
-
-    // Busca a versão atual do protocolo WhatsApp Web — essencial para evitar rejeição
-    const { version } = await fetchLatestBaileysVersion();
-    this.log.log(`Using WA version: ${version.join('.')}`);
-
-    const sock = makeWASocket({
-      version,
-      auth: {
-        creds: state.creds,
-        keys: makeCacheableSignalKeyStore(state.keys, logger),
-      },
-      browser: Browsers.ubuntu('Chrome'),
-      printQRInTerminal: false,
-      logger,
-      connectTimeoutMs: 30_000,
-      retryRequestDelayMs: 500,
-    });
-
-    this.sessions.set(tenantId, { socket: sock, status: 'connecting', qr: null });
-    await this.redis.sadd(SESSIONS_KEY, tenantId);
-
-    sock.ev.on('creds.update', saveCreds);
-
-    sock.ev.on('connection.update', async ({ connection, lastDisconnect, qr }) => {
-      const current = this.sessions.get(tenantId);
-      if (!current) return;
-
-      if (qr) {
-        this.log.log(`QR generated for tenant ${tenantId}`);
-        this.sessions.set(tenantId, { ...current, qr, status: 'connecting' });
-      }
-
-      if (connection === 'open') {
-        this.log.log(`Tenant ${tenantId} connected`);
-        this.sessions.set(tenantId, { ...current, socket: sock, status: 'open', qr: null });
-      }
-
-      if (connection === 'close') {
-        const code = (lastDisconnect?.error as Boom)?.output?.statusCode;
-        const isLoggedOut = code === DisconnectReason.loggedOut || code === DisconnectReason.forbidden;
-        // 405 = HTTP Method Not Allowed (versão/protocolo rejeitado), 515 = restartRequired
-        const isRestartRequired = code === DisconnectReason.restartRequired || code === 405;
-
-        this.log.warn(`Tenant ${tenantId} disconnected (code ${code})`);
-
-        if (isLoggedOut) {
-          // Conta deslogada — não reconectar
-          this.sessions.set(tenantId, { socket: null, status: 'closed', qr: null });
-          await this.redis.srem(SESSIONS_KEY, tenantId);
-          this.removeAuthFiles(tenantId);
-        } else if (isRestartRequired) {
-          // Credenciais ruins ou protocolo desatualizado — limpar e tentar de novo após 5s
-          this.sessions.set(tenantId, { ...current, socket: null, status: 'connecting' });
-          this.removeAuthFiles(tenantId);
-          setTimeout(() => this.startSession(tenantId), 5_000);
-        } else {
-          // Erro transitório — reconectar após 3s mantendo QR existente
-          this.sessions.set(tenantId, { ...current, socket: null, status: 'connecting' });
-          setTimeout(() => this.startSession(tenantId), 3_000);
-        }
-      }
-    });
-  }
-
-  private waitFor(
-    tenantId: string,
-    condition: (s: SessionState) => boolean,
-    timeout: number,
-  ): Promise<void> {
-    return new Promise((resolve) => {
-      const start = Date.now();
-      const interval = setInterval(() => {
-        const state = this.sessions.get(tenantId);
-        if ((state && condition(state)) || Date.now() - start >= timeout) {
-          clearInterval(interval);
-          resolve();
-        }
-      }, 200);
-    });
-  }
-
-  private normalizePhone(phone: string): string {
-    const digits = phone.replace(/\D/g, '');
-    if (digits.length === 10 || digits.length === 11) {
-      return '55' + digits;
+    if (!result?.exists) {
+      throw new BadRequestException(
+        `The number ${phone} does not have a WhatsApp account.`,
+      );
     }
-    return digits;
+
+    const sent = await active.socket.sendMessage(result.jid, {
+      text: message,
+    });
+
+    await cacheMessage(
+      this.redis,
+      tenantUuid,
+      sent?.key?.remoteJid ?? result.jid,
+      sent?.key?.id,
+      sent?.message,
+    );
+
+    return { ok: true, phone: result.jid };
   }
 
-  private removeAuthFiles(tenantId: string): void {
-    const authDir = path.join(AUTH_DIR, tenantId);
-    fs.rmSync(authDir, { recursive: true, force: true });
+  getStatus(tenantUuid: string): { status: GatewayStatus; qr: string | null } {
+    const session = this.sessions.get(tenantUuid);
+    return {
+      status: session?.status ?? 'closed',
+      qr: session?.lastQr ?? null,
+    };
+  }
+
+  async removeSession(tenantUuid: string): Promise<void> {
+    const session = this.sessions.get(tenantUuid);
+
+    if (session?.socket) {
+      session.socket.end(new Error('session removed'));
+    }
+
+    this.sessions.delete(tenantUuid);
+    await this.redis.srem(SESSION_KEY_PREFIX, tenantUuid);
+
+    const authKeys = await this.redis.keys(authPattern(tenantUuid));
+    if (authKeys.length > 0) {
+      await this.redis.del(...authKeys);
+    }
+
+    const messageKeys = await this.redis.keys(messagesPattern(tenantUuid));
+    if (messageKeys.length > 0) {
+      await this.redis.del(...messageKeys);
+    }
+
+    new Logger(`${AppService.name}:${tenantUuid}`).log(`Session removed`);
+  }
+
+  private async clearAuthKeys(tenantUuid: string): Promise<void> {
+    await this.redis.srem(SESSION_KEY_PREFIX, tenantUuid);
+    const authKeys = await this.redis.keys(authPattern(tenantUuid));
+    if (authKeys.length > 0) {
+      await this.redis.del(...authKeys);
+    }
+  }
+
+  private async reconnect(tenantUuid: string): Promise<void> {
+    const session = this.sessions.get(tenantUuid);
+
+    if (session?.socket) {
+      session.socket.end(new Error('restart required'));
+    }
+
+    this.sessions.delete(tenantUuid);
+    await this.connect(tenantUuid);
+  }
+
+  private async waitUntilOpen(
+    tenantUuid: string,
+    timeoutMs: number,
+  ): Promise<void> {
+    const startedAt = Date.now();
+
+    while (Date.now() - startedAt <= timeoutMs) {
+      const s = this.sessions.get(tenantUuid)?.status;
+
+      if (s === 'open') return;
+      if (s === 'error' || s === 'closed') break;
+
+      await new Promise((resolve) => setTimeout(resolve, 250));
+    }
+  }
+
+  private connectTimeoutMs(): number {
+    const timeout = Number.parseInt(
+      this.config.get<string>('WHATSAPP_CONNECT_TIMEOUT_MS', '30000'),
+      10,
+    );
+    return Number.isNaN(timeout) ? 45000 : timeout;
+  }
+
+  private normalizePhone(value: string): string {
+    const digits = value.replace(/\D/g, '');
+
+    if (digits.length === 10 || digits.length === 11) {
+      return `55${digits}`;
+    }
+
+    return digits;
   }
 }

@@ -5,7 +5,7 @@ namespace App\Jobs;
 use App\Enums\TicketStatus;
 use App\Models\Order;
 use App\Models\Ticket;
-use App\Jobs\SendWhatsAppTicketNotificationJob;
+use App\Services\WhatsAppService;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\Log;
@@ -26,7 +26,7 @@ class GenerateOrderTicketsJob implements ShouldQueue
     /**
      * Execute the job.
      */
-    public function handle(): void
+    public function handle(WhatsAppService $whatsApp): void
     {
         Log::info('Gerando tickets para o pedido', [
             'order_id' => $this->order->id,
@@ -70,7 +70,7 @@ class GenerateOrderTicketsJob implements ShouldQueue
 
         // Após gerar todos os tickets, envia notificações
         $this->sendConfirmationEmail();
-        SendWhatsAppTicketNotificationJob::dispatch($this->order);
+        $this->sendWhatsAppNotifications($whatsApp);
     }
 
     /**
@@ -120,7 +120,7 @@ class GenerateOrderTicketsJob implements ShouldQueue
 
         // 1. Envia email para o COMPRADOR com TODOS os tickets
         $buyerEmail = $this->order->buyer_email;
-        
+
         if ($buyerEmail) {
             \Illuminate\Support\Facades\Mail::to($buyerEmail)
                 ->queue(new \App\Mail\OrderPaidMail($this->order));
@@ -135,7 +135,7 @@ class GenerateOrderTicketsJob implements ShouldQueue
         // 2. Envia email para CADA PARTICIPANTE com apenas SEU ticket
         foreach ($this->order->items as $item) {
             $participantEmail = $item->participant_data['email'] ?? null;
-            
+
             if ($participantEmail && $participantEmail !== $buyerEmail) {
                 // Só envia se for email diferente do comprador (evita duplicação)
                 \Illuminate\Support\Facades\Mail::to($participantEmail)
@@ -153,6 +153,80 @@ class GenerateOrderTicketsJob implements ShouldQueue
                     'email' => $participantEmail,
                 ]);
             }
+        }
+    }
+
+    /**
+     * Envia notificações via WhatsApp com os ingressos
+     */
+    private function sendWhatsAppNotifications(WhatsAppService $whatsApp): void
+    {
+        $this->order->load(['items.ticket', 'event']);
+
+        $event      = $this->order->event;
+        $buyerPhone = $this->order->buyer_phone;
+        $eventDate  = $event->date_start
+            ? $event->date_start->format('d/m/Y \à\s H:i')
+            : 'a confirmar';
+        $locationParts = array_filter([$event->venue, $event->city, $event->state]);
+        $locationLine  = $locationParts ? '📍 ' . implode(' - ', $locationParts) . "\n" : '';
+
+        // 1. Envia para o COMPRADOR com TODOS os ingressos
+        if ($buyerPhone) {
+            $ticketLines = [];
+            $number = 1;
+            foreach ($this->order->items as $item) {
+                $name = $item->participant_data['name'] ?? 'Participante';
+                $code = $item->ticket?->code ?? 'N/A';
+                $ticketLines[] = "{$number}. {$name} — Código: `{$code}`";
+                $number++;
+            }
+
+            $message = __('whatsapp.ticket_buyer', [
+                'event'    => $event->title,
+                'date'     => $eventDate,
+                'location' => $locationLine,
+                'tickets'  => implode("\n", $ticketLines),
+            ]);
+
+            $sent = $whatsApp->send($buyerPhone, $message);
+
+            Log::info('WhatsApp comprador', [
+                'order_id'    => $this->order->id,
+                'buyer_phone' => $buyerPhone,
+                'sent'        => $sent,
+            ]);
+        }
+
+        // 2. Envia para cada PARTICIPANTE com somente o seu ingresso
+        foreach ($this->order->items as $item) {
+            $participantPhone = $item->participant_data['phone'] ?? null;
+
+            if (!$participantPhone || $participantPhone === $buyerPhone) {
+                if ($participantPhone === $buyerPhone) {
+                    Log::info('WhatsApp participante é comprador, já notificado', [
+                        'order_item_id' => $item->id,
+                    ]);
+                }
+                continue;
+            }
+
+            $message = __('whatsapp.ticket_participant', [
+                'name'     => $item->participant_data['name'] ?? 'Participante',
+                'event'    => $event->title,
+                'date'     => $eventDate,
+                'location' => $locationLine,
+                'code'     => $item->ticket?->code ?? 'N/A',
+            ]);
+
+            $sent = $whatsApp->send($participantPhone, $message);
+
+            Log::info('WhatsApp participante', [
+                'order_id'          => $this->order->id,
+                'order_item_id'     => $item->id,
+                'participant_phone' => $participantPhone,
+                'sent'              => $sent,
+            ]);
         }
     }
 }

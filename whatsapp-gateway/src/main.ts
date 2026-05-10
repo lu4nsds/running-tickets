@@ -1,17 +1,19 @@
+import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
-import { AppModule } from './app.module';
-import { AppService } from './app.service';
+import { AppModule } from '@src/app.module';
+import { ConsoleFilterAdapter } from '@src/adapters/console-filter.adapter';
 
-async function bootstrap() {
-  const app = await NestFactory.create(AppModule, { logger: ['log', 'warn', 'error'] });
+ConsoleFilterAdapter.apply();
 
-  const port = process.env.PORT ?? 3000;
-  await app.listen(port);
-  console.log(`WhatsApp Gateway running on port ${port}`);
+async function bootstrap(): Promise<void> {
+  const app = await NestFactory.create(AppModule);
+  app.useGlobalPipes(
+    new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }),
+  );
+  app.enableShutdownHooks();
 
-  // Reconecta todas as sessões persistidas ao iniciar
-  const service = app.get(AppService);
-  await service.reconnectAll();
+  const port = Number.parseInt(process.env.PORT ?? '3000', 10);
+  await app.listen(port, '0.0.0.0');
 }
 
-bootstrap();
+void bootstrap();

@@ -18,7 +18,7 @@ class WhatsAppController extends Controller
 
     public function status(): JsonResponse
     {
-        $result = $this->whatsApp->status();
+        $result = $this->whatsApp->getStatus();
         return new JsonResponse(['data' => $result]);
     }
 

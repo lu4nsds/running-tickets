@@ -4,13 +4,13 @@ namespace Tests\Feature\WhatsApp;
 
 use App\Enums\OrderStatus;
 use App\Enums\TicketStatus;
-use App\Jobs\SendWhatsAppTicketNotificationJob;
+use App\Jobs\GenerateOrderTicketsJob;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Ticket;
 use App\Services\WhatsAppService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Queue;
+use Illuminate\Support\Facades\Mail;
 use Tests\TestCase;
 
 class SendWhatsAppNotificationTest extends TestCase
@@ -19,6 +19,8 @@ class SendWhatsAppNotificationTest extends TestCase
 
     public function test_job_sends_to_buyer_and_participants(): void
     {
+        Mail::fake();
+
         $order = $this->makeOrderWithTickets(
             buyerPhone: '11900000000',
             participants: [
@@ -37,17 +39,19 @@ class SendWhatsAppNotificationTest extends TestCase
                 });
         });
 
-        (new SendWhatsAppTicketNotificationJob($order))->handle($whatsApp);
+        (new GenerateOrderTicketsJob($order))->handle($whatsApp);
 
         // Comprador + 2 participantes (ambos com telefone diferente do comprador)
         $this->assertCount(3, $sentTo);
-        $this->assertContains('5511900000000', $sentTo);
-        $this->assertContains('5511911111111', $sentTo);
-        $this->assertContains('5511922222222', $sentTo);
+        $this->assertContains('11900000000', $sentTo);
+        $this->assertContains('11911111111', $sentTo);
+        $this->assertContains('11922222222', $sentTo);
     }
 
     public function test_job_skips_participant_when_phone_equals_buyer_phone(): void
     {
+        Mail::fake();
+
         $order = $this->makeOrderWithTickets(
             buyerPhone: '11911111111',
             participants: [
@@ -65,27 +69,26 @@ class SendWhatsAppNotificationTest extends TestCase
                 });
         });
 
-        (new SendWhatsAppTicketNotificationJob($order))->handle($whatsApp);
+        (new GenerateOrderTicketsJob($order))->handle($whatsApp);
 
         // Só o comprador — participante tem o mesmo telefone
         $this->assertCount(1, $sentTo);
     }
 
-    public function test_generate_order_tickets_job_dispatches_whatsapp_job(): void
+    public function test_generate_order_tickets_job_calls_whatsapp_send(): void
     {
-        Queue::fake();
+        Mail::fake();
 
         $order = $this->makeOrderWithTickets(
             buyerPhone: '11900000000',
             participants: [['name' => 'Ana', 'phone' => '11911111111']],
         );
 
-        // Simula o disparo a partir do GenerateOrderTicketsJob
-        SendWhatsAppTicketNotificationJob::dispatch($order);
-
-        Queue::assertPushed(SendWhatsAppTicketNotificationJob::class, function ($job) use ($order) {
-            return $job->order->id === $order->id;
+        $whatsApp = $this->mock(WhatsAppService::class, function ($mock) {
+            $mock->shouldReceive('send')->twice()->andReturn(true);
         });
+
+        (new GenerateOrderTicketsJob($order))->handle($whatsApp);
     }
 
     // ── Helpers ──────────────────────────────────────────────────────────────
