@@ -461,180 +461,6 @@
                 </div>
             </div>
 
-            <!-- Payout Settings -->
-            <div
-                class="bg-card-bg border border-surface-elevated rounded-xl p-6"
-            >
-                <div class="flex items-center justify-between mb-6">
-                    <h2
-                        class="text-xl font-bold text-white flex items-center gap-2"
-                    >
-                        <span
-                            class="material-symbols-outlined text-primary text-2xl"
-                        >
-                            payments
-                        </span>
-                        Configurações de Pagamento
-                    </h2>
-                    <router-link
-                        v-if="
-                            payoutSettings &&
-                            payoutSettings.payout_mode !== 'platform' &&
-                            authStore.canEditPaymentSettings
-                        "
-                        :to="`/organizer/events/${event.id}/payout/config`"
-                        class="text-primary hover:underline text-sm flex items-center gap-1"
-                    >
-                        <span class="material-symbols-outlined text-sm"
-                            >edit</span
-                        >
-                        Editar
-                    </router-link>
-                </div>
-
-                <div v-if="payoutSettings" class="space-y-4">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div class="bg-surface/30 rounded-lg p-4">
-                            <p
-                                class="text-text-muted text-sm mb-1 flex items-center gap-1"
-                            >
-                                <span class="material-symbols-outlined text-xs"
-                                    >category</span
-                                >
-                                Modo de Pagamento
-                            </p>
-                            <div class="flex items-center gap-2">
-                                <span
-                                    :class="[
-                                        'inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-semibold',
-                                        payoutSettings.payout_mode ===
-                                        'platform'
-                                            ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20'
-                                            : 'bg-primary/10 text-primary border border-primary/20',
-                                    ]"
-                                >
-                                    <span
-                                        class="material-symbols-outlined text-xs"
-                                    >
-                                        {{
-                                            payoutSettings.payout_mode ===
-                                            "platform"
-                                                ? "business"
-                                                : "person"
-                                        }}
-                                    </span>
-                                    {{
-                                        payoutSettings.payout_mode ===
-                                        "platform"
-                                            ? "Plataforma"
-                                            : "Direto"
-                                    }}
-                                </span>
-                            </div>
-                        </div>
-
-                        <div class="bg-surface/30 rounded-lg p-4">
-                            <p
-                                class="text-text-muted text-sm mb-1 flex items-center gap-1"
-                            >
-                                <span class="material-symbols-outlined text-xs"
-                                    >payment</span
-                                >
-                                Provedor
-                            </p>
-                            <p class="text-white font-medium">
-                                {{ payoutSettings.provider || "Mercado Pago" }}
-                            </p>
-                        </div>
-                    </div>
-
-                    <div
-                        v-if="
-                            payoutSettings.payout_mode === 'direct' &&
-                            payoutSettings.details?.public_key
-                        "
-                        class="bg-surface/30 rounded-lg p-4"
-                    >
-                        <p
-                            class="text-text-muted text-sm mb-2 flex items-center gap-1"
-                        >
-                            <span class="material-symbols-outlined text-xs"
-                                >vpn_key</span
-                            >
-                            Credenciais Configuradas
-                        </p>
-                        <div class="space-y-2">
-                            <div class="flex items-center gap-2">
-                                <span
-                                    class="material-symbols-outlined text-primary text-sm"
-                                    >check_circle</span
-                                >
-                                <span class="text-text-secondary text-sm"
-                                    >Public Key:
-                                    {{
-                                        payoutSettings.details.public_key
-                                    }}</span
-                                >
-                            </div>
-                            <div class="flex items-center gap-2">
-                                <span
-                                    class="material-symbols-outlined text-primary text-sm"
-                                    >check_circle</span
-                                >
-                                <span class="text-text-secondary text-sm"
-                                    >Access Token: ****{{
-                                        payoutSettings.details
-                                            .access_token_masked || "****"
-                                    }}</span
-                                >
-                            </div>
-                        </div>
-                    </div>
-
-                    <div
-                        v-if="payoutSettings.payout_mode === 'platform'"
-                        class="bg-blue-500/5 border border-blue-500/20 rounded-lg p-4"
-                    >
-                        <div class="flex items-start gap-3">
-                            <span
-                                class="material-symbols-outlined text-blue-400 text-xl"
-                                >info</span
-                            >
-                            <p class="text-blue-400 text-sm">
-                                Este evento está configurado para receber
-                                pagamentos através da conta Mercado Pago da
-                                plataforma Running Tickets. Os valores serão
-                                repassados conforme acordo estabelecido.
-                            </p>
-                        </div>
-                    </div>
-                </div>
-
-                <div v-else class="text-center py-8">
-                    <span
-                        class="material-symbols-outlined text-text-muted text-6xl mb-4 block"
-                    >
-                        payment
-                    </span>
-                    <p class="text-text-muted mb-4">
-                        Nenhuma configuração de pagamento cadastrada.
-                    </p>
-                    <router-link
-                        v-if="authStore.canEditPaymentSettings"
-                        :to="`/organizer/events/${event.id}/payout/config`"
-                        class="inline-flex items-center gap-2 px-4 py-2 bg-primary hover:brightness-110 text-background-dark font-semibold rounded-lg transition-all"
-                    >
-                        <span class="material-symbols-outlined text-sm"
-                            >add</span
-                        >
-                        Configurar Pagamento
-                    </router-link>
-                    <p v-else class="text-text-muted text-sm">
-                        Entre em contato com o administrador do organizador para
-                        configurar.
-                    </p>
-                </div>
-            </div>
         </div>
     </div>
 </template>
@@ -660,46 +486,17 @@ const { isLoading, error, withLoading } = useLoading(true);
 const { formatNumber, formatCurrency } = useCurrency();
 
 const event = ref(null);
-const payoutSettings = ref(null);
 const isExporting = ref(false);
 
 const fetchEventDetails = async () => {
-    console.log("Starting fetchEventDetails...");
     await withLoading(async () => {
         const eventId = route.params.id;
 
-        // Buscar detalhes do evento
         const eventResponse = await api.get(
             API_ENDPOINTS.ORGANIZER.EVENT.DETAIL(eventId),
         );
-        console.log("Event data received:", eventResponse.data);
         event.value = eventResponse.data.data || eventResponse.data;
-        console.log("event.value after assignment:", event.value);
-
-        // Buscar configurações de pagamento
-        try {
-            const payoutResponse = await api.get(
-                API_ENDPOINTS.ORGANIZER.EVENT.PAYOUT(eventId),
-            );
-            payoutSettings.value = payoutResponse.data;
-        } catch (err) {
-            // Se não houver configuração, ignora o erro
-            if (err.response?.status !== 404) {
-                console.error(
-                    "Erro ao buscar configurações de pagamento:",
-                    err,
-                );
-            }
-        }
     });
-    console.log(
-        "After withLoading - isLoading:",
-        isLoading.value,
-        "error:",
-        error.value,
-        "event:",
-        event.value,
-    );
 };
 
 const downloadReport = async () => {

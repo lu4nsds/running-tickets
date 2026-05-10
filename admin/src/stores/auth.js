@@ -58,11 +58,6 @@ export const useAuthStore = defineStore("auth", () => {
         return currentOrganizerRole.value === ORGANIZER_ROLE.STAFF;
     });
 
-    // Permissão para editar configurações de pagamento
-    const canEditPaymentSettings = computed(() => {
-        return isSuperAdmin.value || isCurrentOrganizerAdmin.value;
-    });
-
     // Métodos com organizerId específico
     const isOrganizerAdmin = (organizerId) => {
         if (!user.value?.organizers) return false;
@@ -165,7 +160,6 @@ export const useAuthStore = defineStore("auth", () => {
         currentOrganizerRole,
         isCurrentOrganizerAdmin,
         isCurrentOrganizerStaff,
-        canEditPaymentSettings,
         isOrganizerAdmin,
         isOrganizerStaff,
         // Actions

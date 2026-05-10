@@ -1,8 +1,9 @@
 <?php
 
 return [
-    'platform_access_token' => env('MERCADOPAGO_PLATFORM_ACCESS_TOKEN'),
-    'platform_public_key' => env('MERCADOPAGO_PLATFORM_PUBLIC_KEY'),
+    'access_token' => env('MERCADOPAGO_ACCESS_TOKEN'),
+    'public_key' => env('MERCADOPAGO_PUBLIC_KEY'),
     'api_url' => env('MERCADOPAGO_API_URL', 'https://api.mercadopago.com'),
     'sandbox_mode' => env('MERCADOPAGO_SANDBOX_MODE', true),
+    'mock_approved' => env('MERCADOPAGO_MOCK_APPROVED', false),
 ];

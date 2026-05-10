@@ -747,7 +747,7 @@ async function proceedToPayment() {
         // Criar o pedido no backend
         const response = await api.post("/orders", orderData);
 
-        const { order, public_key } = response.data;
+        const { order } = response.data;
 
         // Salvar informações do pedido no localStorage para a tela de pagamento
         localStorage.setItem(
@@ -758,7 +758,6 @@ async function proceedToPayment() {
                 total_cents: order.total_cents,
                 currency: order.currency,
                 event_title: eventData.value.title,
-                public_key: public_key,
                 items: order.items,
                 created_at: order.created_at,
             }),

@@ -1418,8 +1418,10 @@ onMounted(async () => {
             }
         }
 
-        if (!orderData.value.public_key) {
-            error.value = "Configuração de pagamento inválida.";
+        const mpPublicKey = import.meta.env.VITE_MERCADOPAGO_PUBLIC_KEY;
+
+        if (!mpPublicKey) {
+            error.value = "Chave pública do gateway de pagamento não configurada.";
             loading.value = false;
             return;
         }
@@ -1427,7 +1429,7 @@ onMounted(async () => {
         loading.value = false;
 
         // Init MP SDK
-        mp = new window.MercadoPago(orderData.value.public_key, {
+        mp = new window.MercadoPago(mpPublicKey, {
             locale: "pt-BR",
         });
     } catch (err) {

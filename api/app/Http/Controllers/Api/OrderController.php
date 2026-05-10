@@ -193,28 +193,11 @@ class OrderController extends Controller
             // Carrega os relacionamentos para o OrderResource
             $order->load(['event', 'organizer', 'items.ticketType', 'items.category']);
 
-            // Busca public_key do organizador para uso no Checkout Transparente (Bricks)
-            try {
-                $publicKey = $this->mercadoPagoService->getPublicKey($order->event->payoutSetting);
-            } catch (\Exception $e) {
-                DB::rollBack();
-                
-                \Log::error('Erro ao buscar public_key do Mercado Pago', [
-                    'order_id' => $order->id,
-                    'message' => $e->getMessage(),
-                ]);
-                
-                return response()->json([
-                    'message' => 'Erro ao configurar pagamento: ' . $e->getMessage(),
-                ], 500);
-            }
-
             DB::commit();
 
             return response()->json([
                 'message' => 'Pedido criado com sucesso!',
                 'order' => OrderResource::make($order),
-                'public_key' => $publicKey,
             ], 201);
 
         } catch (\Exception $e) {
@@ -258,28 +241,6 @@ class OrderController extends Controller
                 'payer.identification.number' => 'required|string',
             ]);
 
-            // Busca credenciais do organizador
-            $order->load('event.payoutSetting');
-            $payoutSetting = $order->event->payoutSetting;
-
-            if (!$payoutSetting || $payoutSetting->method !== 'mercadopago') {
-                return response()->json([
-                    'message' => 'Configuração de pagamento não encontrada.',
-                ], 500);
-            }
-
-            if ($payoutSetting->payout_mode === 'platform') {
-                $accessToken = config('mercadopago.platform_access_token');
-            } else {
-                $accessToken = $payoutSetting->details['access_token'] ?? null;
-            }
-
-            if (!$accessToken) {
-                return response()->json([
-                    'message' => 'Credenciais de pagamento não configuradas.',
-                ], 500);
-            }
-
             // Re-verifica disponibilidade com lock para evitar overselling
             $order->load('items');
             $ticketTypeIds = $order->items->pluck('ticket_type_id')->unique();
@@ -300,12 +261,36 @@ class OrderController extends Controller
             $paymentMethod = $validated['payment_method'];
             $pixData = null;
 
-            if ($paymentMethod === 'pix') {
+            $shouldMockCardApproval = in_array($paymentMethod, ['credit_card', 'debit_card'], true)
+                && config('mercadopago.mock_approved')
+                && app()->environment('local');
+
+            if ($shouldMockCardApproval) {
+                \Log::warning('MOCK_APPROVED ativo: pulando chamada ao Mercado Pago', [
+                    'order_id'  => $order->id,
+                    'reference' => $order->reference,
+                ]);
+
+                $amount = $order->total_cents / 100;
+                $paymentData = [
+                    'id'                  => 'MOCK-' . $order->reference,
+                    'status'              => 'approved',
+                    'status_detail'       => 'accredited',
+                    'external_reference'  => $order->reference,
+                    'transaction_amount'  => $amount,
+                    'payment_method_id'   => $validated['payment_method_id'] ?? 'master',
+                    'payment_type_id'     => 'credit_card',
+                    'installments'        => $validated['installments'] ?? 1,
+                    'transaction_details' => [
+                        'net_received_amount' => round($amount * 0.95, 2),
+                        'total_paid_amount'   => $amount,
+                    ],
+                ];
+            } elseif ($paymentMethod === 'pix') {
                 $paymentData = $this->mercadoPagoService->createPixPayment(
                     amountCents: $order->total_cents,
                     payer: $validated['payer'],
                     externalReference: $order->reference,
-                    accessToken: $accessToken
                 );
 
                 $pixData = $paymentData['point_of_interaction']['transaction_data'] ?? null;
@@ -317,7 +302,6 @@ class OrderController extends Controller
                     installments: $validated['installments'] ?? 1,
                     payer: $validated['payer'],
                     externalReference: $order->reference,
-                    accessToken: $accessToken
                 );
             }
 

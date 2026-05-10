@@ -36,7 +36,6 @@ class StoreEventRequest extends FormRequest
             'banner' => 'nullable|image|mimes:jpeg,png,webp|max:2048',
             'banner_url' => 'nullable|url',
             'meta' => 'nullable|array',
-            'payout_mode' => 'nullable|in:direct,platform',
         ];
     }
 

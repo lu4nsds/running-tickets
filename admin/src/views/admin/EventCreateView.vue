@@ -576,7 +576,6 @@ const form = reactive({
     date_start: "",
     date_end: "",
     max_participants: null,
-    payout_mode: "platform",
     status: "inativo",
 });
 
@@ -713,7 +712,6 @@ const handleSubmit = async () => {
         if (form.max_participants) {
             formData.append("max_participants", form.max_participants);
         }
-        formData.append("payout_mode", form.payout_mode);
         formData.append("status", form.status);
 
         if (bannerFile.value) {

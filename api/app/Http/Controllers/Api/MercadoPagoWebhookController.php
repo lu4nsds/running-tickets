@@ -26,108 +26,77 @@ class MercadoPagoWebhookController extends Controller
                 'payload' => $request->all(),
             ]);
 
-            // Mercado Pago envia o tipo de notificação
             $type = $request->input('type');
-            
-            // Só processamos notificações de pagamento
+
             if ($type !== 'payment') {
                 Log::info('Tipo de notificação ignorado', ['type' => $type]);
                 return response()->json(['status' => 'ignored'], 200);
             }
 
-            // ID do pagamento no Mercado Pago
             $paymentId = $request->input('data.id');
-            
+
             if (!$paymentId) {
                 Log::warning('Payment ID não encontrado no webhook');
                 return response()->json(['error' => 'Payment ID missing'], 400);
             }
 
-            // Busca o pedido pela referência externa
-            // Precisamos buscar o access_token do organizador para consultar o pagamento
-            $action = $request->input('action');
-            
             Log::info('Processando pagamento', [
                 'payment_id' => $paymentId,
-                'action' => $action,
+                'action'     => $request->input('action'),
             ]);
 
             // Tenta buscar o pedido pelo payment_id primeiro (mais eficiente)
-            $order = Order::where('payment_id', $paymentId)
-                ->with('event.payoutSetting')
-                ->first();
+            $order = Order::where('payment_id', $paymentId)->first();
 
             if ($order) {
                 Log::info('Pedido encontrado por payment_id', [
-                    'order_id' => $order->id,
+                    'order_id'  => $order->id,
                     'reference' => $order->reference,
                 ]);
 
-                $payoutSetting = $order->event->payoutSetting;
-                
-                if ($payoutSetting && isset($payoutSetting->details['access_token'])) {
-                    // Busca dados atualizados do pagamento
-                    $payment = $this->mercadoPagoService->getPaymentById(
-                        $paymentId,
-                        $payoutSetting->details['access_token']
-                    );
+                $payment = $this->mercadoPagoService->getPaymentById($paymentId);
 
-                    if ($payment) {
-                        $this->updateOrderStatus($order, $payment);
-                        return response()->json(['status' => 'processed'], 200);
-                    }
-                }
-            }
-
-            // Fallback: busca por external_reference (para pagamentos antigos ou primeiro webhook)
-            Log::info('Buscando pedido por external_reference (fallback)');
-            
-            $orders = Order::where('status', OrderStatus::PENDING)
-                ->with('event.payoutSetting')
-                ->get();
-
-            foreach ($orders as $order) {
-                $payoutSetting = $order->event->payoutSetting;
-                
-                if (!$payoutSetting || !isset($payoutSetting->details['access_token'])) {
-                    continue;
-                }
-
-                // Busca o pagamento no Mercado Pago
-                $payment = $this->mercadoPagoService->getPaymentById(
-                    $paymentId,
-                    $payoutSetting->details['access_token']
-                );
-
-                if (!$payment) {
-                    continue;
-                }
-
-                // Verifica se o external_reference bate com este pedido
-                if ($payment['external_reference'] === $order->reference) {
-                    Log::info('Pedido encontrado', [
-                        'order_id' => $order->id,
-                        'reference' => $order->reference,
-                        'payment_status' => $payment['status'],
-                    ]);
-
-                    // Atualiza o pedido baseado no status do pagamento
+                if ($payment) {
                     $this->updateOrderStatus($order, $payment);
-
                     return response()->json(['status' => 'processed'], 200);
                 }
             }
 
-            Log::warning('Pedido não encontrado para o pagamento', [
-                'payment_id' => $paymentId,
+            // Fallback: busca por external_reference
+            Log::info('Buscando pedido por external_reference (fallback)');
+
+            $payment = $this->mercadoPagoService->getPaymentById($paymentId);
+
+            if (!$payment) {
+                Log::warning('Pagamento não encontrado no Mercado Pago', ['payment_id' => $paymentId]);
+                return response()->json(['status' => 'payment_not_found'], 200);
+            }
+
+            $order = Order::where('reference', $payment['external_reference'])
+                ->where('status', OrderStatus::PENDING)
+                ->first();
+
+            if (!$order) {
+                Log::warning('Pedido não encontrado para o pagamento', [
+                    'payment_id'         => $paymentId,
+                    'external_reference' => $payment['external_reference'],
+                ]);
+                return response()->json(['status' => 'order_not_found'], 200);
+            }
+
+            Log::info('Pedido encontrado por external_reference', [
+                'order_id'       => $order->id,
+                'reference'      => $order->reference,
+                'payment_status' => $payment['status'],
             ]);
 
-            return response()->json(['status' => 'order_not_found'], 404);
+            $this->updateOrderStatus($order, $payment);
+            return response()->json(['status' => 'processed'], 200);
 
         } catch (\Exception $e) {
             Log::error('Erro ao processar webhook Mercado Pago', [
                 'message' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
+                'trace'   => $e->getTraceAsString(),
             ]);
 
             // Retorna 200 para evitar que o Mercado Pago reenvie infinitamente
@@ -143,7 +112,7 @@ class MercadoPagoWebhookController extends Controller
         $status = $payment['status'];
 
         Log::info('Atualizando status do pedido', [
-            'order_id' => $order->id,
+            'order_id'       => $order->id,
             'current_status' => $order->status->value,
             'payment_status' => $status,
         ]);
@@ -190,9 +159,7 @@ class MercadoPagoWebhookController extends Controller
                 break;
 
             default:
-                Log::info('Status de pagamento não requer atualização', [
-                    'status' => $status,
-                ]);
+                Log::info('Status de pagamento não requer atualização', ['status' => $status]);
                 break;
         }
     }

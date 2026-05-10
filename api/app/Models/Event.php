@@ -86,22 +86,6 @@ class Event extends Model
     }
 
     /**
-     * Configuração de recebimento do evento
-     */
-    public function payoutSettings()
-    {
-        return $this->hasMany(EventPayoutSetting::class);
-    }
-
-    /**
-     * Configuração de pagamento ativa do evento
-     */
-    public function payoutSetting()
-    {
-        return $this->hasOne(EventPayoutSetting::class)->where('active', true);
-    }
-
-    /**
      * Estatísticas de tickets do evento
      * @return array
      */
