@@ -40,7 +40,7 @@
                             class="material-symbols-outlined text-[20px]"
                             :class="{ 'animate-spin': isExporting }"
                         >{{ isExporting ? 'progress_activity' : 'description' }}</span>
-                        {{ isExporting ? 'Exportando...' : 'Baixar Relatório' }}
+                        {{ isExporting ? 'Exportando...' : 'Exportar Dados' }}
                     </button>
                     <button
                         @click="viewDashboard"

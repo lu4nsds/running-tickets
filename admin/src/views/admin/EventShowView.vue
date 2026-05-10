@@ -101,7 +101,7 @@
                             class="material-symbols-outlined text-[20px]"
                             :class="{ 'animate-spin': isExporting }"
                         >{{ isExporting ? 'progress_activity' : 'description' }}</span>
-                        {{ isExporting ? 'Exportando...' : 'Baixar Relatório' }}
+                        {{ isExporting ? 'Exportando...' : 'Exportar Dados' }}
                     </button>
                     <button
                         @click="editEvent"
@@ -110,7 +110,7 @@
                         <span class="material-symbols-outlined text-[20px]"
                             >edit</span
                         >
-                        Editar Evento
+                        Editar
                     </button>
                     <button
                         @click="confirmDelete"
@@ -119,7 +119,7 @@
                         <span class="material-symbols-outlined text-[20px]"
                             >delete</span
                         >
-                        Deletar Evento
+                        Deletar
                     </button>
                 </div>
             </div>
