@@ -25,12 +25,14 @@ class Order extends Model
         'buyer_phone',
         'payment_gateway',
         'payment_id',
+        'payment_response_body',
         'metadata',
     ];
 
     protected $casts = [
-        'status'           => OrderStatus::class,
-        'metadata'         => 'array',
+        'status'                => OrderStatus::class,
+        'metadata'              => 'array',
+        'payment_response_body' => 'array',
         'fee_cents'        => 'integer',
         'net_amount_cents' => 'integer',
     ];

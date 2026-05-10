@@ -14,6 +14,28 @@ use Illuminate\Support\Facades\Http;
 class MercadoPagoService
 {
     /**
+     * Constrói o objeto payer no formato aceito pelo Mercado Pago.
+     * Converte o phone de string "(84) 99999-9999" para objeto {area_code, number}.
+     */
+    private function buildMpPayer(array $payer): array
+    {
+        $mpPayer = [
+            'email'          => $payer['email'],
+            'identification' => $payer['identification'],
+        ];
+
+        if (!empty($payer['phone'])) {
+            $digits          = preg_replace('/[^0-9]/', '', $payer['phone']);
+            $mpPayer['phone'] = [
+                'area_code' => substr($digits, 0, 2),
+                'number'    => substr($digits, 2),
+            ];
+        }
+
+        return $mpPayer;
+    }
+
+    /**
      * Valida credenciais do Mercado Pago via API
      */
     public function validateCredentials(string $accessToken): array
@@ -125,7 +147,7 @@ class MercadoPagoService
                 'installments' => $installments,
                 'payment_method_id' => $paymentMethodId,
                 'external_reference' => $externalReference,
-                'payer' => $payer,
+                'payer' => $this->buildMpPayer($payer),
             ], $requestOptions);
 
             return [
@@ -153,8 +175,9 @@ class MercadoPagoService
         } catch (MPApiException $e) {
             \Log::error('Erro ao criar pagamento com cartão no Mercado Pago', [
                 'external_reference' => $externalReference,
-                'message' => $e->getMessage(),
-                'status_code' => $e->getStatusCode(),
+                'message'      => $e->getMessage(),
+                'status_code'  => $e->getStatusCode(),
+                'api_response' => $e->getApiResponse()?->getContent(),
             ]);
             throw $e;
         } catch (\Exception $e) {
@@ -188,7 +211,7 @@ class MercadoPagoService
                 'description' => 'Running Tickets - Pedido ' . $externalReference,
                 'payment_method_id' => 'pix',
                 'external_reference' => $externalReference,
-                'payer' => $payer,
+                'payer' => $this->buildMpPayer($payer),
             ];
 
             if (!$isLocalhost) {

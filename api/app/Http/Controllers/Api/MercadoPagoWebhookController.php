@@ -152,13 +152,14 @@ class MercadoPagoWebhookController extends Controller
             case 'approved':
                 $netReceived = $payment['transaction_details']['net_received_amount'] ?? null;
                 $order->update([
-                    'status'           => OrderStatus::PAID,
-                    'payment_gateway'  => 'mercadopago',
-                    'payment_id'       => $payment['id'],
-                    'fee_cents'        => $netReceived !== null
+                    'status'                => OrderStatus::PAID,
+                    'payment_gateway'       => 'mercadopago',
+                    'payment_id'            => $payment['id'],
+                    'payment_response_body' => $payment,
+                    'fee_cents'             => $netReceived !== null
                         ? (int) round(($payment['transaction_amount'] - $netReceived) * 100)
                         : null,
-                    'net_amount_cents' => $netReceived !== null
+                    'net_amount_cents'      => $netReceived !== null
                         ? (int) round($netReceived * 100)
                         : null,
                     'metadata' => array_merge($order->metadata ?? [], [
@@ -172,17 +173,19 @@ class MercadoPagoWebhookController extends Controller
             case 'refunded':
             case 'charged_back':
                 $order->update([
-                    'status' => OrderStatus::REFUNDED,
-                    'payment_gateway' => 'mercadopago',
-                    'payment_id' => $payment['id'],
+                    'status'                => OrderStatus::REFUNDED,
+                    'payment_gateway'       => 'mercadopago',
+                    'payment_id'            => $payment['id'],
+                    'payment_response_body' => $payment,
                 ]);
                 break;
 
             case 'cancelled':
                 $order->update([
-                    'status' => OrderStatus::CANCELLED,
-                    'payment_gateway' => 'mercadopago',
-                    'payment_id' => $payment['id'],
+                    'status'                => OrderStatus::CANCELLED,
+                    'payment_gateway'       => 'mercadopago',
+                    'payment_id'            => $payment['id'],
+                    'payment_response_body' => $payment,
                 ]);
                 break;
 

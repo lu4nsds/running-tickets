@@ -1232,6 +1232,7 @@ async function generatePix() {
                 payment_method: "pix",
                 payer: {
                     email: buyerInfo.value.email,
+                    phone: buyerInfo.value.phone,
                     identification: { type: "CPF", number: cpfDigits },
                 },
             },
