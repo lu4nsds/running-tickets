@@ -252,6 +252,7 @@ class OrderController extends Controller
                 'installments'   => 'nullable|integer|min:1|max:12',
                 'payer'          => 'required|array',
                 'payer.email'    => ['required', 'email', 'regex:/^[\x00-\x7F]+$/'],
+                'payer.phone'    => ['required', 'string', 'max:20'],
                 'payer.identification'        => 'required|array',
                 'payer.identification.type'   => 'required|string',
                 'payer.identification.number' => 'required|string',
@@ -332,6 +333,7 @@ class OrderController extends Controller
                 'payment_id'      => (string) $paymentData['id'],
                 'payment_gateway' => 'mercadopago',
                 'buyer_email'     => $validated['payer']['email'],
+                'buyer_phone'     => preg_replace('/[^0-9+]/', '', $validated['payer']['phone']),
             ];
 
             $metadata = $order->metadata ?? [];

@@ -116,6 +116,11 @@ const menuItems = computed(() => {
                 label: "Organizadores",
             },
             { path: "/admin/events", icon: "event", label: "Eventos" },
+            {
+                path: "/admin/comunicacao",
+                icon: "campaign",
+                label: "Comunicação",
+            },
         ];
     } else {
         const items = [

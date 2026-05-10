@@ -206,6 +206,12 @@ const router = createRouter({
                     component: () =>
                         import("@/views/admin/TicketValidationView.vue"),
                 },
+                {
+                    path: "comunicacao",
+                    name: "admin-comunicacao",
+                    component: () => import("@/views/admin/ComunicacaoView.vue"),
+                    meta: { title: "Comunicação" },
+                },
             ],
         },
     ],

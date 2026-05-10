@@ -11,12 +11,13 @@
   "dependencies": {
     "apexcharts": "^5.3.6",
     "axios": "^1.7.9",
+    "html5-qrcode": "^2.3.8",
     "pinia": "^2.3.0",
+    "qrcode": "^1.5.4",
     "v-calendar": "^3.1.2",
     "vue": "^3.5.13",
     "vue-router": "^4.5.0",
-    "vue3-apexcharts": "^1.10.0",
-    "html5-qrcode": "^2.3.8"
+    "vue3-apexcharts": "^1.10.0"
   },
   "devDependencies": {
     "@tailwindcss/forms": "^0.5.11",

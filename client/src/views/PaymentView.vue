@@ -110,6 +110,21 @@
                                     inputmode="numeric"
                                 />
                             </div>
+                            <div class="col-span-1">
+                                <label
+                                    class="block text-sm font-medium text-slate-400 mb-2"
+                                    >Celular (WhatsApp) <span class="text-red-500">*</span></label
+                                >
+                                <input
+                                    v-model="buyerInfo.phone"
+                                    @input="handlePhoneInput"
+                                    maxlength="15"
+                                    placeholder="(11) 99999-9999"
+                                    class="input-field"
+                                    type="tel"
+                                    inputmode="numeric"
+                                />
+                            </div>
                         </div>
                     </section>
 
@@ -889,7 +904,7 @@ const loading = ref(true);
 const error = ref(null);
 const processing = ref(false);
 const orderData = ref({});
-const buyerInfo = ref({ name: "", email: "", cpf: "" });
+const buyerInfo = ref({ name: "", email: "", cpf: "", phone: "" });
 const activeTab = ref("credit");
 
 // Card data
@@ -1030,6 +1045,19 @@ function handleCPFInput(event) {
     buyerInfo.value.cpf = formatCPF(event.target.value);
 }
 
+function handlePhoneInput(event) {
+    let value = event.target.value.replace(/\D/g, "");
+    if (value.length > 11) value = value.slice(0, 11);
+    if (value.length > 10) {
+        value = value.replace(/(\d{2})(\d{5})(\d{4})/, "($1) $2-$3");
+    } else if (value.length > 6) {
+        value = value.replace(/(\d{2})(\d{4})(\d{0,4})/, "($1) $2-$3");
+    } else if (value.length > 2) {
+        value = value.replace(/(\d{2})(\d{0,5})/, "($1) $2");
+    }
+    buyerInfo.value.phone = value;
+}
+
 async function handleCardNumberInput(event) {
     cardData.value.number = formatCardNumber(event.target.value);
     fieldErrors.value.number = "";
@@ -1168,6 +1196,7 @@ async function submitCardPayment() {
                 installments: selectedInstallment.value?.installments ?? 1,
                 payer: {
                     email: buyerInfo.value.email,
+                    phone: buyerInfo.value.phone,
                     identification: {
                         type: "CPF",
                         number: cpfDigits,
@@ -1381,9 +1410,10 @@ onMounted(async () => {
             const participants = JSON.parse(participantsRaw);
             if (participants?.length) {
                 const first = participants[0];
-                buyerInfo.value.name = first.name || "";
+                buyerInfo.value.name  = first.name || "";
                 buyerInfo.value.email = first.email || "";
-                buyerInfo.value.cpf = formatCPF(first.cpf || "");
+                buyerInfo.value.cpf   = formatCPF(first.cpf || "");
+                buyerInfo.value.phone = first.phone || "";
             }
         }
 

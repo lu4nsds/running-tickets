@@ -22,6 +22,7 @@ class Order extends Model
         'currency',
         'status',
         'buyer_email',
+        'buyer_phone',
         'payment_gateway',
         'payment_id',
         'metadata',

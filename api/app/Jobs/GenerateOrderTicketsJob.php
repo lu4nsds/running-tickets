@@ -5,6 +5,7 @@ namespace App\Jobs;
 use App\Enums\TicketStatus;
 use App\Models\Order;
 use App\Models\Ticket;
+use App\Jobs\SendWhatsAppTicketNotificationJob;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\Log;
@@ -67,8 +68,9 @@ class GenerateOrderTicketsJob implements ShouldQueue
             ]);
         }
 
-        // Após gerar todos os tickets, envia email de confirmação
+        // Após gerar todos os tickets, envia notificações
         $this->sendConfirmationEmail();
+        SendWhatsAppTicketNotificationJob::dispatch($this->order);
     }
 
     /**

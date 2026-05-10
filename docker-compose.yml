@@ -122,6 +122,25 @@
             - api
         command: sh -c "npm i && npm run dev -- --host"
 
+    # WhatsApp Gateway (NestJS + Baileys)
+    whatsapp-gateway:
+        build:
+            context: ./whatsapp-gateway
+            dockerfile: Dockerfile
+        container_name: running-tickets-whatsapp
+        restart: unless-stopped
+        environment:
+            - REDIS_URL=redis://redis:6379
+            - WHATSAPP_API_KEY=${WHATSAPP_GATEWAY_API_KEY:-}
+            - PORT=3000
+            - WHATSAPP_CONNECT_TIMEOUT_MS=30000
+        ports:
+            - "3001:3000"
+        networks:
+            - running-tickets-network
+        depends_on:
+            - redis
+
     # Frontend Admin (Backoffice)
     admin:
         image: node:24.14-alpine

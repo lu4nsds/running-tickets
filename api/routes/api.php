@@ -117,6 +117,13 @@ Route::middleware('auth:sanctum')->group(function () {
 
         // Exportar relatório de inscritos
         Route::get('/events/{event}/report', [AdminReportController::class, 'exportParticipants']);
+
+        // WhatsApp Gateway
+        Route::prefix('whatsapp')->group(function () {
+            Route::post('connect', [\App\Http\Controllers\Api\WhatsAppController::class, 'connect']);
+            Route::get('status', [\App\Http\Controllers\Api\WhatsAppController::class, 'status']);
+            Route::delete('session', [\App\Http\Controllers\Api\WhatsAppController::class, 'disconnect']);
+        });
     });
     
     // Organizers (contexto específico)

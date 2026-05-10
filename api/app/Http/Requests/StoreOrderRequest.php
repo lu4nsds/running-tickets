@@ -23,7 +23,7 @@ class StoreOrderRequest extends FormRequest
     {
         return [
             'event_id' => ['required', 'integer', 'exists:events,id'],
-            'items' => ['required', 'array', 'min:1'],
+            'items'    => ['required', 'array', 'min:1'],
             'items.*.ticket_type_id' => ['required', 'integer', 'exists:ticket_types,id'],
             'items.*.category_id' => ['nullable', 'integer', 'exists:categories,id'],
             'items.*.participant_data' => ['required', 'array'],
@@ -69,6 +69,7 @@ class StoreOrderRequest extends FormRequest
             'items.*.participant_data.shirt_size' => ['nullable', 'string', 'in:PP,P,M,G,GG,XG'],
             'items.*.participant_data.city' => ['nullable', 'string', 'max:255'],
             'items.*.participant_data.team' => ['nullable', 'string', 'max:255'],
+            'items.*.participant_data.phone' => ['required', 'string', 'max:20'],
             'items.*.participant_data.emergency_contact' => ['nullable', 'string', 'max:255'],
             'items.*.participant_data.rg' => ['nullable', 'string', 'max:20'],
         ];
@@ -99,6 +100,8 @@ class StoreOrderRequest extends FormRequest
             'items.*.participant_data.birthdate.date' => 'A data de nascimento deve ser uma data válida.',
             'items.*.participant_data.birthdate.before' => 'A data de nascimento deve ser anterior a hoje.',
             'items.*.participant_data.shirt_size.in' => 'O tamanho da camisa deve ser PP, P, M, G, GG ou XG.',
+            'items.*.participant_data.phone.required' => 'O telefone do participante é obrigatório.',
+            'items.*.participant_data.phone.max' => 'O telefone do participante não pode ter mais de 20 caracteres.',
             'items.*.participant_data.emergency_contact.max' => 'O contato de emergência não pode ter mais de 255 caracteres.',
             'items.*.participant_data.rg.max' => 'O RG não pode ter mais de 20 caracteres.',
         ];
@@ -109,16 +112,23 @@ class StoreOrderRequest extends FormRequest
      */
     protected function prepareForValidation(): void
     {
-        // Remove formatação do CPF se vier com pontos e traços
+        $mergeData = [];
+
+        // Remove formatação do CPF e telefone dos participantes
         if ($this->has('items')) {
-            $items = collect($this->items)->map(function ($item) {
+            $mergeData['items'] = collect($this->items)->map(function ($item) {
                 if (isset($item['participant_data']['cpf'])) {
                     $item['participant_data']['cpf'] = preg_replace('/[^0-9]/', '', $item['participant_data']['cpf']);
                 }
+                if (isset($item['participant_data']['phone'])) {
+                    $item['participant_data']['phone'] = preg_replace('/[^0-9+]/', '', $item['participant_data']['phone']);
+                }
                 return $item;
             })->toArray();
+        }
 
-            $this->merge(['items' => $items]);
+        if (!empty($mergeData)) {
+            $this->merge($mergeData);
         }
     }
 

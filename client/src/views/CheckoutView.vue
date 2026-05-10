@@ -203,18 +203,35 @@
                                         placeholder="joao@exemplo.com"
                                     />
                                     <p
-                                        v-if="
-                                            errors[
-                                                `participants.${index}.email`
-                                            ]
-                                        "
+                                        v-if="errors[`participants.${index}.email`]"
                                         class="mt-1 text-sm text-red-500"
                                     >
-                                        {{
-                                            errors[
-                                                `participants.${index}.email`
-                                            ]
-                                        }}
+                                        {{ errors[`participants.${index}.email`] }}
+                                    </p>
+                                </div>
+
+                                <div>
+                                    <label
+                                        class="block text-sm font-medium text-slate-300 mb-2"
+                                    >
+                                        Celular (WhatsApp)
+                                        <span class="text-red-500">*</span>
+                                    </label>
+                                    <input
+                                        v-model="participant.phone"
+                                        @input="(e) => formatPhone(e, index)"
+                                        type="tel"
+                                        required
+                                        maxlength="15"
+                                        class="w-full px-4 py-3 bg-surface-darker border border-border-dark rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-primary transition-colors"
+                                        placeholder="(11) 99999-9999"
+                                        inputmode="numeric"
+                                    />
+                                    <p
+                                        v-if="errors[`participants.${index}.phone`]"
+                                        class="mt-1 text-sm text-red-500"
+                                    >
+                                        {{ errors[`participants.${index}.phone`] }}
                                     </p>
                                 </div>
 
@@ -518,7 +535,7 @@ const totalAmount = computed(() => {
 
 const isFormValid = computed(() => {
     return participants.value.every(
-        (p) => p.name && p.email && p.cpf && isValidBirthdate(p.birthdate) && p.category_id,
+        (p) => p.name && p.email && p.phone && p.cpf && isValidBirthdate(p.birthdate) && p.category_id,
     );
 });
 
@@ -526,6 +543,7 @@ function isParticipantComplete(participant) {
     return (
         participant.name &&
         participant.email &&
+        participant.phone &&
         participant.cpf &&
         isValidBirthdate(participant.birthdate) &&
         participant.category_id
@@ -561,6 +579,22 @@ function formatPrice(cents) {
         style: "currency",
         currency: "BRL",
     }).format(cents / 100);
+}
+
+function formatPhone(event, index) {
+    let value = event.target.value.replace(/\D/g, "");
+
+    if (value.length > 11) value = value.slice(0, 11);
+
+    if (value.length > 10) {
+        value = value.replace(/(\d{2})(\d{5})(\d{4})/, "($1) $2-$3");
+    } else if (value.length > 6) {
+        value = value.replace(/(\d{2})(\d{4})(\d{0,4})/, "($1) $2-$3");
+    } else if (value.length > 2) {
+        value = value.replace(/(\d{2})(\d{0,5})/, "($1) $2");
+    }
+
+    participants.value[index].phone = value;
 }
 
 function formatCPF(event, index) {
@@ -603,6 +637,7 @@ function initializeParticipants() {
                 category_id: "",
                 name: "",
                 email: "",
+                phone: "",
                 cpf: "",
                 birthdate: "",
                 shirt_size: "",
@@ -638,6 +673,13 @@ function validateForm() {
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!participant.email || !emailRegex.test(participant.email)) {
             errors.value[`participants.${index}.email`] = "Email inválido";
+            hasErrors = true;
+        }
+
+        // Celular
+        const phoneClean = participant.phone.replace(/\D/g, "");
+        if (phoneClean.length < 10 || phoneClean.length > 11) {
+            errors.value[`participants.${index}.phone`] = "Celular inválido";
             hasErrors = true;
         }
 
@@ -692,7 +734,8 @@ async function proceedToPayment() {
                 participant_data: {
                     name: p.name,
                     email: p.email,
-                    cpf: p.cpf.replace(/\D/g, ""), // Remove formatação do CPF
+                    phone: p.phone.replace(/\D/g, ""),
+                    cpf: p.cpf.replace(/\D/g, ""),
                     birthdate: p.birthdate,
                     shirt_size: p.shirt_size || null,
                     city: p.city || null,

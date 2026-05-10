@@ -61,6 +61,9 @@ class OrderSeeder extends Seeder
                 $feeCents = (int) round($totalCents * $feeRate);
                 $netAmountCents = $totalCents - $feeCents;
 
+                $buyerEmail = fake()->email();
+                $buyerPhone = fake()->numerify('119########');
+
                 $order = Order::create([
                     'event_id'         => $event->id,
                     'organizer_id'     => $event->organizer_id,
@@ -71,6 +74,8 @@ class OrderSeeder extends Seeder
                     'net_amount_cents' => $netAmountCents,
                     'currency'         => Currency::BRL->value,
                     'status'           => OrderStatus::PAID->value,
+                    'buyer_email'      => $buyerEmail,
+                    'buyer_phone'      => $buyerPhone,
                     'payment_gateway'  => PaymentGateway::MERCADOPAGO->value,
                     'payment_id'       => 'MP-' . rand(100000, 999999),
                     'metadata'         => [
@@ -83,17 +88,21 @@ class OrderSeeder extends Seeder
 
                 // Criar order items e tickets
                 for ($j = 0; $j < $quantity; $j++) {
+                    $participantEmail = ($j === 0) ? $buyerEmail : fake()->email();
+                    $participantPhone = ($j === 0) ? $buyerPhone : fake()->numerify('119########');
+
                     $orderItem = OrderItem::create([
                         'order_id' => $order->id,
                         'ticket_type_id' => $ticketType->id,
                         'category_id' => $category->id,
                         'user_id' => null,
                         'participant_data' => [
-                            'name' => 'Participante ' . fake()->name(),
-                            'email' => fake()->email(),
-                            'cpf' => fake()->numerify('###########'),
+                            'name'       => 'Participante ' . fake()->name(),
+                            'email'      => $participantEmail,
+                            'phone'      => $participantPhone,
+                            'cpf'        => fake()->numerify('###########'),
                             'birth_date' => fake()->date('Y-m-d', '-25 years'),
-                            'gender' => $category->gender,
+                            'gender'     => $category->gender,
                         ],
                     ]);
 
@@ -121,36 +130,40 @@ class OrderSeeder extends Seeder
                 $totalCents = $ticketType->price_cents * $quantity;
                 $createdAt = now()->subDays(rand(0, 5));
 
+                $buyerEmailPending = fake()->email();
+                $buyerPhonePending = fake()->numerify('119########');
+
                 $order = Order::create([
-                    'event_id' => $event->id,
-                    'organizer_id' => $event->organizer_id,
-                    'reference' => 'ORD-' . strtoupper(Str::random(10)),
-                    'user_id' => null,
-                    'total_cents' => $totalCents,
-                    'currency' => Currency::BRL->value,
-                    'status' => OrderStatus::PENDING->value,
+                    'event_id'        => $event->id,
+                    'organizer_id'    => $event->organizer_id,
+                    'reference'       => 'ORD-' . strtoupper(Str::random(10)),
+                    'user_id'         => null,
+                    'total_cents'     => $totalCents,
+                    'currency'        => Currency::BRL->value,
+                    'status'          => OrderStatus::PENDING->value,
+                    'buyer_email'     => $buyerEmailPending,
+                    'buyer_phone'     => $buyerPhonePending,
                     'payment_gateway' => null,
-                    'payment_id' => null,
-                    'metadata' => [
-                        'ip' => '192.168.1.' . rand(1, 255),
-                    ],
-                    'created_at' => $createdAt,
-                    'updated_at' => $createdAt,
+                    'payment_id'      => null,
+                    'metadata'        => ['ip' => '192.168.1.' . rand(1, 255)],
+                    'created_at'      => $createdAt,
+                    'updated_at'      => $createdAt,
                 ]);
 
                 // Criar order items (sem tickets pois não foi pago)
                 for ($j = 0; $j < $quantity; $j++) {
                     OrderItem::create([
-                        'order_id' => $order->id,
-                        'ticket_type_id' => $ticketType->id,
-                        'category_id' => $category->id,
-                        'user_id' => null,
+                        'order_id'         => $order->id,
+                        'ticket_type_id'   => $ticketType->id,
+                        'category_id'      => $category->id,
+                        'user_id'          => null,
                         'participant_data' => [
-                            'name' => 'Participante ' . fake()->name(),
-                            'email' => fake()->email(),
-                            'cpf' => fake()->numerify('###########'),
+                            'name'       => 'Participante ' . fake()->name(),
+                            'email'      => ($j === 0) ? $buyerEmailPending : fake()->email(),
+                            'phone'      => ($j === 0) ? $buyerPhonePending : fake()->numerify('119########'),
+                            'cpf'        => fake()->numerify('###########'),
                             'birth_date' => fake()->date('Y-m-d', '-25 years'),
-                            'gender' => $category->gender,
+                            'gender'     => $category->gender,
                         ],
                     ]);
                 }
@@ -169,18 +182,23 @@ class OrderSeeder extends Seeder
                 $totalCents = $ticketType->price_cents * $quantity;
                 $createdAt = now()->subDays(rand(1, 20));
 
+                $buyerEmailCancelled = fake()->email();
+                $buyerPhoneCancelled = fake()->numerify('119########');
+
                 $order = Order::create([
-                    'event_id' => $event->id,
-                    'organizer_id' => $event->organizer_id,
-                    'reference' => 'ORD-' . strtoupper(Str::random(10)),
-                    'user_id' => null,
-                    'total_cents' => $totalCents,
-                    'currency' => Currency::BRL->value,
-                    'status' => OrderStatus::CANCELLED->value,
+                    'event_id'        => $event->id,
+                    'organizer_id'    => $event->organizer_id,
+                    'reference'       => 'ORD-' . strtoupper(Str::random(10)),
+                    'user_id'         => null,
+                    'total_cents'     => $totalCents,
+                    'currency'        => Currency::BRL->value,
+                    'status'          => OrderStatus::CANCELLED->value,
+                    'buyer_email'     => $buyerEmailCancelled,
+                    'buyer_phone'     => $buyerPhoneCancelled,
                     'payment_gateway' => null,
-                    'payment_id' => null,
-                    'metadata' => [
-                        'ip' => '192.168.1.' . rand(1, 255),
+                    'payment_id'      => null,
+                    'metadata'        => [
+                        'ip'               => '192.168.1.' . rand(1, 255),
                         'cancelled_reason' => 'Solicitação do cliente',
                     ],
                     'created_at' => $createdAt,
@@ -190,16 +208,17 @@ class OrderSeeder extends Seeder
                 // Criar order items
                 for ($j = 0; $j < $quantity; $j++) {
                     OrderItem::create([
-                        'order_id' => $order->id,
-                        'ticket_type_id' => $ticketType->id,
-                        'category_id' => $category->id,
-                        'user_id' => null,
+                        'order_id'         => $order->id,
+                        'ticket_type_id'   => $ticketType->id,
+                        'category_id'      => $category->id,
+                        'user_id'          => null,
                         'participant_data' => [
-                            'name' => 'Participante ' . fake()->name(),
-                            'email' => fake()->email(),
-                            'cpf' => fake()->numerify('###########'),
+                            'name'       => 'Participante ' . fake()->name(),
+                            'email'      => ($j === 0) ? $buyerEmailCancelled : fake()->email(),
+                            'phone'      => ($j === 0) ? $buyerPhoneCancelled : fake()->numerify('119########'),
+                            'cpf'        => fake()->numerify('###########'),
                             'birth_date' => fake()->date('Y-m-d', '-25 years'),
-                            'gender' => $category->gender,
+                            'gender'     => $category->gender,
                         ],
                     ]);
                 }
