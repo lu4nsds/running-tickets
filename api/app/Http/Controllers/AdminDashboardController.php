@@ -173,6 +173,30 @@ class AdminDashboardController extends Controller
                 )
                 ->get();
 
+            $feeBreakdown = DB::table('orders')
+                ->whereBetween('created_at', [$startDate, $endDate])
+                ->where('status', 'paid')
+                ->selectRaw('
+                    COALESCE(SUM(fee_cents), 0) as total_fees,
+                    COALESCE(SUM(net_amount_cents), 0) as total_net
+                ')
+                ->first();
+
+            $pendingPayouts = DB::table('orders')
+                ->join('organizers', 'orders.organizer_id', '=', 'organizers.id')
+                ->leftJoin('events', 'orders.event_id', '=', 'events.id')
+                ->where('orders.status', 'paid')
+                ->select(
+                    'organizers.id as organizer_id',
+                    'organizers.name as organizer_name',
+                    DB::raw('COALESCE(SUM(orders.net_amount_cents), SUM(orders.total_cents)) as amount_to_transfer'),
+                    DB::raw('ROUND(AVG(CASE WHEN orders.total_cents > 0 AND orders.fee_cents > 0 THEN orders.fee_cents / orders.total_cents * 100 END), 1) as avg_fee_rate'),
+                    DB::raw('MIN(DATEDIFF(events.date_start, NOW())) as nearest_event_days')
+                )
+                ->groupBy('organizers.id', 'organizers.name')
+                ->orderByRaw('MIN(DATEDIFF(events.date_start, NOW())) ASC')
+                ->get();
+
             return [
                 'summary'         => array_merge((array) $platformSummary, $eventStats),
                 'top_organizers'  => $topOrganizers,
@@ -180,6 +204,8 @@ class AdminDashboardController extends Controller
                 'sales_trend'     => $salesTrend,
                 'alerts'          => $alerts,
                 'upcoming_events' => $upcomingEvents,
+                'fee_breakdown'   => $feeBreakdown,
+                'pending_payouts' => $pendingPayouts,
                 'applied_filters' => [
                     'start_date' => $startDate->format('Y-m-d'),
                     'end_date'   => $endDate->format('Y-m-d'),

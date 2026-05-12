@@ -22,11 +22,43 @@ export const useDashboardStore = defineStore("dashboard", () => {
     const alerts         = computed(() => data.value?.alerts || []);
     const appliedFilters = computed(() => data.value?.applied_filters || null);
 
-    // Stubs — payout breakdown removed; kept so template doesn't break (always empty)
-    const payoutPercentages = computed(() => []);
-    const donutSegments     = computed(() => []);
-    const pendingPayouts    = computed(() => []);
-    const top4PendingPayouts = computed(() => []);
+    const pendingPayouts = computed(() => data.value?.pending_payouts ?? []);
+
+    const payoutPercentages = computed(() => {
+        const fb = data.value?.fee_breakdown ?? null;
+        if (!fb) return [];
+        const fees  = Number(fb.total_fees);
+        const net   = Number(fb.total_net);
+        const total = fees + net;
+        if (total === 0) return [];
+        return [
+            { mode_label: 'Taxas (Mercado Pago)',    percentage: Math.round((fees / total) * 100), revenue: fees },
+            { mode_label: 'Líquido (Organizadores)', percentage: Math.round((net  / total) * 100), revenue: net  },
+        ];
+    });
+
+    const donutSegments = computed(() => {
+        if (payoutPercentages.value.length === 0) return [];
+        const colors = ['#00e677', '#3b82f6'];
+        let startAngle = -Math.PI / 2;
+        return payoutPercentages.value.map((item, i) => {
+            const slice     = (item.percentage / 100) * 2 * Math.PI;
+            const endAngle  = startAngle + slice;
+            const r         = 80;
+            const x1 = Math.cos(startAngle) * r;
+            const y1 = Math.sin(startAngle) * r;
+            const x2 = Math.cos(endAngle)   * r;
+            const y2 = Math.sin(endAngle)   * r;
+            const large = slice > Math.PI ? 1 : 0;
+            const path  = `M0,0 L${x1},${y1} A${r},${r} 0 ${large},1 ${x2},${y2} Z`;
+            const midAngle = startAngle + slice / 2;
+            const labelR    = 95;
+            const labelX    = Math.cos(midAngle) * labelR;
+            const labelY    = Math.sin(midAngle) * labelR;
+            startAngle = endAngle;
+            return { path, color: colors[i] ?? '#a855f7', labelX, labelY, percentage: item.percentage };
+        });
+    });
 
     // Computed: Top 4 organizadores
     const top4Organizers = computed(() => topOrganizers.value.slice(0, 4));
@@ -147,7 +179,6 @@ export const useDashboardStore = defineStore("dashboard", () => {
         payoutPercentages,
         donutSegments,
         pendingPayouts,
-        top4PendingPayouts,
         platformHealth,
         salesTrend,
         alerts,

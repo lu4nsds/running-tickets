@@ -276,7 +276,7 @@
                                     >info</span
                                 >
                                 <div
-                                    class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block z-10"
+                                    class="absolute bottom-full right-0 mb-2 hidden group-hover:block z-10"
                                 >
                                     <div
                                         class="bg-slate-900 text-white text-xs rounded-lg px-3 py-2 w-48 shadow-xl border border-slate-700"
@@ -291,7 +291,7 @@
                                         </p>
                                     </div>
                                     <div
-                                        class="w-2 h-2 bg-slate-900 border-b border-r border-slate-700 absolute top-0 left-1/2 -translate-x-1/2 translate-y-1/2 rotate-45"
+                                        class="w-2 h-2 bg-slate-900 border-b border-r border-slate-700 absolute top-0 right-2 translate-y-1/2 rotate-45"
                                     ></div>
                                 </div>
                             </div>
@@ -540,14 +540,7 @@
                                     ]"
                                 ></span>
                                 <span class="text-slate-400">
-                                    {{
-                                        item.payout_mode === "platform"
-                                            ? "Plataforma (Repasse)"
-                                            : item.payout_mode === "direct"
-                                              ? "Direto Organizador"
-                                              : item.mode_label ||
-                                                item.payout_mode
-                                    }}
+                                    {{ item.mode_label }}
                                 </span>
                             </div>
                             <div class="text-right">
