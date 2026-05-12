@@ -13,3 +13,11 @@ export interface SendMessageInput {
   phone: string;
   message: string;
 }
+
+export interface SendDocumentInput {
+  phone: string;
+  filename: string;
+  mimetype: string;
+  data: string;
+  caption?: string;
+}

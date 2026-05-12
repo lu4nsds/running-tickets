@@ -26,6 +26,7 @@ import {
 } from '@src/states/redis-message.state';
 import type {
   GatewayStatus,
+  SendDocumentInput,
   SendMessageInput,
   TenantSession,
 } from '@src/types/whatsapp.type';
@@ -218,6 +219,60 @@ export class AppService implements OnModuleInit {
 
     const sent = await active.socket.sendMessage(result.jid, {
       text: message,
+    });
+
+    await cacheMessage(
+      this.redis,
+      tenantUuid,
+      sent?.key?.remoteJid ?? result.jid,
+      sent?.key?.id,
+      sent?.message,
+    );
+
+    return { ok: true, phone: result.jid };
+  }
+
+  async sendDocument(
+    tenantUuid: string,
+    input: SendDocumentInput,
+  ): Promise<{ ok: true; phone: string }> {
+    const phone = this.normalizePhone(input.phone);
+
+    if (!phone || !input.data || !input.filename || !input.mimetype) {
+      throw new BadRequestException('phone, filename, mimetype and data are required');
+    }
+
+    const session = this.sessions.get(tenantUuid);
+
+    if (!session || session.status !== 'open' || !session.socket) {
+      await this.connect(tenantUuid);
+      await this.waitUntilOpen(tenantUuid, this.connectTimeoutMs());
+    }
+
+    const active = this.sessions.get(tenantUuid);
+
+    if (!active?.socket || active.status !== 'open') {
+      throw new InternalServerErrorException(
+        `WhatsApp session for tenant ${tenantUuid} is not connected. Pair with QR and retry.`,
+      );
+    }
+
+    const onWhatsApp = await active.socket.onWhatsApp(
+      `${phone}@s.whatsapp.net`,
+    );
+    const result = onWhatsApp?.[0];
+
+    if (!result?.exists) {
+      throw new BadRequestException(
+        `The number ${phone} does not have a WhatsApp account.`,
+      );
+    }
+
+    const sent = await active.socket.sendMessage(result.jid, {
+      document: Buffer.from(input.data, 'base64'),
+      mimetype: input.mimetype,
+      fileName: input.filename,
+      caption: input.caption ?? '',
     });
 
     await cacheMessage(

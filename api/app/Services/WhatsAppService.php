@@ -5,6 +5,7 @@ namespace App\Services;
 use RuntimeException;
 use Throwable;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 
 class WhatsAppService extends AbstractIntegrationService
 {
@@ -64,6 +65,45 @@ class WhatsAppService extends AbstractIntegrationService
     // -------------------------------------------------------------------------
     // Messaging
     // -------------------------------------------------------------------------
+
+    public function sendDocument(string $phone, string $storagePath, string $filename, string $caption = ''): bool
+    {
+        try {
+            if (! $this->enabled) {
+                return false;
+            }
+
+            $content = Storage::get($storagePath);
+
+            if ($content === null) {
+                Log::warning('[WhatsApp] PDF not found for document send', ['path' => $storagePath]);
+                return false;
+            }
+
+            $response = $this->request()->post($this->url("tenants/{$this->tenantUuid}/messages/send-document"), [
+                'phone'    => $phone,
+                'filename' => $filename,
+                'mimetype' => 'application/pdf',
+                'data'     => base64_encode($content),
+                'caption'  => $caption,
+            ]);
+
+            if ($response->failed()) {
+                Log::warning('[WhatsApp] Failed to send document', [
+                    'phone'  => $phone,
+                    'status' => $response->status(),
+                    'body'   => $response->body(),
+                ]);
+
+                return false;
+            }
+
+            return true;
+        } catch (Throwable $e) {
+            Log::error('[WhatsApp] Exception sending document', ['message' => $e->getMessage()]);
+            return false;
+        }
+    }
 
     public function send(string $phone, string $message): bool
     {

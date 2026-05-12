@@ -7,6 +7,7 @@ ConsoleFilterAdapter.apply();
 
 async function bootstrap(): Promise<void> {
   const app = await NestFactory.create(AppModule);
+  app.use(require('express').json({ limit: '10mb' }));
   app.useGlobalPipes(
     new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }),
   );

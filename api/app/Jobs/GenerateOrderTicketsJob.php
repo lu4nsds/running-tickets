@@ -5,6 +5,7 @@ namespace App\Jobs;
 use App\Enums\TicketStatus;
 use App\Models\Order;
 use App\Models\Ticket;
+use App\Services\TicketPdfService;
 use App\Services\WhatsAppService;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
@@ -26,7 +27,7 @@ class GenerateOrderTicketsJob implements ShouldQueue
     /**
      * Execute the job.
      */
-    public function handle(WhatsAppService $whatsApp): void
+    public function handle(WhatsAppService $whatsApp, TicketPdfService $pdfService): void
     {
         Log::info('Gerando tickets para o pedido', [
             'order_id' => $this->order->id,
@@ -70,7 +71,7 @@ class GenerateOrderTicketsJob implements ShouldQueue
 
         // Após gerar todos os tickets, envia notificações
         $this->sendConfirmationEmail();
-        $this->sendWhatsAppNotifications($whatsApp);
+        $this->sendWhatsAppNotifications($whatsApp, $pdfService);
     }
 
     /**
@@ -159,9 +160,9 @@ class GenerateOrderTicketsJob implements ShouldQueue
     /**
      * Envia notificações via WhatsApp com os ingressos
      */
-    private function sendWhatsAppNotifications(WhatsAppService $whatsApp): void
+    private function sendWhatsAppNotifications(WhatsAppService $whatsApp, TicketPdfService $pdfService): void
     {
-        $this->order->load(['items.ticket', 'event']);
+        $this->order->load(['items.ticket', 'items.ticketType', 'items.category', 'event']);
 
         $event      = $this->order->event;
         $buyerPhone = $this->order->buyer_phone;
@@ -196,6 +197,18 @@ class GenerateOrderTicketsJob implements ShouldQueue
                 'buyer_phone' => $buyerPhone,
                 'sent'        => $sent,
             ]);
+
+            // Envia PDF de cada ingresso para o comprador
+            foreach ($this->order->items as $item) {
+                if (! $item->ticket) {
+                    continue;
+                }
+
+                $name    = $item->participant_data['name'] ?? 'Participante';
+                $pdfPath = $pdfService->generateTicketPdf($item);
+                $whatsApp->sendDocument($buyerPhone, $pdfPath, "ingresso-{$name}.pdf");
+                $pdfService->cleanupTempPdfs([$pdfPath]);
+            }
         }
 
         // 2. Envia para cada PARTICIPANTE com somente o seu ingresso
@@ -227,6 +240,14 @@ class GenerateOrderTicketsJob implements ShouldQueue
                 'participant_phone' => $participantPhone,
                 'sent'              => $sent,
             ]);
+
+            // Envia PDF do ingresso para o participante
+            if ($item->ticket) {
+                $name    = $item->participant_data['name'] ?? 'Participante';
+                $pdfPath = $pdfService->generateTicketPdf($item);
+                $whatsApp->sendDocument($participantPhone, $pdfPath, "ingresso-{$name}.pdf");
+                $pdfService->cleanupTempPdfs([$pdfPath]);
+            }
         }
     }
 }

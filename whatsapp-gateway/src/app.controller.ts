@@ -8,6 +8,7 @@ import {
   Post,
 } from '@nestjs/common';
 import { AppService } from '@src/app.service';
+import { SendDocumentDto } from '@src/dtos/send-document.dto';
 import { SendMessageDto } from '@src/dtos/send-message.dto';
 import type { GatewayStatus } from '@src/types/whatsapp.type';
 
@@ -49,6 +50,20 @@ export class AppController {
     return this.appService.sendMessage(tenantUuid, {
       phone: body.phone,
       message: body.message,
+    });
+  }
+
+  @Post('messages/send-document')
+  async sendDocument(
+    @Param('tenantUuid') tenantUuid: string,
+    @Body() body: SendDocumentDto,
+  ): Promise<{ ok: true; phone: string }> {
+    return this.appService.sendDocument(tenantUuid, {
+      phone: body.phone,
+      filename: body.filename,
+      mimetype: body.mimetype,
+      data: body.data,
+      caption: body.caption,
     });
   }
 }
