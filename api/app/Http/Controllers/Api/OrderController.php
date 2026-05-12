@@ -261,32 +261,7 @@ class OrderController extends Controller
             $paymentMethod = $validated['payment_method'];
             $pixData = null;
 
-            $shouldMockCardApproval = in_array($paymentMethod, ['credit_card', 'debit_card'], true)
-                && config('mercadopago.mock_approved')
-                && app()->environment('local');
-
-            if ($shouldMockCardApproval) {
-                \Log::warning('MOCK_APPROVED ativo: pulando chamada ao Mercado Pago', [
-                    'order_id'  => $order->id,
-                    'reference' => $order->reference,
-                ]);
-
-                $amount = $order->total_cents / 100;
-                $paymentData = [
-                    'id'                  => 'MOCK-' . $order->reference,
-                    'status'              => 'approved',
-                    'status_detail'       => 'accredited',
-                    'external_reference'  => $order->reference,
-                    'transaction_amount'  => $amount,
-                    'payment_method_id'   => $validated['payment_method_id'] ?? 'master',
-                    'payment_type_id'     => 'credit_card',
-                    'installments'        => $validated['installments'] ?? 1,
-                    'transaction_details' => [
-                        'net_received_amount' => round($amount * 0.95, 2),
-                        'total_paid_amount'   => $amount,
-                    ],
-                ];
-            } elseif ($paymentMethod === 'pix') {
+            if ($paymentMethod === 'pix') {
                 $paymentData = $this->mercadoPagoService->createPixPayment(
                     amountCents: $order->total_cents,
                     payer: $validated['payer'],
