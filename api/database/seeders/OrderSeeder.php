@@ -20,11 +20,6 @@ class OrderSeeder extends Seeder
 {
     public function run(): void
     {
-        // Segurança: só roda em ambiente local
-        if (!app()->environment('local')) {
-            return;
-        }
-
         $events = Event::with('organizer')->get();
 
         if ($events->isEmpty()) {

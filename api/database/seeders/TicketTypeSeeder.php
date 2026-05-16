@@ -11,11 +11,6 @@ class TicketTypeSeeder extends Seeder
 {
     public function run(): void
     {
-        // Segurança: só roda em ambiente local
-        if (!app()->environment('local')) {
-            return;
-        }
-
         $events = Event::all();
 
         foreach ($events as $event) {

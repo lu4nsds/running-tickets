@@ -12,10 +12,6 @@ class EventSeeder extends Seeder
 {
     public function run(): void
     {
-        if (!app()->environment('local')) {
-            return;
-        }
-
         $organizers = Organizer::all();
 
         if ($organizers->isEmpty()) {

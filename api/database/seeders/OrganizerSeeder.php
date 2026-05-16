@@ -9,11 +9,6 @@ class OrganizerSeeder extends Seeder
 {
     public function run(): void
     {
-        // Segurança: só roda em ambiente local
-        if (!app()->environment('local')) {
-            return;
-        }
-
         $organizers = [
             [
                 'email' => 'organizador@dev.local',

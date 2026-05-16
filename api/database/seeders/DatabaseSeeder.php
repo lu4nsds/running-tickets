@@ -10,7 +10,14 @@ class DatabaseSeeder extends Seeder
     {
         $this->call([
             RoleSeeder::class,
-            SuperAdminSeeder::class,
+            AdminSeeder::class,
+        ]);
+
+        if (app()->environment('production')) {
+            return;
+        }
+
+        $this->call([
             OrganizerSeeder::class,
             OrganizerUserSeeder::class,
             EventSeeder::class,

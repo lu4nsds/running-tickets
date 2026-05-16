@@ -13,12 +13,6 @@ class OrganizerUserSeeder extends Seeder
 {
     public function run(): void
     {
-        // Segurança: só roda em ambiente local
-        if (!app()->environment('local')) {
-            return;
-        }
-
-        // Pega o organizador criado pelo OrganizerSeeder
         $organizer = Organizer::where('email', 'organizador@dev.local')->first();
         
         if (!$organizer) {
