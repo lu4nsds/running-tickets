@@ -153,6 +153,7 @@
 
 networks:
     running-tickets-network:
+        name: running-tickets-network
         driver: bridge
 
 volumes:
