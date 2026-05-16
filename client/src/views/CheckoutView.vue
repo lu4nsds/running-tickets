@@ -484,9 +484,13 @@ import Footer from "../components/Footer.vue";
 import CheckoutFormSkeleton from "../components/CheckoutFormSkeleton.vue";
 import CityAutocomplete from "../components/CityAutocomplete.vue";
 import { useAuthStore } from "../stores/auth";
+import { useCheckoutStore } from "../stores/checkout";
+import { useToast } from "../composables/useToast";
 
 const router = useRouter();
 const authStore = useAuthStore();
+const checkoutStore = useCheckoutStore();
+const toast = useToast();
 
 const loading = ref(true);
 const participants = ref([]);
@@ -718,7 +722,7 @@ function goBack() {
 
 async function proceedToPayment() {
     if (!validateForm()) {
-        alert("Por favor, corrija os erros no formulário");
+        toast.error("Por favor, corrija os erros no formulário");
         return;
     }
 
@@ -749,25 +753,16 @@ async function proceedToPayment() {
 
         const { order } = response.data;
 
-        // Salvar informações do pedido no localStorage para a tela de pagamento
-        localStorage.setItem(
-            "payment_order",
-            JSON.stringify({
-                id: order.id,
-                reference: order.reference,
-                total_cents: order.total_cents,
-                currency: order.currency,
-                event_title: eventData.value.title,
-                items: order.items,
-                created_at: order.created_at,
-            }),
-        );
-
-        // Salvar dados dos participantes (para exibir na confirmação)
-        localStorage.setItem(
-            "checkout_participants",
-            JSON.stringify(participants.value),
-        );
+        checkoutStore.setParticipants(participants.value);
+        checkoutStore.setPaymentOrder({
+            id: order.id,
+            reference: order.reference,
+            total_cents: order.total_cents,
+            currency: order.currency,
+            event_title: eventData.value.title,
+            items: order.items,
+            created_at: order.created_at,
+        });
 
         // Limpar flag de guest checkout (não é mais necessária após criar o pedido)
         sessionStorage.removeItem("checkoutGuest");
@@ -786,7 +781,7 @@ async function proceedToPayment() {
             errorMessage = errors.join("\n");
         }
 
-        alert(errorMessage);
+        toast.error(errorMessage);
     } finally {
         isSubmitting.value = false;
     }
@@ -807,50 +802,43 @@ async function fetchCategories(eventSlugOrId) {
 onMounted(async () => {
     loading.value = true;
 
-    // Carregar dados do localStorage
-    const checkoutData = localStorage.getItem("checkout_data");
-    if (!checkoutData) {
-        alert("Nenhum ingresso selecionado");
+    if (!checkoutStore.hasCheckoutData) {
+        toast.warning("Nenhum ingresso selecionado");
         router.push({ name: "events" });
         return;
     }
 
     try {
-        const data = JSON.parse(checkoutData);
+        const data = checkoutStore.checkoutData;
         selectedTickets.value = data.tickets || [];
         eventData.value = data.event || null;
 
         if (selectedTickets.value.length === 0) {
-            alert("Nenhum ingresso selecionado");
+            toast.warning("Nenhum ingresso selecionado");
             router.push({ name: "events" });
             return;
         }
 
-        // Buscar categorias do evento (usar slug que é mais confiável)
         await fetchCategories(eventData.value?.slug || eventData.value?.id);
 
-        // Inicializar participantes
         initializeParticipants();
 
-        // Tentar restaurar dados dos participantes se existirem
-        const savedParticipants = localStorage.getItem("checkout_participants");
-        if (savedParticipants) {
-            try {
-                const parsed = JSON.parse(savedParticipants);
-                if (parsed.length === participants.value.length) {
-                    participants.value = parsed;
-                }
-            } catch (e) {
-                console.error("Erro ao restaurar participantes:", e);
+        const saved = checkoutStore.participants;
+        if (saved.length) {
+            const validIds = new Set(selectedTickets.value.map((t) => t.id));
+            const compatible =
+                saved.length === participants.value.length &&
+                saved.every((p) => validIds.has(p.ticket_type_id));
+            if (compatible) {
+                participants.value = saved;
             }
         } else if (authStore.isAuthenticated && authStore.user && participants.value.length > 0) {
-            // Pré-preencher o primeiro participante com os dados do usuário logado
             participants.value[0].name = authStore.user.name || "";
             participants.value[0].email = authStore.user.email || "";
         }
     } catch (error) {
         console.error("Erro ao carregar dados do checkout:", error);
-        alert("Erro ao carregar dados");
+        toast.error("Erro ao carregar dados");
         router.push({ name: "events" });
     } finally {
         loading.value = false;

@@ -122,10 +122,12 @@
 import { onMounted } from "vue";
 import { useRouter } from "vue-router";
 import { useAuthStore } from "../stores/auth";
+import { useCheckoutStore } from "../stores/checkout";
 import Navbar from "../components/Navbar.vue";
 
 const router = useRouter();
 const authStore = useAuthStore();
+const checkoutStore = useCheckoutStore();
 
 const benefits = [
     { icon: "local_activity", text: "Acesso rápido aos tickets" },
@@ -139,9 +141,7 @@ onMounted(() => {
         router.replace({ name: "checkout" });
         return;
     }
-    // Se não há dados de checkout, redirecionar para home
-    const checkoutData = localStorage.getItem("checkout_data");
-    if (!checkoutData) {
+    if (!checkoutStore.hasCheckoutData) {
         router.replace({ name: "home" });
     }
 });

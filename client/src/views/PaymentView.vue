@@ -895,8 +895,10 @@ import { useRouter } from "vue-router";
 import api from "../api/axios.js";
 import Navbar from "../components/Navbar.vue";
 import Footer from "../components/Footer.vue";
+import { useCheckoutStore } from "../stores/checkout";
 
 const router = useRouter();
+const checkoutStore = useCheckoutStore();
 
 // ─── State ───────────────────────────────────────────────────────────────────
 
@@ -1263,9 +1265,7 @@ function handleSubmit() {
 
 function redirectAfterPayment(status) {
     if (status === "approved") {
-        localStorage.removeItem("checkout_data");
-        localStorage.removeItem("checkout_participants");
-        localStorage.removeItem("payment_order");
+        checkoutStore.clearCheckout();
         router.push({ name: "payment-success" });
     } else if (["pending", "in_process", "authorized"].includes(status)) {
         router.push({ name: "payment-pending" });
@@ -1396,26 +1396,20 @@ onUnmounted(() => {
 
 onMounted(async () => {
     try {
-        const raw = localStorage.getItem("payment_order");
-        if (!raw) {
+        if (!checkoutStore.hasPaymentOrder) {
             error.value = "Nenhum pedido encontrado para pagamento.";
             loading.value = false;
             return;
         }
 
-        orderData.value = JSON.parse(raw);
+        orderData.value = checkoutStore.paymentOrder;
 
-        // Pre-fill buyer info from first participant
-        const participantsRaw = localStorage.getItem("checkout_participants");
-        if (participantsRaw) {
-            const participants = JSON.parse(participantsRaw);
-            if (participants?.length) {
-                const first = participants[0];
-                buyerInfo.value.name  = first.name || "";
-                buyerInfo.value.email = first.email || "";
-                buyerInfo.value.cpf   = formatCPF(first.cpf || "");
-                buyerInfo.value.phone = first.phone || "";
-            }
+        if (checkoutStore.participants.length) {
+            const first = checkoutStore.participants[0];
+            buyerInfo.value.name  = first.name || "";
+            buyerInfo.value.email = first.email || "";
+            buyerInfo.value.cpf   = formatCPF(first.cpf || "");
+            buyerInfo.value.phone = first.phone || "";
         }
 
         const mpPublicKey = import.meta.env.VITE_MERCADOPAGO_PUBLIC_KEY;

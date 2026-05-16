@@ -158,14 +158,13 @@ import { onMounted, computed } from "vue";
 import Navbar from "../components/Navbar.vue";
 import Footer from "../components/Footer.vue";
 import { useAuthStore } from "../stores/auth";
+import { useCheckoutStore } from "../stores/checkout";
 
 const authStore = useAuthStore();
+const checkoutStore = useCheckoutStore();
 const isAuthenticated = computed(() => authStore.isAuthenticated);
 
 onMounted(() => {
-    // Limpar localStorage
-    localStorage.removeItem("checkout_data");
-    localStorage.removeItem("checkout_participants");
-    localStorage.removeItem("payment_order");
+    checkoutStore.clearCheckout();
 });
 </script>

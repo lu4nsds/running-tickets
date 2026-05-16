@@ -589,12 +589,14 @@
 import { ref, computed, onMounted, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import axios from "@/api/axios";
+import { useCheckoutStore } from "@/stores/checkout";
 import Navbar from "../components/Navbar.vue";
 import Footer from "../components/Footer.vue";
 import EventDetailsSkeleton from "../components/EventDetailsSkeleton.vue";
 
 const route = useRoute();
 const router = useRouter();
+const checkoutStore = useCheckoutStore();
 
 const event = ref(null);
 const loading = ref(true);
@@ -673,7 +675,6 @@ async function addToCart() {
         return;
     }
 
-    // Salvar dados no localStorage para usar no checkout
     const checkoutData = {
         event: {
             id: event.value.id,
@@ -683,9 +684,9 @@ async function addToCart() {
         tickets: selectedTickets.value,
     };
 
-    localStorage.setItem("checkout_data", JSON.stringify(checkoutData));
+    checkoutStore.clearCheckout();
+    checkoutStore.setCheckoutData(checkoutData);
 
-    // Redirecionar para o checkout
     router.push({ name: "checkout" });
 }
 
