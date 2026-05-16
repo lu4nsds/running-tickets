@@ -95,7 +95,7 @@ export class AppService implements OnModuleInit {
         connectTimeoutMs: this.connectTimeoutMs(),
         defaultQueryTimeoutMs: this.connectTimeoutMs(),
         markOnlineOnConnect: true,
-        browser: ['NeoBarber', 'Chrome', '1.0.0'],
+        browser: ['RunningTickets', 'Chrome', '1.0.0'],
         getMessage: (key) =>
           loadCachedMessage(this.redis, tenantUuid, key.remoteJid, key.id),
       });

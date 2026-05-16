@@ -1,7 +1,7 @@
 import { BufferJSON, proto } from '@whiskeysockets/baileys';
 import type Redis from 'ioredis';
 
-const MESSAGE_KEY_PREFIX = 'neobarber:whatsapp:msgs';
+const MESSAGE_KEY_PREFIX = 'running-tickets:whatsapp:msgs';
 const MESSAGE_TTL_SECONDS = 60 * 60 * 24 * 7;
 
 function messageKey(tenantUuid: string, remoteJid: string, id: string): string {

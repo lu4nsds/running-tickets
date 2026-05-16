@@ -1,13 +1,13 @@
 {
-  "name": "neobarber-whatsapp-gateway",
+  "name": "running-tickets-whatsapp-gateway",
   "private": true,
-  "version": "1.0.1",
-  "description": "NeoBarber WhatsApp Gateway",
+  "version": "1.1.1",
+  "description": "RunningTickets WhatsApp Gateway",
   "license": "UNLICENSED",
   "author": {
-    "name": "Adevsoft Brasil",
-    "email": "pedrohenrykes@gmail.com",
-    "url": "https://adevsoft.com.br"
+    "name": "RunningTickets Team",
+    "email": "developers@runningtickets.com.br",
+    "url": "https://runningtickets.com.br"
   },
   "scripts": {
     "build": "nest build",

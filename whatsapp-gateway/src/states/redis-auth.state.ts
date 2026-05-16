@@ -8,8 +8,8 @@ import {
 } from '@whiskeysockets/baileys';
 import type Redis from 'ioredis';
 
-const SESSION_KEY_PREFIX = 'neobarber:whatsapp:sessions';
-const AUTH_KEY_PREFIX = 'neobarber:whatsapp:auth';
+const SESSION_KEY_PREFIX = 'running-tickets:whatsapp:sessions';
+const AUTH_KEY_PREFIX = 'running-tickets:whatsapp:auth';
 
 function credKey(tenantUuid: string): string {
   return `${AUTH_KEY_PREFIX}:${tenantUuid}:creds`;
