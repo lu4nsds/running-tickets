@@ -6,6 +6,7 @@ use App\Enums\OrderStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Services\MercadoPagoService;
+use App\Services\PaymentResultService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -13,7 +14,8 @@ use Illuminate\Support\Facades\Log;
 class MercadoPagoWebhookController extends Controller
 {
     public function __construct(
-        private MercadoPagoService $mercadoPagoService
+        private MercadoPagoService $mercadoPagoService,
+        private PaymentResultService $paymentResultService,
     ) {}
 
     /**
@@ -73,7 +75,11 @@ class MercadoPagoWebhookController extends Controller
             }
 
             $order = Order::where('reference', $payment['external_reference'])
-                ->where('status', OrderStatus::PENDING)
+                ->whereIn('status', [
+                    OrderStatus::PENDING->value,
+                    OrderStatus::PROCESSING->value,
+                    OrderStatus::FAILED->value,
+                ])
                 ->first();
 
             if (!$order) {
@@ -105,62 +111,17 @@ class MercadoPagoWebhookController extends Controller
     }
 
     /**
-     * Atualiza o status do pedido baseado no pagamento
+     * Aplica o resultado do pagamento via PaymentResultService —
+     * mesma lógica usada pelo ProcessCardPaymentJob (idempotente).
      */
     private function updateOrderStatus(Order $order, array $payment): void
     {
-        $status = $payment['status'];
-
-        Log::info('Atualizando status do pedido', [
-            'order_id'       => $order->id,
+        Log::info('Atualizando status do pedido via webhook', [
+            'order_id' => $order->id,
             'current_status' => $order->status->value,
-            'payment_status' => $status,
+            'payment_status' => $payment['status'] ?? null,
         ]);
 
-        switch ($status) {
-            case 'approved':
-                $netReceived = $payment['transaction_details']['net_received_amount'] ?? null;
-                $order->update([
-                    'status'                => OrderStatus::PAID,
-                    'payment_gateway'       => 'mercadopago',
-                    'payment_id'            => $payment['id'],
-                    'payment_response_body' => $payment,
-                    'fee_cents'             => $netReceived !== null
-                        ? (int) round(($payment['transaction_amount'] - $netReceived) * 100)
-                        : null,
-                    'net_amount_cents'      => $netReceived !== null
-                        ? (int) round($netReceived * 100)
-                        : null,
-                    'metadata' => array_merge($order->metadata ?? [], [
-                        'payment_method'     => $payment['payment_method_id'],
-                        'payment_type'       => $payment['payment_type_id'],
-                        'transaction_amount' => $payment['transaction_amount'],
-                    ]),
-                ]);
-                break;
-
-            case 'refunded':
-            case 'charged_back':
-                $order->update([
-                    'status'                => OrderStatus::REFUNDED,
-                    'payment_gateway'       => 'mercadopago',
-                    'payment_id'            => $payment['id'],
-                    'payment_response_body' => $payment,
-                ]);
-                break;
-
-            case 'cancelled':
-                $order->update([
-                    'status'                => OrderStatus::CANCELLED,
-                    'payment_gateway'       => 'mercadopago',
-                    'payment_id'            => $payment['id'],
-                    'payment_response_body' => $payment,
-                ]);
-                break;
-
-            default:
-                Log::info('Status de pagamento não requer atualização', ['status' => $status]);
-                break;
-        }
+        $this->paymentResultService->apply($order, $payment);
     }
 }

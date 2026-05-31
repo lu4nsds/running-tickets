@@ -27,6 +27,7 @@ class Order extends Model
         'payment_id',
         'payment_response_body',
         'metadata',
+        'reserved_until',
     ];
 
     protected $casts = [
@@ -35,6 +36,7 @@ class Order extends Model
         'payment_response_body' => 'array',
         'fee_cents'        => 'integer',
         'net_amount_cents' => 'integer',
+        'reserved_until'   => 'datetime',
     ];
 
     /**
@@ -113,5 +115,43 @@ class Order extends Model
     public function isPaid(): bool
     {
         return $this->status === OrderStatus::PAID;
+    }
+
+    public function hasActiveReservation(): bool
+    {
+        return $this->reserved_until !== null && $this->reserved_until->isFuture();
+    }
+
+    public function isPayable(): bool
+    {
+        return $this->status->isPayable() && $this->hasActiveReservation();
+    }
+
+    public function getPendingPixData(): ?array
+    {
+        $body = $this->payment_response_body ?? [];
+
+        if (($body['outcome'] ?? null) !== 'pending') {
+            return null;
+        }
+
+        if (($body['mp_status'] ?? null) !== 'pending') {
+            return null;
+        }
+
+        if (empty($body['qr_code'])) {
+            return null;
+        }
+
+        return $body;
+    }
+
+    public function scopeReservedOrders($query)
+    {
+        return $query->whereIn('status', [
+            OrderStatus::PENDING->value,
+            OrderStatus::PROCESSING->value,
+            OrderStatus::FAILED->value,
+        ])->where('reserved_until', '>', now());
     }
 }

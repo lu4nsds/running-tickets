@@ -33,11 +33,19 @@ const router = createRouter({
             name: "checkout",
             component: () => import("../views/CheckoutView.vue"),
         },
-        // Pagamento
+        // Pagamento (1ª tentativa, retomada de PIX, retry de cartão — sempre por reference)
         {
-            path: "/pagamento",
+            path: "/pagamento/:reference",
             name: "payment",
             component: () => import("../views/PaymentView.vue"),
+            props: true,
+        },
+        // Tela "estamos processando, você receberá um e-mail" pós-submit de cartão
+        {
+            path: "/pagamento/:reference/processando",
+            name: "payment-processing",
+            component: () => import("../views/PaymentProcessingView.vue"),
+            props: true,
         },
         {
             path: "/pagamento/sucesso",

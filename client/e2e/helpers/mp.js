@@ -13,6 +13,18 @@ export const APRO_CARD = {
 };
 
 /**
+ * Cartão de teste OTHE — sempre recusado pelo emissor (cc_rejected_other_reason).
+ * Usado para validar o fluxo de PaymentFailedMail + retomada.
+ */
+export const OTHE_CARD = {
+    number: '5031 4332 1540 6351',
+    holder: 'OTHE',
+    expiry: '11/30',
+    cvv: '123',
+    cpf: '123.456.789-09',
+};
+
+/**
  * PaymentView usa inputs nativos (não o widget Bricks com iframes) e tokeniza
  * via SDK só no submit — por isso podemos preencher diretamente.
  *
@@ -67,12 +79,55 @@ export async function generatePix(page) {
 }
 
 /**
- * APRO costuma aprovar em ~5-15s. Damos 90s de folga porque o
- * PaymentSuccessView faz polling de /orders/{ref}/status.
+ * Após o submit de cartão o backend retorna 202 e o frontend redireciona para
+ * /pagamento/:ref/processando — a tela final "estamos processando, você
+ * receberá um e-mail". É o ponto de saída do fluxo de cartão.
  */
-export async function waitForPaymentSuccess(page) {
-    await page.waitForURL(/\/pagamento\/sucesso/, { timeout: 90_000 });
+export async function waitForPaymentProcessing(page) {
+    await page.waitForURL(/\/pagamento\/[A-Z0-9-]+\/processando/, {
+        timeout: 30_000,
+    });
     await expect(
-        page.getByRole('heading', { name: /PAGAMENTO APROVADO/i })
+        page.getByRole('heading', {
+            name: /Estamos processando seu pagamento/i,
+        })
     ).toBeVisible();
+}
+
+/**
+ * Aguarda o Order atingir um status específico via polling do endpoint
+ * público /api/orders/{ref}/status. Usado para sincronizar a UI com o
+ * trabalho assíncrono do ProcessCardPaymentJob.
+ */
+export async function waitForOrderStatus(page, reference, expectedStatus, {
+    timeout = 90_000,
+    interval = 1_500,
+} = {}) {
+    const apiUrl = process.env.E2E_API_URL ?? 'http://localhost';
+    const deadline = Date.now() + timeout;
+
+    while (Date.now() < deadline) {
+        const resp = await page.request.get(
+            `${apiUrl}/api/orders/${reference}/status`
+        );
+        if (resp.ok()) {
+            const body = await resp.json();
+            if (body.status === expectedStatus) return body;
+        }
+        await page.waitForTimeout(interval);
+    }
+    throw new Error(
+        `Order ${reference} não atingiu status "${expectedStatus}" em ${timeout}ms.`
+    );
+}
+
+/**
+ * Extrai a `reference` do Order da URL atual (ex: /pagamento/ORD-2026-ABC).
+ */
+export function referenceFromUrl(page) {
+    const match = page.url().match(/\/pagamento\/([A-Z0-9-]+)/);
+    if (!match) {
+        throw new Error(`URL atual não contém reference: ${page.url()}`);
+    }
+    return match[1];
 }

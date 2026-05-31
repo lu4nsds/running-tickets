@@ -897,6 +897,10 @@ import Navbar from "../components/Navbar.vue";
 import Footer from "../components/Footer.vue";
 import { useCheckoutStore } from "../stores/checkout";
 
+const props = defineProps({
+    reference: { type: String, required: true },
+});
+
 const router = useRouter();
 const checkoutStore = useCheckoutStore();
 
@@ -1208,6 +1212,15 @@ async function submitCardPayment() {
         );
 
         const { payment_status } = response.data;
+        // Cartão é assíncrono — backend retorna 202 com status "processing".
+        if (payment_status === "processing") {
+            checkoutStore.clearCheckout();
+            router.push({
+                name: "payment-processing",
+                params: { reference: orderData.value.reference },
+            });
+            return;
+        }
         redirectAfterPayment(payment_status);
     } catch (err) {
         processing.value = false;
@@ -1320,6 +1333,20 @@ function handlePaymentError(err) {
         return;
     }
 
+    // Reserva dos ingressos expirou (TTL de 15min vencido)
+    if (err?.response?.data?.error_code === "reservation_expired") {
+        router.push({
+            name: "payment-error",
+            query: {
+                reason: "reservation_expired",
+                message:
+                    err.response.data.message ||
+                    "A reserva dos ingressos expirou. Inicie um novo pedido.",
+            },
+        });
+        return;
+    }
+
     // Pagamento recusado pela operadora
     if (
         err?.response?.status === 400 &&
@@ -1396,21 +1423,74 @@ onUnmounted(() => {
 
 onMounted(async () => {
     try {
-        if (!checkoutStore.hasPaymentOrder) {
-            error.value = "Nenhum pedido encontrado para pagamento.";
+        // Carrega o Order pela rota — sem sessionStorage.
+        const { data: status } = await api.get(
+            `/orders/${props.reference}/status`,
+        );
+
+        const order = status?.order?.data ?? status?.order;
+        if (!order) {
+            error.value = "Pedido não encontrado.";
             loading.value = false;
             return;
         }
 
-        orderData.value = checkoutStore.paymentOrder;
+        orderData.value = {
+            id: order.id,
+            reference: order.reference,
+            total_cents: order.total_cents,
+            currency: order.currency,
+            event_title: order.event?.title ?? "",
+            items: order.items ?? [],
+            created_at: order.created_at,
+            status: order.status,
+            reserved_until: status.reserved_until,
+            is_payable: status.is_payable,
+        };
 
-        if (checkoutStore.participants.length) {
-            const first = checkoutStore.participants[0];
-            buyerInfo.value.name  = first.name || "";
-            buyerInfo.value.email = first.email || "";
-            buyerInfo.value.cpf   = formatCPF(first.cpf || "");
-            buyerInfo.value.phone = first.phone || "";
+        // Pedido fora do estado pagável — manda para Meus Ingressos.
+        if (!status.is_payable) {
+            // PIX pendente mas reserva válida → ainda mostra QR
+            if (order.status === "pending" && status.pix?.qr_code) {
+                // segue para baixo
+            } else if (order.status === "paid") {
+                router.replace({ name: "my-tickets" });
+                return;
+            } else {
+                error.value = "Este pedido não pode mais receber pagamento.";
+                loading.value = false;
+                return;
+            }
         }
+
+        // PIX já gerado e válido — recupera QR sem nova chamada ao MP.
+        if (status.pix?.qr_code) {
+            activeTab.value = "pix";
+            pixData.value = status.pix;
+            startPixPolling();
+        }
+
+        // Hidrata dados do comprador: prioriza checkout store (fluxo recente),
+        // depois Order (buyer_email/phone) + primeiro participante (nome/cpf).
+        const firstParticipant =
+            order.items?.[0]?.participant_data ?? null;
+        const checkoutFirst = checkoutStore.participants[0] ?? null;
+
+        buyerInfo.value.name =
+            checkoutFirst?.name || firstParticipant?.name || "";
+        buyerInfo.value.email =
+            checkoutFirst?.email ||
+            order.buyer_email ||
+            firstParticipant?.email ||
+            "";
+        buyerInfo.value.cpf = formatCPF(
+            checkoutFirst?.cpf || firstParticipant?.cpf || "",
+        );
+        buyerInfo.value.phone =
+            checkoutFirst?.phone ||
+            order.buyer_phone ||
+            firstParticipant?.phone ||
+            "";
 
         const mpPublicKey = import.meta.env.VITE_MERCADOPAGO_PUBLIC_KEY;
 
@@ -1428,7 +1508,11 @@ onMounted(async () => {
         });
     } catch (err) {
         console.error("Error initializing payment:", err);
-        error.value = "Erro ao carregar o pagamento.";
+        if (err?.response?.status === 404) {
+            error.value = "Pedido não encontrado.";
+        } else {
+            error.value = "Erro ao carregar o pagamento.";
+        }
         loading.value = false;
     }
 });

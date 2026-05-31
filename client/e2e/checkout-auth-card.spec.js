@@ -12,7 +12,9 @@ import {
     selectPaymentTab,
     fillCreditCard,
     submitPayment,
-    waitForPaymentSuccess,
+    waitForPaymentProcessing,
+    waitForOrderStatus,
+    referenceFromUrl,
 } from './helpers/mp.js';
 
 test.describe('Checkout autenticado — cartão APRO', () => {
@@ -33,20 +35,26 @@ test.describe('Checkout autenticado — cartão APRO', () => {
         await fillFirstParticipant(page);
         await proceedToPayment(page);
 
-        // /pagamento → confirma pedido criado
+        // /pagamento/:ref → confirma pedido criado
         await expect(
             page.getByText(/Pedido:\s*ORD-/i)
         ).toBeVisible({ timeout: 15_000 });
+
+        const reference = referenceFromUrl(page);
 
         await selectPaymentTab(page, 'credit');
         await ensureBuyerInfo(page);
         await fillCreditCard(page, APRO_CARD);
         await submitPayment(page);
-        await waitForPaymentSuccess(page);
 
-        // Link para "Ver Meus Ingressos" deve aparecer
+        // Cartão é assíncrono — vai para a tela "estamos processando".
+        await waitForPaymentProcessing(page);
+
         await expect(
-            page.getByRole('link', { name: /Ver Meus Ingressos/i })
+            page.getByRole('link', { name: /Ir para Meus Ingressos/i })
         ).toBeVisible();
+
+        // O job no worker eventualmente aprova o pagamento.
+        await waitForOrderStatus(page, reference, 'paid');
     });
 });

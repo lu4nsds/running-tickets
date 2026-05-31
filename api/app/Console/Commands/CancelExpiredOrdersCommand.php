@@ -15,35 +15,42 @@ class CancelExpiredOrdersCommand extends Command
      *
      * @var string
      */
-    protected $signature = 'orders:cancel-expired {--minutes=30 : Tempo em minutos para considerar um pedido como expirado}';
+    protected $signature = 'orders:cancel-expired {--minutes= : Fallback: considera expirado tudo criado há mais de N minutos (para pedidos legados sem reserved_until)}';
 
     /**
      * The console command description.
      *
      * @var string
      */
-    protected $description = 'Cancela pedidos pendentes que expiraram sem pagamento';
+    protected $description = 'Cancela pedidos cuja reserva (reserved_until) expirou, liberando os ingressos para venda';
 
     /**
      * Execute the console command.
      */
     public function handle()
     {
-        $minutes = (int) $this->option('minutes');
-        
-        if ($minutes <= 0) {
-            $this->error('O valor de --minutes deve ser maior que 0');
-            return Command::FAILURE;
-        }
+        $minutes = $this->option('minutes') !== null ? (int) $this->option('minutes') : null;
 
-        $expirationTime = Carbon::now()->subMinutes($minutes);
+        $this->info('Procurando pedidos com reserva expirada...');
 
-        $this->info("Procurando pedidos pendentes criados antes de {$expirationTime->format('d/m/Y H:i:s')}...");
+        // Pedidos em PENDING ou FAILED com reserva expirada — PROCESSING fica
+        // fora porque o job ainda está trabalhando neles.
+        $query = Order::whereIn('status', [
+                OrderStatus::PENDING->value,
+                OrderStatus::FAILED->value,
+            ])
+            ->where(function ($q) use ($minutes) {
+                $q->whereNotNull('reserved_until')->where('reserved_until', '<', now());
 
-        // Busca pedidos PENDING criados há mais de X minutos
-        $expiredOrders = Order::where('status', OrderStatus::PENDING)
-            ->where('created_at', '<', $expirationTime)
-            ->get();
+                if ($minutes !== null && $minutes > 0) {
+                    $q->orWhere(function ($q2) use ($minutes) {
+                        $q2->whereNull('reserved_until')
+                           ->where('created_at', '<', Carbon::now()->subMinutes($minutes));
+                    });
+                }
+            });
+
+        $expiredOrders = $query->get();
 
         if ($expiredOrders->isEmpty()) {
             $this->info('Nenhum pedido expirado encontrado.');
@@ -57,9 +64,8 @@ class CancelExpiredOrdersCommand extends Command
         foreach ($expiredOrders as $order) {
             try {
                 $metadata = $order->metadata ?? [];
-                $metadata['cancelled_reason'] = 'expired';
+                $metadata['cancelled_reason'] = 'reservation_expired';
                 $metadata['cancelled_at'] = now()->toIso8601String();
-                $metadata['expired_after_minutes'] = $minutes;
 
                 $order->update([
                     'status' => OrderStatus::CANCELLED,

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\OrderStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -50,12 +51,10 @@ class TicketType extends Model
      */
     public function isAvailableForPurchase(): bool
     {
-        // Verifica se está ativo
         if (!$this->active) {
             return false;
         }
 
-        // Verifica se está no período de vendas
         $now = now();
         if ($this->start_sale && $now->lt($this->start_sale)) {
             return false;
@@ -64,37 +63,41 @@ class TicketType extends Model
             return false;
         }
 
-        // Verifica se ainda tem quota disponível
-        if ($this->quota !== null) {
-            $sold = $this->orderItems()
-                ->whereHas('order', function ($query) {
-                    $query->where('status', 'paid');
-                })
-                ->count();
-
-            if ($sold >= $this->quota) {
-                return false;
-            }
+        if ($this->quota !== null && $this->getAvailableQuantity() <= 0) {
+            return false;
         }
 
         return true;
     }
 
     /**
-     * Retorna quantidade disponível para venda
+     * Retorna quantidade disponível para venda.
+     *
+     * Considera ingressos já emitidos (PAID) e reservas ativas
+     * (PENDING/PROCESSING/FAILED com reserved_until > now()) — isso protege
+     * contra overselling durante o fluxo de pagamento assíncrono.
      */
     public function getAvailableQuantity(): ?int
     {
         if ($this->quota === null) {
-            return null; // ilimitado
+            return null;
         }
 
-        $sold = $this->orderItems()
+        $taken = $this->orderItems()
             ->whereHas('order', function ($query) {
-                $query->where('status', 'paid');
+                $query->where(function ($q) {
+                    $q->where('status', OrderStatus::PAID->value)
+                      ->orWhere(function ($q2) {
+                          $q2->whereIn('status', [
+                              OrderStatus::PENDING->value,
+                              OrderStatus::PROCESSING->value,
+                              OrderStatus::FAILED->value,
+                          ])->where('reserved_until', '>', now());
+                      });
+                });
             })
             ->count();
 
-        return max(0, $this->quota - $sold);
+        return max(0, $this->quota - $taken);
     }
 }

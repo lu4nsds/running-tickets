@@ -12,7 +12,9 @@ import {
     selectPaymentTab,
     fillCreditCard,
     submitPayment,
-    waitForPaymentSuccess,
+    waitForPaymentProcessing,
+    waitForOrderStatus,
+    referenceFromUrl,
 } from './helpers/mp.js';
 
 /**
@@ -64,11 +66,14 @@ test.describe('Checkout guest → cadastro → cartão APRO', () => {
         await fillFirstParticipant(page, { name: user.name, email: user.email });
         await proceedToPayment(page);
 
+        const reference = referenceFromUrl(page);
+
         await selectPaymentTab(page, 'credit');
         await ensureBuyerInfo(page);
         await fillCreditCard(page, APRO_CARD);
         await submitPayment(page);
-        await waitForPaymentSuccess(page);
-        await expect(page).toHaveURL(/\/pagamento\/sucesso/);
+        await waitForPaymentProcessing(page);
+
+        await waitForOrderStatus(page, reference, 'paid');
     });
 });

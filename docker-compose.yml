@@ -88,7 +88,7 @@
             - running-tickets-network
         depends_on:
             - mysql
-        command: php artisan queue:work --verbose --tries=3 --timeout=60
+        command: php artisan queue:work --queue=default,payments --verbose --tries=3 --timeout=60
 
     # Scheduler (Tarefas agendadas)
     scheduler:

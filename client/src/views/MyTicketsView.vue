@@ -9,10 +9,10 @@
                     Meus Ingressos
                 </h1>
                 <span
-                    v-if="!loading && totalTickets > 0"
+                    v-if="!loading && totalTicketsCount > 0"
                     class="inline-flex flex-col items-center justify-center px-3 py-1 rounded-full bg-primary/10 border border-primary/30 text-primary text-xs font-bold text-center"
                 >
-                    {{ totalTickets }} Ingresso{{ totalTickets !== 1 ? "s" : "" }}
+                    {{ totalTicketsCount }} Ingresso{{ totalTicketsCount !== 1 ? "s" : "" }}
                 </span>
             </div>
 
@@ -38,7 +38,7 @@
             <template v-else>
                 <!-- Estado vazio geral -->
                 <div
-                    v-if="tickets.length === 0"
+                    v-if="groups.length === 0"
                     class="flex flex-col items-center justify-center py-24 text-center"
                 >
                     <div
@@ -106,7 +106,7 @@
                         <div
                             v-for="group in filteredGroups"
                             :key="group.event.id"
-                            class="bg-surface-dark rounded-xl border border-border-dark overflow-hidden flex flex-col sm:flex-row"
+                            class="bg-surface-dark rounded-xl border border-border-dark overflow-hidden flex flex-col sm:flex-row sm:h-[142px]"
                         >
                             <!-- Imagem com badge de data -->
                             <div class="relative w-full sm:w-36 h-36 sm:h-auto flex-shrink-0 bg-slate-800 flex items-center justify-center overflow-hidden">
@@ -151,13 +151,23 @@
                                         </svg>
                                         {{ group.event.city }}{{ group.event.state ? `, ${group.event.state}` : "" }}
                                     </p>
-                                    <!-- Badge de quantidade de ingressos -->
+                                    <!-- Badge de quantidade de ingressos ou status do pedido -->
                                     <div class="flex items-center gap-2 flex-wrap">
-                                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-bold">
+                                        <span
+                                            v-if="group.tickets.length > 0"
+                                            class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-bold"
+                                        >
                                             <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
                                                 <path d="M2 6a2 2 0 012-2h12a2 2 0 012 2v2a2 2 0 100 4v2a2 2 0 01-2 2H4a2 2 0 01-2-2v-2a2 2 0 100-4V6z" />
                                             </svg>
                                             {{ group.tickets.length }} Ingresso{{ group.tickets.length !== 1 ? "s" : "" }}
+                                        </span>
+                                        <span
+                                            v-else-if="group.action.order"
+                                            class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold"
+                                            :class="statusBadgeClass(group.action.order.status)"
+                                        >
+                                            {{ statusBadgeLabel(group.action.order.status) }}
                                         </span>
                                         <span
                                             v-for="cat in uniqueCategories(group.tickets)"
@@ -167,18 +177,38 @@
                                             {{ cat }}
                                         </span>
                                     </div>
+
+                                    <!-- Countdown da reserva -->
+                                    <p
+                                        v-if="group.countdown"
+                                        class="mt-2 text-xs text-amber-400 flex items-center gap-1"
+                                    >
+                                        <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd" />
+                                        </svg>
+                                        Ingressos reservados por
+                                        <span class="font-mono font-bold">{{ group.countdown }}</span>
+                                    </p>
                                 </div>
 
-                                <!-- Botão Ver Comprovante -->
+                                <!-- Botão state-driven -->
                                 <router-link
-                                    :to="{ name: 'event-tickets', params: { eventId: group.event.id } }"
-                                    class="flex items-center justify-center gap-2 px-5 py-2.5 bg-primary text-background-dark font-bold text-sm rounded-lg hover:bg-primary/90 transition-colors whitespace-nowrap flex-shrink-0"
+                                    v-if="group.action.to && !group.action.disabled"
+                                    :to="group.action.to"
+                                    :class="actionButtonClass(group.action.variant)"
                                 >
                                     <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                                        <path fill-rule="evenodd" d="M3 4a1 1 0 011-1h3a1 1 0 011 1v3a1 1 0 01-1 1H4a1 1 0 01-1-1V4zm2 2V5h1v1H5zm7-2a1 1 0 00-1 1v3a1 1 0 001 1h3a1 1 0 001-1V4a1 1 0 00-1-1h-3zm1 2v1h1V5h-1zM3 12a1 1 0 011-1h3a1 1 0 011 1v3a1 1 0 01-1 1H4a1 1 0 01-1-1v-3zm2 2v-1h1v1H5zm5-2a1 1 0 011-1h3a1 1 0 110 2h-1v1a1 1 0 11-2 0v-1h-1a1 1 0 01-1-1zm4 2a1 1 0 102 0 1 1 0 00-2 0z" clip-rule="evenodd" />
+                                        <path fill-rule="evenodd" :d="actionIconPath(group.action.variant)" clip-rule="evenodd" />
                                     </svg>
-                                    Ver Comprovante
+                                    {{ group.action.label }}
                                 </router-link>
+                                <span
+                                    v-else
+                                    :class="actionButtonClass(group.action.variant)"
+                                    class="cursor-not-allowed opacity-60"
+                                >
+                                    {{ group.action.label }}
+                                </span>
                             </div>
                         </div>
                     </div>
@@ -191,13 +221,11 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from "vue";
+import { ref, computed } from "vue";
 import Navbar from "../components/Navbar.vue";
 import Footer from "../components/Footer.vue";
-import api from "../api/axios";
+import { useUserOrderGroups } from "../composables/useUserOrderGroups";
 
-const loading = ref(true);
-const tickets = ref([]);
 const activeTab = ref("upcoming");
 
 const tabs = [
@@ -205,20 +233,11 @@ const tabs = [
     { key: "past", label: "Histórico de Provas" },
 ];
 
-const totalTickets = computed(() => tickets.value.length);
+const { loading, groups } = useUserOrderGroups();
 
-// Agrupa tickets por evento
-const groupedByEvent = computed(() => {
-    const map = {};
-    for (const item of tickets.value) {
-        const id = item.event.id;
-        if (!map[id]) {
-            map[id] = { event: item.event, tickets: [] };
-        }
-        map[id].tickets.push(item);
-    }
-    return Object.values(map);
-});
+const totalTicketsCount = computed(() =>
+    groups.value.reduce((sum, g) => sum + g.tickets.length, 0),
+);
 
 function isUpcoming(group) {
     if (!group.event?.date_start) return true;
@@ -226,13 +245,13 @@ function isUpcoming(group) {
 }
 
 const filteredGroups = computed(() =>
-    groupedByEvent.value.filter((g) =>
+    groups.value.filter((g) =>
         activeTab.value === "upcoming" ? isUpcoming(g) : !isUpcoming(g),
     ),
 );
 
 function tabCount(key) {
-    return groupedByEvent.value.filter((g) =>
+    return groups.value.filter((g) =>
         key === "upcoming" ? isUpcoming(g) : !isUpcoming(g),
     ).length;
 }
@@ -256,14 +275,39 @@ function formatDay(dateStr) {
     return new Date(dateStr).getDate().toString().padStart(2, "0");
 }
 
-onMounted(async () => {
-    try {
-        const { data } = await api.get("/tickets");
-        tickets.value = data.data || [];
-    } catch (err) {
-        console.error("Erro ao buscar ingressos:", err);
-    } finally {
-        loading.value = false;
+const actionStyles = {
+    primary:
+        "flex items-center justify-center gap-2 px-5 py-2.5 bg-primary text-background-dark font-bold text-sm rounded-lg hover:bg-primary/90 transition-colors whitespace-nowrap flex-shrink-0",
+    warning:
+        "flex items-center justify-center gap-2 px-5 py-2.5 bg-amber-500 text-background-dark font-bold text-sm rounded-lg hover:bg-amber-400 transition-colors whitespace-nowrap flex-shrink-0",
+    muted:
+        "flex items-center justify-center gap-2 px-5 py-2.5 bg-slate-700 text-slate-400 font-bold text-sm rounded-lg whitespace-nowrap flex-shrink-0",
+};
+
+function actionButtonClass(variant) {
+    return actionStyles[variant] || actionStyles.primary;
+}
+
+function actionIconPath(variant) {
+    if (variant === "warning") {
+        return "M10 18a8 8 0 100-16 8 8 0 000 16zM8.94 6.94a1.5 1.5 0 112.12 2.12l-.7.7a3 3 0 00-.88 2.12V12a1 1 0 11-2 0v-.12a5 5 0 011.47-3.54l.7-.7a.5.5 0 10-.71-.7 1 1 0 11-1.41-1.42l.41-.42zM10 14a1 1 0 100 2 1 1 0 000-2z";
     }
-});
+    return "M3 4a1 1 0 011-1h3a1 1 0 011 1v3a1 1 0 01-1 1H4a1 1 0 01-1-1V4zm2 2V5h1v1H5zm7-2a1 1 0 00-1 1v3a1 1 0 001 1h3a1 1 0 001-1V4a1 1 0 00-1-1h-3zm1 2v1h1V5h-1zM3 12a1 1 0 011-1h3a1 1 0 011 1v3a1 1 0 01-1 1H4a1 1 0 01-1-1v-3zm2 2v-1h1v1H5zm5-2a1 1 0 011-1h3a1 1 0 110 2h-1v1a1 1 0 11-2 0v-1h-1a1 1 0 01-1-1zm4 2a1 1 0 102 0 1 1 0 00-2 0z";
+}
+
+function statusBadgeClass(status) {
+    return {
+        pending: "bg-slate-700 text-slate-300 border border-slate-600",
+        processing: "bg-sky-500/10 text-sky-300 border border-sky-500/30",
+        failed: "bg-red-500/10 text-red-300 border border-red-500/30",
+    }[status] || "bg-slate-700 text-slate-300";
+}
+
+function statusBadgeLabel(status) {
+    return {
+        pending: "Aguardando pagamento",
+        processing: "Processando pagamento",
+        failed: "Pagamento falhou",
+    }[status] || status;
+}
 </script>

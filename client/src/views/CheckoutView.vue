@@ -754,21 +754,13 @@ async function proceedToPayment() {
         const { order } = response.data;
 
         checkoutStore.setParticipants(participants.value);
-        checkoutStore.setPaymentOrder({
-            id: order.id,
-            reference: order.reference,
-            total_cents: order.total_cents,
-            currency: order.currency,
-            event_title: eventData.value.title,
-            items: order.items,
-            created_at: order.created_at,
-        });
 
         // Limpar flag de guest checkout (não é mais necessária após criar o pedido)
         sessionStorage.removeItem("checkoutGuest");
 
-        // Navegar para a página de pagamento
-        router.push({ name: "payment" });
+        // Navegar para a tela de pagamento — Order é carregado da API pelo reference,
+        // não mais via sessionStorage.
+        router.push({ name: "payment", params: { reference: order.reference } });
     } catch (error) {
         console.error("Erro ao criar pedido:", error);
 
