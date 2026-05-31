@@ -132,19 +132,21 @@ export function useUserOrderGroups() {
     }
 
     const groups = computed(() => {
-        const map = new Map();
+        const paidByEvent = new Map();
+        const openGroups = [];
 
         for (const ticket of tickets.value) {
             const eventId = ticket.event?.id;
             if (!eventId) continue;
-            if (!map.has(eventId)) {
-                map.set(eventId, {
+            if (!paidByEvent.has(eventId)) {
+                paidByEvent.set(eventId, {
+                    key: `event-${eventId}`,
                     event: ticket.event,
                     tickets: [],
                     openOrders: [],
                 });
             }
-            map.get(eventId).tickets.push(ticket);
+            paidByEvent.get(eventId).tickets.push(ticket);
         }
 
         for (const order of orders.value) {
@@ -154,20 +156,19 @@ export function useUserOrderGroups() {
             if (order.status !== "processing" && !hasActiveReservation(order)) {
                 continue;
             }
-            const eventId = order.event?.id;
-            if (!eventId) continue;
+            if (!order.event?.id) continue;
 
-            if (!map.has(eventId)) {
-                map.set(eventId, {
-                    event: order.event,
-                    tickets: [],
-                    openOrders: [],
-                });
-            }
-            map.get(eventId).openOrders.push(order);
+            openGroups.push({
+                key: `order-${order.reference}`,
+                event: order.event,
+                tickets: [],
+                openOrders: [order],
+            });
         }
 
-        return Array.from(map.values()).map((group) => {
+        const all = [...paidByEvent.values(), ...openGroups];
+
+        return all.map((group) => {
             const action = resolveAction(group);
             const countdownOrder = action.order;
             return {
