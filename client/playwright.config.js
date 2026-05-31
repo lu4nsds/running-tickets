@@ -1,5 +1,7 @@
 import { defineConfig, devices } from '@playwright/test';
 
+try { process.loadEnvFile('.env'); } catch { /* .env opcional (ex.: CI) */ }
+
 const CLIENT_URL = process.env.E2E_BASE_URL ?? 'http://localhost:5173';
 const API_URL = process.env.E2E_API_URL ?? 'http://localhost';
 
