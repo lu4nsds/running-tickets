@@ -65,8 +65,8 @@
                 <!-- Action Buttons -->
                 <div class="flex flex-col sm:flex-row gap-4 justify-center">
                     <router-link
-                        v-if="errorReason !== 'sold_out'"
-                        :to="{ name: 'payment', params: route.params }"
+                        v-if="errorReason !== 'sold_out' && reference"
+                        :to="{ name: 'payment', params: { reference } }"
                         class="inline-flex items-center justify-center gap-2 px-8 py-4 bg-primary text-background-dark font-bold rounded-lg hover:bg-primary/90 transition-all shadow-lg shadow-primary/20"
                     >
                         <svg
@@ -211,6 +211,7 @@ const errorReason = computed(() => route.query.reason || "generic_error");
 const errorMessage = computed(
     () => route.query.message || "Não foi possível processar seu pagamento",
 );
+const reference = computed(() => route.query.reference || null);
 
 // Mensagens e dicas específicas por tipo de erro
 const errorDetails = computed(() => {
@@ -278,6 +279,30 @@ const errorDetails = computed(() => {
                 {
                     title: "Eventos futuros",
                     desc: "Cadastre-se para ser notificado de novos eventos",
+                },
+            ],
+        },
+        pix_error: {
+            title: "Erro ao pagar com PIX",
+            subtitle:
+                "Tivemos um problema ao gerar o QR Code do seu pagamento",
+            icon: "error",
+            tips: [
+                {
+                    title: "Tente novamente em instantes",
+                    desc: "Pode ser uma instabilidade temporária no provedor de pagamentos",
+                },
+                {
+                    title: "Verifique sua conexão",
+                    desc: "Confirme que você está conectado à internet",
+                },
+                {
+                    title: "Use outro meio de pagamento",
+                    desc: "Você pode finalizar com cartão de crédito ou débito",
+                },
+                {
+                    title: "Sua reserva continua ativa",
+                    desc: "Seus ingressos seguem reservados — basta tentar novamente em Meus Ingressos",
                 },
             ],
         },

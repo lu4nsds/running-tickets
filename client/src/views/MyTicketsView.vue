@@ -105,7 +105,7 @@
                     <div v-else class="space-y-4">
                         <div
                             v-for="group in filteredGroups"
-                            :key="group.event.id"
+                            :key="group.key"
                             class="bg-surface-dark rounded-xl border border-border-dark overflow-hidden flex flex-col sm:flex-row sm:h-[142px]"
                         >
                             <!-- Imagem com badge de data -->

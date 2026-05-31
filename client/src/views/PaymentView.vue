@@ -1262,7 +1262,7 @@ async function generatePix() {
             redirectAfterPayment("approved");
         }
     } catch (err) {
-        handlePaymentError(err);
+        handlePaymentError(err, "pix");
     } finally {
         processing.value = false;
     }
@@ -1283,11 +1283,14 @@ function redirectAfterPayment(status) {
     } else if (["pending", "in_process", "authorized"].includes(status)) {
         router.push({ name: "payment-pending" });
     } else {
-        router.push({ name: "payment-error" });
+        router.push({
+            name: "payment-error",
+            query: { reference: orderData.value.reference },
+        });
     }
 }
 
-function handlePaymentError(err) {
+function handlePaymentError(err, method = "card") {
     // Handle Mercado Pago SDK tokenization errors (erros de validação de cartão)
     if (err?.cause?.length) {
         const mpError = err.cause[0];
@@ -1314,6 +1317,7 @@ function handlePaymentError(err) {
             query: {
                 reason: "invalid_card",
                 message: mpError?.description || "Dados do cartão inválidos",
+                reference: orderData.value.reference,
             },
         });
         return;
@@ -1328,6 +1332,7 @@ function handlePaymentError(err) {
                 message:
                     err.response.data.message ||
                     "Ingressos esgotados durante o processo de pagamento",
+                reference: orderData.value.reference,
             },
         });
         return;
@@ -1342,6 +1347,7 @@ function handlePaymentError(err) {
                 message:
                     err.response.data.message ||
                     "A reserva dos ingressos expirou. Inicie um novo pedido.",
+                reference: orderData.value.reference,
             },
         });
         return;
@@ -1359,6 +1365,7 @@ function handlePaymentError(err) {
                 message:
                     err.response.data.message ||
                     "Pagamento recusado pela operadora do cartão",
+                reference: orderData.value.reference,
             },
         });
         return;
@@ -1371,8 +1378,9 @@ function handlePaymentError(err) {
     router.push({
         name: "payment-error",
         query: {
-            reason: "generic_error",
+            reason: method === "pix" ? "pix_error" : "generic_error",
             message: msg,
+            reference: orderData.value.reference,
         },
     });
 }
