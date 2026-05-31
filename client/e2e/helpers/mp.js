@@ -101,7 +101,7 @@ export async function waitForPaymentProcessing(page) {
  */
 export async function waitForOrderStatus(page, reference, expectedStatus, {
     timeout = 90_000,
-    interval = 1_500,
+    interval = 500,
 } = {}) {
     const apiUrl = process.env.E2E_API_URL ?? 'http://localhost';
     const deadline = Date.now() + timeout;

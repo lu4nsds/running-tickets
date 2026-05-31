@@ -56,7 +56,13 @@ export async function registerViaApi(overrides = {}) {
             );
         }
         const body = await res.json();
-        return { user, token: body.token, profile: body.user };
+        const token = body.access_token ?? body.token;
+        if (!token) {
+            throw new Error(
+                `register não devolveu token. Body: ${JSON.stringify(body)}`
+            );
+        }
+        return { user, token, profile: body.user };
     } finally {
         await ctx.dispose();
     }

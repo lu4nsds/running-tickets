@@ -51,7 +51,7 @@ test.describe('Checkout autenticado — cartão APRO', () => {
         await waitForPaymentProcessing(page);
 
         await expect(
-            page.getByRole('link', { name: /Ir para Meus Ingressos/i })
+            page.getByRole('link', { name: /Ver Meus Ingressos/i })
         ).toBeVisible();
 
         // O job no worker eventualmente aprova o pagamento.

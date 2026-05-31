@@ -7,13 +7,13 @@ const API_URL = process.env.E2E_API_URL ?? 'http://localhost';
 
 export default defineConfig({
     testDir: './e2e',
-    fullyParallel: false,
-    workers: 1,
+    fullyParallel: true,
+    workers: 2,
     forbidOnly: !!process.env.CI,
     // Sandbox do Mercado Pago retorna "internal_error" 500 com frequência
-    // alta (~30-50%) mesmo para cartão APRO. Bumpamos retries para 2 (3
-    // tentativas no total) — falhas reais do app ainda quebram.
-    retries: 2,
+    // alta (~30-50%) em pagamentos. Retries cobrem essa flakiness — falhas
+    // determinísticas reais ainda quebram em 1 tentativa local extra.
+    retries: process.env.CI ? 2 : 1,
     reporter: process.env.CI ? [['list'], ['html', { open: 'never' }]] : 'list',
     globalSetup: './e2e/global-setup.js',
     timeout: 90_000,
