@@ -244,11 +244,24 @@ function isUpcoming(group) {
     return new Date(group.event.date_start) >= new Date();
 }
 
-const filteredGroups = computed(() =>
-    groups.value.filter((g) =>
+function eventTime(group) {
+    const date = group.event?.date_start;
+    return date ? new Date(date).getTime() : Infinity;
+}
+
+const filteredGroups = computed(() => {
+    const list = groups.value.filter((g) =>
         activeTab.value === "upcoming" ? isUpcoming(g) : !isUpcoming(g),
-    ),
-);
+    );
+
+    // Próximas: evento mais próximo de ocorrer no topo (ascendente).
+    // Histórico: prova mais recente no topo (descendente).
+    return list.sort((a, b) =>
+        activeTab.value === "upcoming"
+            ? eventTime(a) - eventTime(b)
+            : eventTime(b) - eventTime(a),
+    );
+});
 
 function tabCount(key) {
     return groups.value.filter((g) =>

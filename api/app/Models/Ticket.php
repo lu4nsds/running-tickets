@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\TicketStatus;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
@@ -30,6 +31,26 @@ class Ticket extends Model
     public function orderItem()
     {
         return $this->belongsTo(OrderItem::class);
+    }
+
+    /**
+     * Ordena os tickets pela data de início do evento associado.
+     *
+     * Usa uma subquery correlacionada (ticket -> order_item -> order -> event)
+     * para garantir uma ordenação determinística no nível do banco, em vez de
+     * depender da ordem implícita da chave primária.
+     */
+    public function scopeOrderByEventDate(Builder $query, string $direction = 'asc'): void
+    {
+        $query->orderBy(
+            OrderItem::query()
+                ->select('events.date_start')
+                ->join('orders', 'orders.id', '=', 'order_items.order_id')
+                ->join('events', 'events.id', '=', 'orders.event_id')
+                ->whereColumn('order_items.id', 'tickets.order_item_id')
+                ->limit(1),
+            $direction,
+        );
     }
 
     /**
