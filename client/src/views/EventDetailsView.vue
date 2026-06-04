@@ -346,8 +346,8 @@
                                         />
                                     </svg>
                                     <p>
-                                        Nenhum ingresso disponível para esta
-                                        categoria.
+                                        Nenhum ingresso disponível para este
+                                        evento.
                                     </p>
                                 </div>
                             </div>
