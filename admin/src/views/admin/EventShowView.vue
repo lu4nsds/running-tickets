@@ -312,9 +312,7 @@
                             >
                                 Descrição
                             </p>
-                            <p class="text-text-secondary whitespace-pre-wrap">
-                                {{ event.description }}
-                            </p>
+                            <MarkdownContent :source="event.description" />
                         </div>
                     </div>
 
@@ -948,6 +946,7 @@ import api from "@/api/axios";
 import { adminEventsApi } from "@/api/events";
 import ErrorState from "@/components/ui/ErrorState.vue";
 import Modal from "@/components/ui/Modal.vue";
+import MarkdownContent from "@/components/MarkdownContent.vue";
 
 const route = useRoute();
 const router = useRouter();
