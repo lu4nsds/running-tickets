@@ -83,25 +83,14 @@ export const useOrdersStore = defineStore("orders", () => {
         }
     }
 
-    async function createCancellation(reference, reason) {
+    async function createCancellationBatch(references, reason) {
         loading.value = true;
         error.value = null;
         try {
-            const response = await api.post(
-                `/orders/${reference}/cancellation`,
-                { reason },
-            );
-
-            // Atualiza na lista se existir
-            const index = orders.value.findIndex(
-                (o) => o.reference === reference,
-            );
-            if (index !== -1) {
-                orders.value[index] = {
-                    ...orders.value[index],
-                    cancellation: response.data.cancellation,
-                };
-            }
+            const response = await api.post("/orders/cancellations", {
+                references,
+                reason,
+            });
 
             return response.data;
         } catch (err) {
@@ -127,7 +116,7 @@ export const useOrdersStore = defineStore("orders", () => {
         fetchOrderByReference,
         createOrder,
         cancelOrder,
-        createCancellation,
+        createCancellationBatch,
         clearCurrentOrder,
     };
 });

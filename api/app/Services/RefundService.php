@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Enums\OrderCancellationStatus;
 use App\Enums\TicketStatus;
+use App\Models\Order;
 use App\Models\OrderCancellation;
 use App\Models\Ticket;
 use App\Models\User;
@@ -58,18 +59,44 @@ class RefundService
     }
 
     /**
-     * Rejeita a solicitação sem tocar no gateway.
+     * Rejeita a solicitação sem tocar no gateway e reativa os ingressos que
+     * haviam sido desativados enquanto a solicitação estava pendente.
      */
     public function reject(OrderCancellation $request, User $reviewer, ?string $notes): OrderCancellation
     {
-        $request->update([
-            'status' => OrderCancellationStatus::REJECTED,
-            'review_notes' => $notes,
-            'reviewed_by' => $reviewer->id,
-            'reviewed_at' => now(),
-        ]);
+        return DB::transaction(function () use ($request, $reviewer, $notes) {
+            $request->update([
+                'status' => OrderCancellationStatus::REJECTED,
+                'review_notes' => $notes,
+                'reviewed_by' => $reviewer->id,
+                'reviewed_at' => now(),
+            ]);
 
-        return $request->fresh(['order']);
+            $this->reactivateTickets($request->order);
+
+            return $request->fresh(['order']);
+        });
+    }
+
+    /**
+     * Desativa os ingressos ativos de um pedido enquanto há uma solicitação de
+     * cancelamento pendente (impede validação até a avaliação da organização).
+     */
+    public function deactivateTickets(Order $order): void
+    {
+        Ticket::whereIn('order_item_id', $order->items()->select('id'))
+            ->where('status', TicketStatus::ACTIVE->value)
+            ->update(['status' => TicketStatus::INACTIVE->value]);
+    }
+
+    /**
+     * Reativa os ingressos que foram desativados por uma solicitação rejeitada.
+     */
+    public function reactivateTickets(Order $order): void
+    {
+        Ticket::whereIn('order_item_id', $order->items()->select('id'))
+            ->where('status', TicketStatus::INACTIVE->value)
+            ->update(['status' => TicketStatus::ACTIVE->value]);
     }
 
     private function flushDashboardCache($order): void

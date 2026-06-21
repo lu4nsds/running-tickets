@@ -140,7 +140,7 @@
                             </div>
 
                             <!-- Conteúdo -->
-                            <div class="flex-1 p-5 flex flex-col sm:flex-row sm:items-center gap-4">
+                            <div class="relative flex-1 p-5 flex flex-col sm:flex-row sm:items-center gap-4">
                                 <div class="flex-1 min-w-0">
                                     <h3 class="text-base font-bold text-white mb-1 truncate">
                                         {{ group.event.title }}
@@ -151,23 +151,15 @@
                                         </svg>
                                         {{ group.event.city }}{{ group.event.state ? `, ${group.event.state}` : "" }}
                                     </p>
-                                    <!-- Badge de quantidade de ingressos ou status do pedido -->
-                                    <div class="flex items-center gap-2 flex-wrap">
+                                    <!-- Badge de quantidade de ingressos (pedidos pagos) -->
+                                    <div v-if="group.tickets.length > 0" class="flex items-center gap-2 flex-wrap">
                                         <span
-                                            v-if="group.tickets.length > 0"
                                             class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-bold"
                                         >
                                             <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
                                                 <path d="M2 6a2 2 0 012-2h12a2 2 0 012 2v2a2 2 0 100 4v2a2 2 0 01-2 2H4a2 2 0 01-2-2v-2a2 2 0 100-4V6z" />
                                             </svg>
                                             {{ group.tickets.length }} Ingresso{{ group.tickets.length !== 1 ? "s" : "" }}
-                                        </span>
-                                        <span
-                                            v-else-if="group.action.order"
-                                            class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold"
-                                            :class="statusBadgeClass(group.action.order.status)"
-                                        >
-                                            {{ statusBadgeLabel(group.action.order.status) }}
                                         </span>
                                         <span
                                             v-for="cat in uniqueCategories(group.tickets)"
@@ -178,18 +170,16 @@
                                         </span>
                                     </div>
 
-                                    <!-- Countdown da reserva -->
-                                    <p
-                                        v-if="group.countdown"
-                                        class="mt-2 text-xs text-amber-400 flex items-center gap-1"
-                                    >
-                                        <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
-                                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd" />
-                                        </svg>
-                                        Ingressos reservados por
-                                        <span class="font-mono font-bold">{{ group.countdown }}</span>
-                                    </p>
                                 </div>
+
+                                <!-- Referência do pedido (estados abertos) — fixada no rodapé do card -->
+                                <p
+                                    v-if="group.action.order"
+                                    class="mt-2 sm:mt-0 sm:absolute sm:bottom-5 sm:left-5 text-xs text-slate-500"
+                                >
+                                    Ref:
+                                    <span class="font-mono text-slate-400">{{ group.action.order.reference }}</span>
+                                </p>
 
                                 <!-- Botão state-driven -->
                                 <router-link
@@ -308,19 +298,4 @@ function actionIconPath(variant) {
     return "M3 4a1 1 0 011-1h3a1 1 0 011 1v3a1 1 0 01-1 1H4a1 1 0 01-1-1V4zm2 2V5h1v1H5zm7-2a1 1 0 00-1 1v3a1 1 0 001 1h3a1 1 0 001-1V4a1 1 0 00-1-1h-3zm1 2v1h1V5h-1zM3 12a1 1 0 011-1h3a1 1 0 011 1v3a1 1 0 01-1 1H4a1 1 0 01-1-1v-3zm2 2v-1h1v1H5zm5-2a1 1 0 011-1h3a1 1 0 110 2h-1v1a1 1 0 11-2 0v-1h-1a1 1 0 01-1-1zm4 2a1 1 0 102 0 1 1 0 00-2 0z";
 }
 
-function statusBadgeClass(status) {
-    return {
-        pending: "bg-slate-700 text-slate-300 border border-slate-600",
-        processing: "bg-sky-500/10 text-sky-300 border border-sky-500/30",
-        failed: "bg-red-500/10 text-red-300 border border-red-500/30",
-    }[status] || "bg-slate-700 text-slate-300";
-}
-
-function statusBadgeLabel(status) {
-    return {
-        pending: "Aguardando pagamento",
-        processing: "Processando pagamento",
-        failed: "Pagamento falhou",
-    }[status] || status;
-}
 </script>

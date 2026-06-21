@@ -79,8 +79,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/orders/{order:reference}', [OrderController::class, 'show']);
     Route::post('/orders/{order:reference}/cancel', [OrderController::class, 'cancel']);
 
-    // Solicitação de cancelamento/estorno (pedidos pagos)
-    Route::post('/orders/{order:reference}/cancellation', [OrderCancellationController::class, 'store']);
+    // Solicitação de cancelamento/estorno (um ou mais pedidos pagos)
+    Route::post('/orders/cancellations', [OrderCancellationController::class, 'storeBatch']);
     
     // Tickets do usuário autenticado
     Route::get('/tickets', [TicketController::class, 'index']);

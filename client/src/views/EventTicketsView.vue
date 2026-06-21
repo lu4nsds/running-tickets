@@ -110,13 +110,6 @@
                             </svg>
                             Solicitar cancelamento
                         </button>
-                        <span
-                            v-else-if="cancellationStatus"
-                            class="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold whitespace-nowrap"
-                            :class="cancellationBadgeClass(cancellationStatus)"
-                        >
-                            {{ cancellationBadgeLabel(cancellationStatus) }}
-                        </span>
                     </div>
                 </div>
 
@@ -142,11 +135,16 @@
                                     <span class="px-2 py-0.5 rounded bg-slate-700 text-slate-300 text-xs font-medium">
                                         {{ categoryLabel(item) }}
                                     </span>
-                                    <span class="text-slate-500 text-xs flex items-center gap-1">
-                                        <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                                </div>
+                                <!-- Ref do pedido + ID do ingresso, abaixo da categoria -->
+                                <div class="mt-1.5 text-slate-500 text-xs">
+                                    <span v-if="item.order?.reference" class="mr-3 whitespace-nowrap">
+                                        Ref: <span class="font-mono">{{ item.order.reference }}</span>
+                                    </span>
+                                    <span class="whitespace-nowrap">
+                                        <svg class="w-3 h-3 inline-block align-[-0.125em] mr-1" fill="currentColor" viewBox="0 0 20 20">
                                             <path d="M2 6a2 2 0 012-2h12a2 2 0 012 2v2a2 2 0 100 4v2a2 2 0 01-2 2H4a2 2 0 01-2-2v-2a2 2 0 100-4V6z" />
-                                        </svg>
-                                        ID: {{ formatCode(item.ticket.code) }}
+                                        </svg>ID: {{ formatCode(item.ticket.code) }}
                                     </span>
                                 </div>
                             </div>
@@ -159,7 +157,15 @@
                                 <span class="text-[10px] uppercase tracking-widest text-slate-500 font-semibold mb-0.5">
                                     Status do Ingresso
                                 </span>
-                                <span class="flex items-center gap-1.5 text-sm font-semibold"
+                                <!-- Solicitação de cancelamento ativa substitui o status do ingresso -->
+                                <span
+                                    v-if="activeCancellationStatus(item)"
+                                    class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-sm font-semibold whitespace-nowrap"
+                                    :class="cancellationBadgeClass(activeCancellationStatus(item))"
+                                >
+                                    {{ cancellationBadgeLabel(activeCancellationStatus(item)) }}
+                                </span>
+                                <span v-else class="flex items-center gap-1.5 text-sm font-semibold"
                                     :class="statusClass(item.ticket.status)"
                                 >
                                     <span class="w-2 h-2 rounded-full"
@@ -214,9 +220,40 @@
                     </div>
 
                     <p class="text-sm text-slate-400 mb-3">
-                        Todos os ingressos deste evento serão cancelados. Sua solicitação será
+                        Selecione os pedidos que deseja cancelar. Sua solicitação será
                         avaliada pela organização e, em caso de aprovação, o valor pago será estornado.
                     </p>
+
+                    <!-- Seleção de pedidos -->
+                    <label class="block text-xs font-semibold text-slate-300 mb-1.5">
+                        Pedidos <span class="text-red-400">*</span>
+                    </label>
+                    <div class="space-y-2 mb-4 max-h-52 overflow-y-auto pr-1">
+                        <label
+                            v-for="order in cancellableOrders"
+                            :key="order.reference"
+                            class="flex items-start gap-3 rounded-lg bg-background-dark border border-border-dark px-3 py-2.5 cursor-pointer hover:border-primary/50 transition-colors"
+                        >
+                            <input
+                                type="checkbox"
+                                :value="order.reference"
+                                :checked="selectedRefs.includes(order.reference)"
+                                @change="toggleRef(order.reference)"
+                                class="mt-0.5 h-4 w-4 rounded border-border-dark bg-surface-dark text-primary focus:ring-primary"
+                            />
+                            <span class="min-w-0">
+                                <span class="block text-sm font-semibold text-slate-100">
+                                    Ref: <span class="font-mono">{{ order.reference }}</span>
+                                </span>
+                                <span class="block text-xs text-slate-400 mt-0.5">
+                                    {{ order.participants.join(", ") }}
+                                    <span class="text-slate-500">
+                                        ({{ order.count }} ingresso{{ order.count !== 1 ? "s" : "" }})
+                                    </span>
+                                </span>
+                            </span>
+                        </label>
+                    </div>
 
                     <label class="block text-xs font-semibold text-slate-300 mb-1">
                         Motivo do cancelamento <span class="text-red-400">*</span>
@@ -238,7 +275,7 @@
                         </button>
                         <button
                             @click="submitCancellation"
-                            :disabled="!cancelReason.trim() || submitting"
+                            :disabled="!cancelReason.trim() || selectedRefs.length === 0 || submitting"
                             class="px-4 py-2 bg-red-500 text-white text-sm font-bold rounded-lg hover:bg-red-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             {{ submitting ? "Enviando..." : "Enviar solicitação" }}
@@ -329,31 +366,36 @@ const qrModal = ref({ open: false, item: null });
 const cancelModal = ref({ open: false });
 const cancelReason = ref("");
 const submitting = ref(false);
+const selectedRefs = ref([]);
 
-// Pedidos pagos elegíveis a cancelamento (sem solicitação pendente/aprovada).
-const cancellableRefs = computed(() => {
-    const refs = new Set();
+// Pedidos pagos elegíveis a cancelamento (sem solicitação pendente/aprovada),
+// agrupando os ingressos por pedido para exibir na seleção do modal.
+const cancellableOrders = computed(() => {
+    const byRef = new Map();
     for (const item of tickets.value) {
         const order = item.order;
         if (!order || order.status !== "paid") continue;
         const st = order.cancellation?.status;
-        if (!st || st === "rejected") refs.add(order.reference);
+        if (st && st !== "rejected") continue; // já possui solicitação ativa
+        if (!byRef.has(order.reference)) {
+            byRef.set(order.reference, {
+                reference: order.reference,
+                participants: [],
+            });
+        }
+        const name = item.participant?.name;
+        if (name) byRef.get(order.reference).participants.push(name);
     }
-    return [...refs];
+    return [...byRef.values()].map((o) => ({ ...o, count: o.participants.length }));
 });
 
-const canRequestCancellation = computed(() => cancellableRefs.value.length > 0);
+const canRequestCancellation = computed(() => cancellableOrders.value.length > 0);
 
-// Status agregado para exibir badge quando não há ação disponível.
-const cancellationStatus = computed(() => {
-    const statuses = tickets.value
-        .map((i) => i.order?.cancellation?.status)
-        .filter(Boolean);
-    if (statuses.includes("pending")) return "pending";
-    if (statuses.includes("approved")) return "approved";
-    if (statuses.includes("rejected")) return "rejected";
-    return null;
-});
+function toggleRef(reference) {
+    const i = selectedRefs.value.indexOf(reference);
+    if (i === -1) selectedRefs.value.push(reference);
+    else selectedRefs.value.splice(i, 1);
+}
 
 const cancellationBadges = {
     pending: { label: "Cancelamento pendente", class: "bg-amber-500/10 border border-amber-500/30 text-amber-300" },
@@ -369,25 +411,31 @@ function cancellationBadgeClass(status) {
     return cancellationBadges[status]?.class || "bg-slate-700 text-slate-300";
 }
 
+// Status do cancelamento exibido no ingresso (apenas quando ativo: pending/approved).
+function activeCancellationStatus(item) {
+    const st = item.order?.cancellation?.status;
+    return st === "pending" || st === "approved" ? st : null;
+}
+
 function openCancelModal() {
     cancelReason.value = "";
+    selectedRefs.value = []; // todos desmarcados: usuário precisa selecionar
     cancelModal.value.open = true;
 }
 
 function closeCancelModal() {
     cancelModal.value.open = false;
     cancelReason.value = "";
+    selectedRefs.value = [];
 }
 
 async function submitCancellation() {
     const reason = cancelReason.value.trim();
-    if (!reason || submitting.value) return;
+    if (!reason || selectedRefs.value.length === 0 || submitting.value) return;
     submitting.value = true;
     try {
-        // Cria uma solicitação para cada pedido pago do evento.
-        for (const reference of cancellableRefs.value) {
-            await ordersStore.createCancellation(reference, reason);
-        }
+        // Envia um único request com os pedidos selecionados.
+        await ordersStore.createCancellationBatch(selectedRefs.value, reason);
         toast.success(
             "Sua solicitação foi enviada e será avaliada pela organização.",
             "Solicitação enviada",
@@ -427,18 +475,21 @@ function formatFullDate(dateStr) {
 
 function statusClass(status) {
     if (status === "active") return "text-primary";
+    if (status === "inactive") return "text-amber-400";
     if (status === "used") return "text-slate-400";
     return "text-red-400";
 }
 
 function statusDotClass(status) {
     if (status === "active") return "bg-primary";
+    if (status === "inactive") return "bg-amber-400";
     if (status === "used") return "bg-slate-400";
     return "bg-red-400";
 }
 
 function statusLabel(status) {
     if (status === "active") return "Confirmado";
+    if (status === "inactive") return "Inativo";
     if (status === "used") return "Utilizado";
     return "Cancelado";
 }

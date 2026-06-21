@@ -4,11 +4,11 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class StoreOrderCancellationRequest extends FormRequest
+class StoreBatchOrderCancellationRequest extends FormRequest
 {
     /**
      * A autorização de propriedade/elegibilidade é feita no controller via
-     * Policy ($this->authorize('create', ...)), pois depende do pedido.
+     * Policy ($this->authorize('create', ...)) para cada pedido informado.
      */
     public function authorize(): bool
     {
@@ -18,6 +18,8 @@ class StoreOrderCancellationRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'references' => ['required', 'array', 'min:1'],
+            'references.*' => ['required', 'string', 'exists:orders,reference'],
             'reason' => ['required', 'string', 'max:1000'],
         ];
     }
@@ -25,6 +27,9 @@ class StoreOrderCancellationRequest extends FormRequest
     public function messages(): array
     {
         return [
+            'references.required' => 'Selecione ao menos um pedido para solicitar o cancelamento.',
+            'references.min' => 'Selecione ao menos um pedido para solicitar o cancelamento.',
+            'references.*.exists' => 'Um dos pedidos informados não foi encontrado.',
             'reason.required' => 'O motivo do cancelamento é obrigatório.',
             'reason.max' => 'O motivo não pode ter mais de 1000 caracteres.',
         ];

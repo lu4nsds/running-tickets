@@ -80,6 +80,7 @@ export function useUserOrderGroups() {
                 to: null,
                 variant: "muted",
                 disabled: true,
+                order: processing,
             };
         }
 

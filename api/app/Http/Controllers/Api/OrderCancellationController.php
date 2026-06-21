@@ -5,13 +5,14 @@ namespace App\Http\Controllers\Api;
 use App\Enums\OrderCancellationStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\ReviewOrderCancellationRequest;
-use App\Http\Requests\StoreOrderCancellationRequest;
+use App\Http\Requests\StoreBatchOrderCancellationRequest;
 use App\Http\Resources\OrderCancellationResource;
 use App\Models\Event;
 use App\Models\Order;
 use App\Models\OrderCancellation;
 use App\Services\RefundService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use MercadoPago\Exceptions\MPApiException;
 
@@ -35,22 +36,34 @@ class OrderCancellationController extends Controller
     }
 
     /**
-     * Cria um pedido de cancelamento para um pedido pago (comprador).
+     * Cria solicitações de cancelamento para um ou mais pedidos pagos do
+     * comprador em um único request (estorno avaliado pela organização).
      */
-    public function store(StoreOrderCancellationRequest $request, Order $order): JsonResponse
+    public function storeBatch(StoreBatchOrderCancellationRequest $request): JsonResponse
     {
-        $this->authorize('create', [OrderCancellation::class, $order]);
+        $orders = Order::whereIn('reference', $request->validated('references'))->get();
 
-        $cancellation = OrderCancellation::create([
-            'order_id' => $order->id,
-            'requested_by' => $request->user()->id,
-            'reason' => $request->validated('reason'),
-            'status' => OrderCancellationStatus::PENDING,
-        ]);
+        $cancellations = DB::transaction(function () use ($orders, $request) {
+            return $orders->map(function (Order $order) use ($request) {
+                $this->authorize('create', [OrderCancellation::class, $order]);
+
+                $cancellation = OrderCancellation::create([
+                    'order_id' => $order->id,
+                    'requested_by' => $request->user()->id,
+                    'reason' => $request->validated('reason'),
+                    'status' => OrderCancellationStatus::PENDING,
+                ]);
+
+                // Desativa os ingressos enquanto a solicitação estiver pendente.
+                $this->refundService->deactivateTickets($order);
+
+                return $cancellation;
+            });
+        });
 
         return response()->json([
             'message' => 'Solicitação de cancelamento enviada com sucesso.',
-            'cancellation' => OrderCancellationResource::make($cancellation),
+            'cancellations' => OrderCancellationResource::collection($cancellations),
         ], 201);
     }
 

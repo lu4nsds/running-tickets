@@ -56,7 +56,7 @@ class OrderCancellationTest extends TestCase
         return $user->fresh();
     }
 
-    // ── store (comprador) ────────────────────────────────────────────────────
+    // ── storeBatch (comprador) ───────────────────────────────────────────────
 
     public function test_owner_can_request_cancellation_of_paid_order(): void
     {
@@ -64,14 +64,41 @@ class OrderCancellationTest extends TestCase
         $order = $this->makePaidOrder($owner);
 
         $this->actingAs($owner, 'sanctum')
-            ->postJson("/api/orders/{$order->reference}/cancellation", [
+            ->postJson('/api/orders/cancellations', [
+                'references' => [$order->reference],
                 'reason' => 'Não poderei comparecer ao evento.',
             ])
             ->assertStatus(201)
-            ->assertJsonPath('cancellation.status', 'pending');
+            ->assertJsonPath('cancellations.0.status', 'pending');
 
         $this->assertDatabaseHas('order_cancellations', [
             'order_id' => $order->id,
+            'requested_by' => $owner->id,
+            'status' => 'pending',
+        ]);
+    }
+
+    public function test_owner_can_request_cancellation_of_multiple_orders_in_one_request(): void
+    {
+        $owner = User::factory()->create();
+        $orderA = $this->makePaidOrder($owner);
+        $orderB = $this->makePaidOrder($owner);
+
+        $this->actingAs($owner, 'sanctum')
+            ->postJson('/api/orders/cancellations', [
+                'references' => [$orderA->reference, $orderB->reference],
+                'reason' => 'Não poderei comparecer ao evento.',
+            ])
+            ->assertStatus(201)
+            ->assertJsonCount(2, 'cancellations');
+
+        $this->assertDatabaseHas('order_cancellations', [
+            'order_id' => $orderA->id,
+            'requested_by' => $owner->id,
+            'status' => 'pending',
+        ]);
+        $this->assertDatabaseHas('order_cancellations', [
+            'order_id' => $orderB->id,
             'requested_by' => $owner->id,
             'status' => 'pending',
         ]);
@@ -83,9 +110,23 @@ class OrderCancellationTest extends TestCase
         $order = $this->makePaidOrder($owner);
 
         $this->actingAs($owner, 'sanctum')
-            ->postJson("/api/orders/{$order->reference}/cancellation", [])
+            ->postJson('/api/orders/cancellations', [
+                'references' => [$order->reference],
+            ])
             ->assertStatus(422)
             ->assertJsonValidationErrors('reason');
+    }
+
+    public function test_references_are_required(): void
+    {
+        $owner = User::factory()->create();
+
+        $this->actingAs($owner, 'sanctum')
+            ->postJson('/api/orders/cancellations', [
+                'reason' => 'Mudei de ideia.',
+            ])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('references');
     }
 
     public function test_cannot_request_cancellation_of_unpaid_order(): void
@@ -99,7 +140,8 @@ class OrderCancellationTest extends TestCase
             ->create();
 
         $this->actingAs($owner, 'sanctum')
-            ->postJson("/api/orders/{$order->reference}/cancellation", [
+            ->postJson('/api/orders/cancellations', [
+                'references' => [$order->reference],
                 'reason' => 'Mudei de ideia.',
             ])
             ->assertStatus(403);
@@ -115,7 +157,8 @@ class OrderCancellationTest extends TestCase
         ]);
 
         $this->actingAs($owner, 'sanctum')
-            ->postJson("/api/orders/{$order->reference}/cancellation", [
+            ->postJson('/api/orders/cancellations', [
+                'references' => [$order->reference],
                 'reason' => 'Segunda tentativa.',
             ])
             ->assertStatus(403);
@@ -128,10 +171,76 @@ class OrderCancellationTest extends TestCase
         $order = $this->makePaidOrder($owner);
 
         $this->actingAs($stranger, 'sanctum')
-            ->postJson("/api/orders/{$order->reference}/cancellation", [
+            ->postJson('/api/orders/cancellations', [
+                'references' => [$order->reference],
                 'reason' => 'Não é meu pedido.',
             ])
             ->assertStatus(403);
+    }
+
+    public function test_batch_rolls_back_when_one_order_is_not_owned(): void
+    {
+        $owner = User::factory()->create();
+        $stranger = User::factory()->create();
+        $ownOrder = $this->makePaidOrder($owner);
+        $strangerOrder = $this->makePaidOrder($stranger);
+
+        $this->actingAs($owner, 'sanctum')
+            ->postJson('/api/orders/cancellations', [
+                'references' => [$ownOrder->reference, $strangerOrder->reference],
+                'reason' => 'Tentativa de cancelar pedido de terceiro.',
+            ])
+            ->assertStatus(403);
+
+        // Nenhuma solicitação criada (rollback da transação)
+        $this->assertDatabaseCount('order_cancellations', 0);
+    }
+
+    public function test_requesting_cancellation_deactivates_tickets(): void
+    {
+        $owner = User::factory()->create();
+        $order = $this->makePaidOrder($owner);
+
+        $ticket = Ticket::whereIn('order_item_id', $order->items()->pluck('id'))->first();
+        $this->assertSame(TicketStatus::ACTIVE, $ticket->status);
+
+        $this->actingAs($owner, 'sanctum')
+            ->postJson('/api/orders/cancellations', [
+                'references' => [$order->reference],
+                'reason' => 'Não poderei comparecer.',
+            ])
+            ->assertStatus(201);
+
+        $this->assertSame(TicketStatus::INACTIVE, $ticket->fresh()->status);
+    }
+
+    public function test_rejecting_cancellation_reactivates_tickets(): void
+    {
+        $admin = $this->makeSuperAdmin();
+        $owner = User::factory()->create();
+        $order = $this->makePaidOrder($owner);
+
+        // Comprador solicita: ingressos ficam inativos.
+        $this->actingAs($owner, 'sanctum')
+            ->postJson('/api/orders/cancellations', [
+                'references' => [$order->reference],
+                'reason' => 'Não poderei comparecer.',
+            ])
+            ->assertStatus(201);
+
+        $ticket = Ticket::whereIn('order_item_id', $order->items()->pluck('id'))->first();
+        $this->assertSame(TicketStatus::INACTIVE, $ticket->fresh()->status);
+
+        $cancellation = OrderCancellation::where('order_id', $order->id)->firstOrFail();
+
+        // Admin rejeita: ingressos voltam a ficar ativos.
+        $this->actingAs($admin, 'sanctum')
+            ->postJson("/api/admin/cancellations/{$cancellation->id}/reject", [
+                'review_notes' => 'Fora do prazo.',
+            ])
+            ->assertStatus(200);
+
+        $this->assertSame(TicketStatus::ACTIVE, $ticket->fresh()->status);
     }
 
     // ── approve (super admin) ──────────────────────────────────────────────────
