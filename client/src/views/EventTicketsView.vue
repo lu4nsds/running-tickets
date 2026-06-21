@@ -175,8 +175,9 @@
                                 </span>
                             </div>
 
-                            <!-- Botão QR Code -->
+                            <!-- Botão QR Code (apenas para ingressos ativos) -->
                             <button
+                                v-if="item.ticket.status === 'active'"
                                 @click="openQr(item)"
                                 class="flex items-center justify-center gap-2 px-4 py-2.5 bg-primary text-background-dark font-bold text-sm rounded-lg hover:bg-primary/90 transition-colors whitespace-nowrap"
                             >
@@ -399,8 +400,6 @@ function toggleRef(reference) {
 
 const cancellationBadges = {
     pending: { label: "Cancelamento pendente", class: "bg-amber-500/10 border border-amber-500/30 text-amber-300" },
-    approved: { label: "Cancelamento aprovado", class: "bg-emerald-500/10 border border-emerald-500/30 text-emerald-300" },
-    rejected: { label: "Cancelamento rejeitado", class: "bg-red-500/10 border border-red-500/30 text-red-300" },
 };
 
 function cancellationBadgeLabel(status) {
@@ -411,10 +410,11 @@ function cancellationBadgeClass(status) {
     return cancellationBadges[status]?.class || "bg-slate-700 text-slate-300";
 }
 
-// Status do cancelamento exibido no ingresso (apenas quando ativo: pending/approved).
+// Status do cancelamento exibido no ingresso (apenas enquanto pendente).
+// Quando aprovado, o próprio status do ingresso (reembolsado) é exibido.
 function activeCancellationStatus(item) {
     const st = item.order?.cancellation?.status;
-    return st === "pending" || st === "approved" ? st : null;
+    return st === "pending" ? st : null;
 }
 
 function openCancelModal() {
@@ -477,6 +477,7 @@ function statusClass(status) {
     if (status === "active") return "text-primary";
     if (status === "inactive") return "text-amber-400";
     if (status === "used") return "text-slate-400";
+    if (status === "refunded") return "text-rose-400";
     return "text-red-400";
 }
 
@@ -484,6 +485,7 @@ function statusDotClass(status) {
     if (status === "active") return "bg-primary";
     if (status === "inactive") return "bg-amber-400";
     if (status === "used") return "bg-slate-400";
+    if (status === "refunded") return "bg-rose-400";
     return "bg-red-400";
 }
 
@@ -491,6 +493,7 @@ function statusLabel(status) {
     if (status === "active") return "Confirmado";
     if (status === "inactive") return "Inativo";
     if (status === "used") return "Utilizado";
+    if (status === "refunded") return "Reembolsado";
     return "Cancelado";
 }
 
