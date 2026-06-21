@@ -42,20 +42,36 @@
             </button>
         </div>
 
-        <LoadingState v-if="store.isLoading" message="Carregando..." />
         <ErrorState
-            v-else-if="store.error"
+            v-if="store.error"
             :message="store.error"
             @retry="loadActiveTab"
         />
 
+        <template v-else>
         <!-- Tab: Pedidos -->
-        <div v-else-if="activeTab === 'orders'">
+        <div v-show="activeTab === 'orders'">
+            <!-- Busca -->
+            <div class="relative mb-4 max-w-md">
+                <span
+                    class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-text-muted text-[20px]"
+                    >search</span
+                >
+                <input
+                    v-model="searchQuery"
+                    type="text"
+                    placeholder="Buscar por referência, e-mail ou CPF..."
+                    class="w-full bg-card-bg border border-surface-elevated rounded-lg pl-10 pr-3 py-2.5 text-sm text-white placeholder-text-muted focus:outline-none focus:border-primary"
+                />
+            </div>
+
+            <LoadingState v-if="store.isLoading" message="Carregando..." />
+            <template v-else>
             <div
                 v-if="store.orders.length === 0"
                 class="text-center py-16 text-text-muted"
             >
-                Nenhum pedido para este evento.
+                Nenhum pedido encontrado.
             </div>
             <div
                 v-else
@@ -105,10 +121,38 @@
                     </tbody>
                 </table>
             </div>
+
+            <!-- Paginação -->
+            <div
+                v-if="store.ordersPagination.lastPage > 1"
+                class="flex justify-center items-center gap-4 mt-4"
+            >
+                <button
+                    @click="changeOrdersPage(store.ordersPagination.currentPage - 1)"
+                    :disabled="store.ordersPagination.currentPage <= 1"
+                    class="flex items-center justify-center w-8 h-8 rounded-lg border border-surface-elevated text-text-muted hover:text-white hover:border-primary transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                    <span class="material-symbols-outlined text-base">chevron_left</span>
+                </button>
+                <span class="text-text-muted text-sm">
+                    {{ store.ordersPagination.currentPage }} /
+                    {{ store.ordersPagination.lastPage }}
+                </span>
+                <button
+                    @click="changeOrdersPage(store.ordersPagination.currentPage + 1)"
+                    :disabled="store.ordersPagination.currentPage >= store.ordersPagination.lastPage"
+                    class="flex items-center justify-center w-8 h-8 rounded-lg border border-surface-elevated text-text-muted hover:text-white hover:border-primary transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                    <span class="material-symbols-outlined text-base">chevron_right</span>
+                </button>
+            </div>
+            </template>
         </div>
 
         <!-- Tab: Solicitações de cancelamento -->
-        <div v-else-if="activeTab === 'requests'">
+        <div v-show="activeTab === 'requests'">
+            <LoadingState v-if="store.isLoading" message="Carregando..." />
+            <template v-else>
             <div
                 v-if="store.cancellations.length === 0"
                 class="text-center py-16 text-text-muted"
@@ -190,7 +234,9 @@
                     </tbody>
                 </table>
             </div>
+            </template>
         </div>
+        </template>
 
         <!-- Modal: Aprovar estorno -->
         <Modal
@@ -263,7 +309,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted } from "vue";
+import { ref, reactive, computed, watch, onMounted } from "vue";
 import { useRoute } from "vue-router";
 import { useOrdersStore } from "@/stores/orders";
 import { useEventsStore } from "@/stores/events";
@@ -291,6 +337,21 @@ const approveModal = reactive({ open: false, request: null });
 const rejectModal = reactive({ open: false, request: null });
 const rejectNotes = ref("");
 
+// Busca (referência / e-mail / CPF) com debounce
+const searchQuery = ref("");
+let searchTimer = null;
+watch(searchQuery, () => {
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(() => {
+        store.fetchEventOrders(eventId, 1, searchQuery.value.trim());
+    }, 400);
+});
+
+function changeOrdersPage(page) {
+    if (page < 1 || page > store.ordersPagination.lastPage) return;
+    store.fetchEventOrders(eventId, page, searchQuery.value.trim());
+}
+
 const pendingCancellationsCount = computed(
     () =>
         store.cancellations.filter((r) => r.status === "pending").length,
@@ -298,7 +359,7 @@ const pendingCancellationsCount = computed(
 
 async function loadActiveTab() {
     if (activeTab.value === "orders") {
-        await store.fetchEventOrders(eventId);
+        await store.fetchEventOrders(eventId, 1, searchQuery.value.trim());
     } else {
         await store.fetchCancellations(eventId);
     }

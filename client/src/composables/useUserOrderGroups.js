@@ -61,7 +61,7 @@ export function useUserOrderGroups() {
     function resolveAction(group) {
         if (group.tickets.length > 0) {
             return {
-                label: "Ver Comprovante",
+                label: "Ver Ingressos",
                 to: {
                     name: "event-tickets",
                     params: { eventId: group.event.id },
@@ -144,20 +144,9 @@ export function useUserOrderGroups() {
                     event: ticket.event,
                     tickets: [],
                     openOrders: [],
-                    paidOrder: null,
                 });
             }
             paidByEvent.get(eventId).tickets.push(ticket);
-        }
-
-        // Anexa o pedido pago do evento (para solicitação de cancelamento/estorno).
-        // No caso comum há um pedido pago por evento; usa-se o mais recente.
-        for (const order of orders.value) {
-            if (order.status !== "paid" || !order.event?.id) continue;
-            const group = paidByEvent.get(order.event.id);
-            if (group && !group.paidOrder) {
-                group.paidOrder = order;
-            }
         }
 
         for (const order of orders.value) {

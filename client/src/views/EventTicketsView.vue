@@ -91,12 +91,33 @@
                             Gerencie os ingressos individuais de cada participante vinculado à sua conta.
                         </p>
                     </div>
-                    <span class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary/10 border border-primary/30 text-primary text-sm font-bold whitespace-nowrap">
-                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                            <path d="M2 6a2 2 0 012-2h12a2 2 0 012 2v2a2 2 0 100 4v2a2 2 0 01-2 2H4a2 2 0 01-2-2v-2a2 2 0 100-4V6z" />
-                        </svg>
-                        {{ tickets.length.toString().padStart(2, "0") }} Ingresso{{ tickets.length !== 1 ? "s" : "" }}
-                    </span>
+                    <div class="flex items-center gap-3 flex-wrap">
+                        <span class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary/10 border border-primary/30 text-primary text-sm font-bold whitespace-nowrap">
+                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M2 6a2 2 0 012-2h12a2 2 0 012 2v2a2 2 0 100 4v2a2 2 0 01-2 2H4a2 2 0 01-2-2v-2a2 2 0 100-4V6z" />
+                            </svg>
+                            {{ tickets.length.toString().padStart(2, "0") }} Ingresso{{ tickets.length !== 1 ? "s" : "" }}
+                        </span>
+
+                        <!-- Solicitação de cancelamento (estorno de todos os ingressos do pedido) -->
+                        <button
+                            v-if="canRequestCancellation"
+                            @click="openCancelModal"
+                            class="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-red-500 text-red-400 text-sm font-bold hover:bg-red-500/10 transition-colors whitespace-nowrap"
+                        >
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                            Solicitar cancelamento
+                        </button>
+                        <span
+                            v-else-if="cancellationStatus"
+                            class="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold whitespace-nowrap"
+                            :class="cancellationBadgeClass(cancellationStatus)"
+                        >
+                            {{ cancellationBadgeLabel(cancellationStatus) }}
+                        </span>
+                    </div>
                 </div>
 
                 <!-- Lista de tickets individuais -->
@@ -156,7 +177,7 @@
                                 <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                                     <path fill-rule="evenodd" d="M3 4a1 1 0 011-1h3a1 1 0 011 1v3a1 1 0 01-1 1H4a1 1 0 01-1-1V4zm2 2V5h1v1H5zm7-2a1 1 0 00-1 1v3a1 1 0 001 1h3a1 1 0 001-1V4a1 1 0 00-1-1h-3zm1 2v1h1V5h-1zM3 12a1 1 0 011-1h3a1 1 0 011 1v3a1 1 0 01-1 1H4a1 1 0 01-1-1v-3zm2 2v-1h1v1H5zm5-2a1 1 0 011-1h3a1 1 0 110 2h-1v1a1 1 0 11-2 0v-1h-1a1 1 0 01-1-1zm4 2a1 1 0 102 0 1 1 0 00-2 0z" clip-rule="evenodd" />
                                 </svg>
-                                Ver QR Code Individual
+                                Ver QR Code
                             </button>
                         </div>
                     </div>
@@ -171,6 +192,61 @@
                 </router-link>
             </div>
         </main>
+
+        <!-- Modal: Solicitar cancelamento -->
+        <Teleport to="body">
+            <div
+                v-if="cancelModal.open"
+                class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
+                @click.self="closeCancelModal"
+            >
+                <div class="bg-surface-dark border border-border-dark rounded-2xl p-6 max-w-md w-full shadow-2xl">
+                    <div class="flex items-start justify-between mb-4">
+                        <div>
+                            <h3 class="text-lg font-bold text-white">Solicitar cancelamento</h3>
+                            <p class="text-sm text-slate-400">{{ eventData?.title }}</p>
+                        </div>
+                        <button @click="closeCancelModal" class="text-slate-400 hover:text-white transition-colors">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    </div>
+
+                    <p class="text-sm text-slate-400 mb-3">
+                        Todos os ingressos deste evento serão cancelados. Sua solicitação será
+                        avaliada pela organização e, em caso de aprovação, o valor pago será estornado.
+                    </p>
+
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">
+                        Motivo do cancelamento <span class="text-red-400">*</span>
+                    </label>
+                    <textarea
+                        v-model="cancelReason"
+                        rows="4"
+                        maxlength="1000"
+                        placeholder="Descreva o motivo do cancelamento..."
+                        class="w-full rounded-lg bg-background-dark border border-border-dark px-3 py-2 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-primary resize-none"
+                    ></textarea>
+
+                    <div class="flex justify-end gap-3 mt-5">
+                        <button
+                            @click="closeCancelModal"
+                            class="px-4 py-2 text-sm font-semibold text-slate-300 hover:text-white transition-colors"
+                        >
+                            Voltar
+                        </button>
+                        <button
+                            @click="submitCancellation"
+                            :disabled="!cancelReason.trim() || submitting"
+                            class="px-4 py-2 bg-red-500 text-white text-sm font-bold rounded-lg hover:bg-red-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            {{ submitting ? "Enviando..." : "Enviar solicitação" }}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </Teleport>
 
         <!-- Modal do QR Code Individual -->
         <Teleport to="body">
@@ -232,18 +308,101 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from "vue";
+import { ref, computed, onMounted } from "vue";
 import { useRoute } from "vue-router";
 import Navbar from "../components/Navbar.vue";
 import Footer from "../components/Footer.vue";
 import api from "../api/axios";
+import { useOrdersStore } from "../stores/orders";
+import { useToast } from "../composables/useToast";
 
 const route = useRoute();
+const ordersStore = useOrdersStore();
+const toast = useToast();
 
 const loading = ref(true);
 const tickets = ref([]);
 const eventData = ref(null);
 const qrModal = ref({ open: false, item: null });
+
+// ── Cancelamento (estorno do(s) pedido(s) deste evento) ────────────────────
+const cancelModal = ref({ open: false });
+const cancelReason = ref("");
+const submitting = ref(false);
+
+// Pedidos pagos elegíveis a cancelamento (sem solicitação pendente/aprovada).
+const cancellableRefs = computed(() => {
+    const refs = new Set();
+    for (const item of tickets.value) {
+        const order = item.order;
+        if (!order || order.status !== "paid") continue;
+        const st = order.cancellation?.status;
+        if (!st || st === "rejected") refs.add(order.reference);
+    }
+    return [...refs];
+});
+
+const canRequestCancellation = computed(() => cancellableRefs.value.length > 0);
+
+// Status agregado para exibir badge quando não há ação disponível.
+const cancellationStatus = computed(() => {
+    const statuses = tickets.value
+        .map((i) => i.order?.cancellation?.status)
+        .filter(Boolean);
+    if (statuses.includes("pending")) return "pending";
+    if (statuses.includes("approved")) return "approved";
+    if (statuses.includes("rejected")) return "rejected";
+    return null;
+});
+
+const cancellationBadges = {
+    pending: { label: "Cancelamento pendente", class: "bg-amber-500/10 border border-amber-500/30 text-amber-300" },
+    approved: { label: "Cancelamento aprovado", class: "bg-emerald-500/10 border border-emerald-500/30 text-emerald-300" },
+    rejected: { label: "Cancelamento rejeitado", class: "bg-red-500/10 border border-red-500/30 text-red-300" },
+};
+
+function cancellationBadgeLabel(status) {
+    return cancellationBadges[status]?.label || "Cancelamento solicitado";
+}
+
+function cancellationBadgeClass(status) {
+    return cancellationBadges[status]?.class || "bg-slate-700 text-slate-300";
+}
+
+function openCancelModal() {
+    cancelReason.value = "";
+    cancelModal.value.open = true;
+}
+
+function closeCancelModal() {
+    cancelModal.value.open = false;
+    cancelReason.value = "";
+}
+
+async function submitCancellation() {
+    const reason = cancelReason.value.trim();
+    if (!reason || submitting.value) return;
+    submitting.value = true;
+    try {
+        // Cria uma solicitação para cada pedido pago do evento.
+        for (const reference of cancellableRefs.value) {
+            await ordersStore.createCancellation(reference, reason);
+        }
+        toast.success(
+            "Sua solicitação foi enviada e será avaliada pela organização.",
+            "Solicitação enviada",
+        );
+        closeCancelModal();
+        await loadTickets();
+    } catch (err) {
+        toast.error(
+            err.response?.data?.message ||
+                "Não foi possível enviar a solicitação.",
+        );
+    } finally {
+        submitting.value = false;
+    }
+}
 
 function categoryLabel(item) {
     if (!item) return "";
@@ -292,7 +451,7 @@ function closeQr() {
     qrModal.value = { open: false, item: null };
 }
 
-onMounted(async () => {
+async function loadTickets() {
     try {
         const eventId = route.params.eventId;
         const { data } = await api.get("/tickets", { params: { event_id: eventId } });
@@ -306,5 +465,7 @@ onMounted(async () => {
     } finally {
         loading.value = false;
     }
-});
+}
+
+onMounted(loadTickets);
 </script>

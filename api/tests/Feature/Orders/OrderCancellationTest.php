@@ -168,6 +168,49 @@ class OrderCancellationTest extends TestCase
         $this->assertSame(TicketStatus::REFUNDED, $ticket->fresh()->status);
     }
 
+    public function test_approve_refunds_all_tickets_of_a_multi_ticket_order(): void
+    {
+        $this->mock(MercadoPagoService::class, function ($mock) {
+            $mock->shouldReceive('refundPayment')
+                ->once()
+                ->andReturn(['id' => 'refund-multi', 'status' => 'approved']);
+        });
+
+        $admin = $this->makeSuperAdmin();
+        $owner = User::factory()->create();
+
+        $organizer = Organizer::factory()->create();
+        $event = Event::factory()->for($organizer)->create();
+        $ticketType = TicketType::factory()->for($event)->create();
+        $order = Order::factory()->for($event)->for($organizer)->paid()
+            ->state(['user_id' => $owner->id, 'payment_id' => '999'])
+            ->create();
+
+        // 3 participantes / 3 ingressos no mesmo pedido
+        $itemIds = [];
+        for ($i = 0; $i < 3; $i++) {
+            $item = OrderItem::factory()->for($order)
+                ->state(['ticket_type_id' => $ticketType->id])
+                ->create();
+            Ticket::factory()->for($item, 'orderItem')->create();
+            $itemIds[] = $item->id;
+        }
+
+        $request = OrderCancellation::factory()->for($order)->create([
+            'requested_by' => $owner->id,
+        ]);
+
+        $this->actingAs($admin, 'sanctum')
+            ->postJson("/api/admin/cancellations/{$request->id}/approve")
+            ->assertStatus(200);
+
+        // TODOS os ingressos devem estar reembolsados
+        $refunded = Ticket::whereIn('order_item_id', $itemIds)
+            ->where('status', TicketStatus::REFUNDED->value)
+            ->count();
+        $this->assertSame(3, $refunded);
+    }
+
     public function test_approve_does_not_change_state_when_gateway_fails(): void
     {
         $this->mock(MercadoPagoService::class, function ($mock) {

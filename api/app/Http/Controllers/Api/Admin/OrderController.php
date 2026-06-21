@@ -25,7 +25,27 @@ class OrderController extends Controller
             $query->where('status', $status);
         }
 
-        $orders = $query->paginate(15);
+        // Busca por referência do pedido, e-mail do comprador ou CPF do participante
+        $search = trim((string) $request->query('search', ''));
+        if ($search !== '') {
+            $digits = preg_replace('/\D/', '', $search);
+            // Só busca por CPF quando o termo é numérico (sem letras), para evitar
+            // que dígitos avulsos de uma referência/e-mail casem qualquer CPF.
+            $isCpfSearch = $digits !== '' && ! preg_match('/[a-zA-Z]/', $search);
+
+            $query->where(function ($q) use ($search, $digits, $isCpfSearch) {
+                $q->where('reference', 'like', "%{$search}%")
+                    ->orWhere('buyer_email', 'like', "%{$search}%");
+
+                if ($isCpfSearch) {
+                    $q->orWhereHas('items', function ($iq) use ($digits) {
+                        $iq->whereRaw("JSON_EXTRACT(participant_data, '$.cpf') LIKE ?", ["%{$digits}%"]);
+                    });
+                }
+            });
+        }
+
+        $orders = $query->paginate(15)->withQueryString();
 
         return OrderResource::collection($orders)->response();
     }

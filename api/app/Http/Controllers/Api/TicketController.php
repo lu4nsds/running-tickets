@@ -17,7 +17,7 @@ class TicketController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
-        $query = Ticket::with(['orderItem.order.event', 'orderItem.ticketType', 'orderItem.category'])
+        $query = Ticket::with(['orderItem.order.event', 'orderItem.order.latestCancellation', 'orderItem.ticketType', 'orderItem.category'])
             ->whereHas('orderItem.order', function ($q) use ($request) {
                 $q->where('user_id', $request->user()->id);
             });
@@ -35,24 +35,35 @@ class TicketController extends Controller
 
         return response()->json([
             'data' => $tickets->map(function ($ticket) {
+                $order = $ticket->orderItem->order;
+                $cancellation = $order->latestCancellation;
+
                 return [
                     'ticket' => TicketResource::make($ticket),
                     'participant' => $ticket->orderItem->participant_data,
+                    'order' => [
+                        'reference' => $order->reference,
+                        'status' => $order->status->value,
+                        'cancellation' => $cancellation ? [
+                            'status' => $cancellation->status->value,
+                            'status_label' => $cancellation->status->label(),
+                        ] : null,
+                    ],
                     'event' => [
-                        'id'         => $ticket->orderItem->order->event->id,
-                        'title'      => $ticket->orderItem->order->event->title,
+                        'id' => $ticket->orderItem->order->event->id,
+                        'title' => $ticket->orderItem->order->event->title,
                         'date_start' => $ticket->orderItem->order->event->date_start,
                         'banner_url' => $ticket->orderItem->order->event->banner_full_url,
-                        'city'       => $ticket->orderItem->order->event->city,
-                        'state'      => $ticket->orderItem->order->event->state,
+                        'city' => $ticket->orderItem->order->event->city,
+                        'state' => $ticket->orderItem->order->event->state,
                     ],
                     'ticket_type' => [
-                        'id'   => $ticket->orderItem->ticketType->id,
+                        'id' => $ticket->orderItem->ticketType->id,
                         'name' => $ticket->orderItem->ticketType->name,
                     ],
                     'category' => $ticket->orderItem->category ? [
-                        'id'       => $ticket->orderItem->category->id,
-                        'name'     => $ticket->orderItem->category->name,
+                        'id' => $ticket->orderItem->category->id,
+                        'name' => $ticket->orderItem->category->name,
                         'distance' => $ticket->orderItem->category->distance,
                     ] : null,
                 ];
@@ -95,17 +106,17 @@ class TicketController extends Controller
         $ticket = Ticket::with('orderItem.order.event')->where('code', $code)->firstOrFail();
 
         $user = $request->user();
-        
+
         // Verifica permissão: dono do ticket, super admin ou organizador do evento
         $isOwner = $ticket->orderItem->order->user_id === $user->id;
         $isSuperAdmin = $user->hasRole('super_admin');
         $isOrganizer = $user->canAccessOrganizer($ticket->orderItem->order->event->organizer_id);
-        
-        if (!$isOwner && !$isSuperAdmin && !$isOrganizer) {
+
+        if (! $isOwner && ! $isSuperAdmin && ! $isOrganizer) {
             abort(403, 'Você não tem permissão para acessar este ticket.');
         }
 
-        if (!$ticket->qr_path || !Storage::exists($ticket->qr_path)) {
+        if (! $ticket->qr_path || ! Storage::exists($ticket->qr_path)) {
             abort(404, 'QR Code não encontrado');
         }
 
@@ -128,25 +139,25 @@ class TicketController extends Controller
         $event = $ticket->orderItem->order->event;
 
         // Verifica se o usuário é super admin ou tem acesso ao organizador do evento
-        if (!$user->hasRole('super_admin') && !$user->canAccessOrganizer($event->organizer_id)) {
+        if (! $user->hasRole('super_admin') && ! $user->canAccessOrganizer($event->organizer_id)) {
             return response()->json([
                 'message' => 'Você não tem permissão para validar tickets deste evento.',
             ], 403);
         }
 
-        if (!$ticket->canBeUsed()) {
+        if (! $ticket->canBeUsed()) {
             return response()->json([
-                'valid'        => false,
-                'message'      => 'Ticket já foi utilizado ou está inválido.',
-                'status'       => $ticket->status->value,
+                'valid' => false,
+                'message' => 'Ticket já foi utilizado ou está inválido.',
+                'status' => $ticket->status->value,
                 'status_label' => $ticket->status->label(),
-                'participant'  => $ticket->orderItem->participant_data,
-                'ticket_type'  => [
-                    'id'   => $ticket->orderItem->ticketType->id,
+                'participant' => $ticket->orderItem->participant_data,
+                'ticket_type' => [
+                    'id' => $ticket->orderItem->ticketType->id,
                     'name' => $ticket->orderItem->ticketType->name,
                 ],
                 'category' => $ticket->orderItem->category ? [
-                    'id'   => $ticket->orderItem->category->id,
+                    'id' => $ticket->orderItem->category->id,
                     'name' => $ticket->orderItem->category->name,
                 ] : null,
                 'used_at' => $ticket->status->value === 'used'
@@ -159,20 +170,20 @@ class TicketController extends Controller
         $ticket->markAsUsed();
 
         return response()->json([
-            'valid'       => true,
-            'message'     => 'Ticket validado com sucesso!',
-            'ticket'      => TicketResource::make($ticket->fresh()),
+            'valid' => true,
+            'message' => 'Ticket validado com sucesso!',
+            'ticket' => TicketResource::make($ticket->fresh()),
             'participant' => $ticket->orderItem->participant_data,
             'ticket_type' => [
-                'id'   => $ticket->orderItem->ticketType->id,
+                'id' => $ticket->orderItem->ticketType->id,
                 'name' => $ticket->orderItem->ticketType->name,
             ],
             'category' => $ticket->orderItem->category ? [
-                'id'   => $ticket->orderItem->category->id,
+                'id' => $ticket->orderItem->category->id,
                 'name' => $ticket->orderItem->category->name,
             ] : null,
             'event' => [
-                'id'    => $event->id,
+                'id' => $event->id,
                 'title' => $event->title,
             ],
         ]);
