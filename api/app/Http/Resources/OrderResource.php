@@ -35,6 +35,12 @@ class OrderResource extends JsonResource
             'payment_gateway' => $this->payment_gateway,
             'payment_id' => $this->payment_id,
             'items' => OrderItemResource::collection($this->whenLoaded('items')),
+            'cancellation' => $this->whenLoaded(
+                'latestCancellation',
+                fn () => $this->latestCancellation
+                    ? OrderCancellationResource::make($this->latestCancellation)
+                    : null,
+            ),
             'metadata' => $this->metadata,
             'created_at' => $this->created_at?->toISOString(),
             'updated_at' => $this->updated_at?->toISOString(),

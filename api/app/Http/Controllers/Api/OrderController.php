@@ -37,7 +37,7 @@ class OrderController extends Controller
     {
         $user = $request->user();
 
-        $query = Order::with(['event', 'organizer', 'items.ticketType', 'items.category', 'items.ticket']);
+        $query = Order::with(['event', 'organizer', 'items.ticketType', 'items.category', 'items.ticket', 'latestCancellation']);
 
         // Super admin vê todos os pedidos
         if ($user->isSuperAdmin()) {
@@ -64,7 +64,7 @@ class OrderController extends Controller
     public function show(Request $request, Order $order): JsonResponse
     {
         // Load relationships
-        $order->load(['event', 'organizer', 'items.ticketType', 'items.category', 'items.ticket']);
+        $order->load(['event', 'organizer', 'items.ticketType', 'items.category', 'items.ticket', 'latestCancellation']);
 
         $user = $request->user();
 

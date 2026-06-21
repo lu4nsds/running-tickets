@@ -14,6 +14,8 @@ use App\Http\Controllers\Api\Organizer\EventController as OrganizerEventControll
 use App\Http\Controllers\Api\Organizer\CategoryController as OrganizerCategoryController;
 use App\Http\Controllers\Api\Organizer\TicketTypeController as OrganizerTicketTypeController;
 use App\Http\Controllers\Api\OrderController;
+use App\Http\Controllers\Api\OrderCancellationController;
+use App\Http\Controllers\Api\Admin\OrderController as AdminOrderController;
 use App\Http\Controllers\Api\TicketController;
 use App\Http\Controllers\Api\MercadoPagoWebhookController;
 use App\Http\Controllers\DashboardController;
@@ -76,6 +78,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/orders', [OrderController::class, 'index']);
     Route::get('/orders/{order:reference}', [OrderController::class, 'show']);
     Route::post('/orders/{order:reference}/cancel', [OrderController::class, 'cancel']);
+
+    // Solicitação de cancelamento/estorno (pedidos pagos)
+    Route::post('/orders/{order:reference}/cancellation', [OrderCancellationController::class, 'store']);
     
     // Tickets do usuário autenticado
     Route::get('/tickets', [TicketController::class, 'index']);
@@ -113,6 +118,14 @@ Route::middleware('auth:sanctum')->group(function () {
 
         // Exportar relatório de inscritos
         Route::get('/events/{event}/report', [AdminReportController::class, 'exportParticipants']);
+
+        // Pedidos do evento
+        Route::get('/events/{event}/orders', [AdminOrderController::class, 'index']);
+
+        // Solicitações de cancelamento/estorno
+        Route::get('/events/{event}/cancellations', [OrderCancellationController::class, 'index']);
+        Route::post('/cancellations/{orderCancellation}/approve', [OrderCancellationController::class, 'approve']);
+        Route::post('/cancellations/{orderCancellation}/reject', [OrderCancellationController::class, 'reject']);
 
         // WhatsApp Gateway
         Route::prefix('whatsapp')->group(function () {

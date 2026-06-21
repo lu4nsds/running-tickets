@@ -191,24 +191,45 @@
                                     </p>
                                 </div>
 
-                                <!-- Botão state-driven -->
-                                <router-link
-                                    v-if="group.action.to && !group.action.disabled"
-                                    :to="group.action.to"
-                                    :class="actionButtonClass(group.action.variant)"
-                                >
-                                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                                        <path fill-rule="evenodd" :d="actionIconPath(group.action.variant)" clip-rule="evenodd" />
-                                    </svg>
-                                    {{ group.action.label }}
-                                </router-link>
-                                <span
-                                    v-else
-                                    :class="actionButtonClass(group.action.variant)"
-                                    class="cursor-not-allowed opacity-60"
-                                >
-                                    {{ group.action.label }}
-                                </span>
+                                <!-- Ações -->
+                                <div class="flex flex-col items-stretch gap-2 sm:w-auto">
+                                    <!-- Botão state-driven -->
+                                    <router-link
+                                        v-if="group.action.to && !group.action.disabled"
+                                        :to="group.action.to"
+                                        :class="actionButtonClass(group.action.variant)"
+                                    >
+                                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fill-rule="evenodd" :d="actionIconPath(group.action.variant)" clip-rule="evenodd" />
+                                        </svg>
+                                        {{ group.action.label }}
+                                    </router-link>
+                                    <span
+                                        v-else
+                                        :class="actionButtonClass(group.action.variant)"
+                                        class="cursor-not-allowed opacity-60"
+                                    >
+                                        {{ group.action.label }}
+                                    </span>
+
+                                    <!-- Solicitação de cancelamento (pedidos pagos) -->
+                                    <template v-if="group.tickets.length > 0 && group.paidOrder">
+                                        <span
+                                            v-if="group.paidOrder.cancellation"
+                                            class="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold"
+                                            :class="cancellationBadgeClass(group.paidOrder.cancellation.status)"
+                                        >
+                                            {{ cancellationBadgeLabel(group.paidOrder.cancellation.status) }}
+                                        </span>
+                                        <button
+                                            v-else
+                                            @click="openCancelModal(group.paidOrder)"
+                                            class="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-red-300 border border-red-500/30 hover:bg-red-500/10 transition-colors whitespace-nowrap"
+                                        >
+                                            Solicitar cancelamento
+                                        </button>
+                                    </template>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -217,14 +238,72 @@
         </main>
 
         <Footer />
+
+        <!-- Modal: Solicitar cancelamento -->
+        <Teleport to="body">
+            <div
+                v-if="cancelModal.open"
+                class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
+                @click.self="closeCancelModal"
+            >
+                <div class="bg-surface-dark border border-border-dark rounded-2xl p-6 max-w-md w-full shadow-2xl">
+                    <div class="flex items-start justify-between mb-4">
+                        <div>
+                            <h3 class="text-lg font-bold text-white">Solicitar cancelamento</h3>
+                            <p class="text-sm text-slate-400">
+                                {{ cancelModal.order?.event?.title }}
+                            </p>
+                        </div>
+                        <button @click="closeCancelModal" class="text-slate-400 hover:text-white">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    </div>
+
+                    <p class="text-sm text-slate-400 mb-3">
+                        Sua solicitação será avaliada pela organização. Em caso de aprovação, o valor pago será estornado.
+                    </p>
+
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">
+                        Motivo do cancelamento <span class="text-red-400">*</span>
+                    </label>
+                    <textarea
+                        v-model="cancelReason"
+                        rows="4"
+                        maxlength="1000"
+                        placeholder="Descreva o motivo do cancelamento..."
+                        class="w-full rounded-lg bg-background-dark border border-border-dark px-3 py-2 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-primary resize-none"
+                    ></textarea>
+
+                    <div class="flex justify-end gap-3 mt-5">
+                        <button
+                            @click="closeCancelModal"
+                            class="px-4 py-2 text-sm font-semibold text-slate-300 hover:text-white transition-colors"
+                        >
+                            Voltar
+                        </button>
+                        <button
+                            @click="submitCancellation"
+                            :disabled="!cancelReason.trim() || submitting"
+                            class="px-4 py-2 bg-red-500 text-white text-sm font-bold rounded-lg hover:bg-red-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            {{ submitting ? "Enviando..." : "Enviar solicitação" }}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </Teleport>
     </div>
 </template>
 
 <script setup>
-import { ref, computed } from "vue";
+import { ref, computed, reactive } from "vue";
 import Navbar from "../components/Navbar.vue";
 import Footer from "../components/Footer.vue";
 import { useUserOrderGroups } from "../composables/useUserOrderGroups";
+import { useOrdersStore } from "../stores/orders";
+import { useToast } from "../composables/useToast";
 
 const activeTab = ref("upcoming");
 
@@ -233,7 +312,73 @@ const tabs = [
     { key: "past", label: "Histórico de Provas" },
 ];
 
-const { loading, groups } = useUserOrderGroups();
+const { loading, groups, reload } = useUserOrderGroups();
+
+const ordersStore = useOrdersStore();
+const toast = useToast();
+
+// ── Modal de solicitação de cancelamento ──────────────────────────────────
+const cancelModal = reactive({ open: false, order: null });
+const cancelReason = ref("");
+const submitting = ref(false);
+
+function openCancelModal(order) {
+    cancelModal.order = order;
+    cancelReason.value = "";
+    cancelModal.open = true;
+}
+
+function closeCancelModal() {
+    cancelModal.open = false;
+    cancelModal.order = null;
+    cancelReason.value = "";
+}
+
+async function submitCancellation() {
+    if (!cancelReason.value.trim() || submitting.value) return;
+    submitting.value = true;
+    try {
+        await ordersStore.createCancellation(
+            cancelModal.order.reference,
+            cancelReason.value.trim(),
+        );
+        toast.success(
+            "Sua solicitação foi enviada e será avaliada pela organização.",
+            "Solicitação enviada",
+        );
+        closeCancelModal();
+        await reload();
+    } catch (err) {
+        toast.error(
+            ordersStore.error || "Não foi possível enviar a solicitação.",
+        );
+    } finally {
+        submitting.value = false;
+    }
+}
+
+const cancellationBadges = {
+    pending: {
+        label: "Cancelamento pendente",
+        class: "bg-amber-500/10 text-amber-300 border border-amber-500/30",
+    },
+    approved: {
+        label: "Cancelamento aprovado",
+        class: "bg-emerald-500/10 text-emerald-300 border border-emerald-500/30",
+    },
+    rejected: {
+        label: "Cancelamento rejeitado",
+        class: "bg-red-500/10 text-red-300 border border-red-500/30",
+    },
+};
+
+function cancellationBadgeLabel(status) {
+    return cancellationBadges[status]?.label || "Cancelamento solicitado";
+}
+
+function cancellationBadgeClass(status) {
+    return cancellationBadges[status]?.class || "bg-slate-700 text-slate-300";
+}
 
 const totalTicketsCount = computed(() =>
     groups.value.reduce((sum, g) => sum + g.tickets.length, 0),

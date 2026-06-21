@@ -201,7 +201,7 @@
         <!-- Table Container -->
         <div
             v-if="hasLoadedOnce && localPagination.total > 0"
-            class="bg-card-bg rounded-xl border border-surface-elevated overflow-hidden"
+            class="bg-card-bg rounded-xl border border-surface-elevated"
         >
             <table class="w-full">
                 <thead>
@@ -403,19 +403,60 @@
                             <!-- Ações -->
                             <td class="px-6 py-4">
                                 <div
-                                    class="flex items-center justify-center gap-1"
+                                    class="relative flex items-center justify-center"
                                 >
                                     <button
-                                        @click="viewEvent(event)"
+                                        @click.stop="toggleActionMenu(event.id)"
                                         class="p-2 text-text-muted hover:text-white hover:bg-surface-elevated rounded-lg transition-colors"
-                                        title="Ver detalhes"
+                                        title="Ações"
                                     >
                                         <span
                                             class="material-symbols-outlined text-[20px]"
                                         >
-                                            visibility
+                                            more_vert
                                         </span>
                                     </button>
+
+                                    <Transition name="dropdown">
+                                        <div
+                                            v-if="activeActionMenu === event.id"
+                                            v-click-outside="
+                                                () => (activeActionMenu = null)
+                                            "
+                                            class="absolute right-0 top-full mt-1 w-56 bg-card-bg border border-surface-elevated rounded-lg shadow-2xl py-2 z-50"
+                                        >
+                                            <button
+                                                @click="
+                                                    viewEvent(event);
+                                                    activeActionMenu = null;
+                                                "
+                                                class="flex items-center gap-3 px-4 py-2 text-text-secondary hover:bg-surface-elevated hover:text-white transition-colors w-full text-left"
+                                            >
+                                                <span
+                                                    class="material-symbols-outlined text-[18px]"
+                                                    >visibility</span
+                                                >
+                                                <span class="text-sm"
+                                                    >Ver detalhes</span
+                                                >
+                                            </button>
+                                            <button
+                                                @click="
+                                                    viewOrders(event);
+                                                    activeActionMenu = null;
+                                                "
+                                                class="flex items-center gap-3 px-4 py-2 text-text-secondary hover:bg-surface-elevated hover:text-white transition-colors w-full text-left"
+                                            >
+                                                <span
+                                                    class="material-symbols-outlined text-[18px]"
+                                                    >receipt_long</span
+                                                >
+                                                <span class="text-sm"
+                                                    >Pedidos</span
+                                                >
+                                            </button>
+                                        </div>
+                                    </Transition>
                                 </div>
                             </td>
                         </tr>
@@ -639,6 +680,32 @@ const goToPage = (page) => {
 
 const viewEvent = (event) => {
     router.push(`/admin/events/${event.id}`);
+};
+
+const viewOrders = (event) => {
+    router.push(`/admin/events/${event.id}/orders`);
+};
+
+// Dropdown de ações por linha
+const activeActionMenu = ref(null);
+const toggleActionMenu = (eventId) => {
+    activeActionMenu.value =
+        activeActionMenu.value === eventId ? null : eventId;
+};
+
+// Diretiva para fechar o dropdown ao clicar fora
+const vClickOutside = {
+    mounted(el, binding) {
+        el.clickOutsideEvent = (event) => {
+            if (!(el === event.target || el.contains(event.target))) {
+                binding.value();
+            }
+        };
+        document.addEventListener("click", el.clickOutsideEvent);
+    },
+    unmounted(el) {
+        document.removeEventListener("click", el.clickOutsideEvent);
+    },
 };
 
 const openCreatePage = () => {

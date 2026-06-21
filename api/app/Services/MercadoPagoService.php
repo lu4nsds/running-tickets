@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use MercadoPago\Client\Payment\PaymentClient;
+use MercadoPago\Client\Payment\PaymentRefundClient;
 use MercadoPago\Client\Common\RequestOptions;
 use MercadoPago\Exceptions\MPApiException;
 
@@ -196,6 +197,42 @@ class MercadoPagoService
                 'message'    => $e->getMessage(),
             ]);
             return null;
+        }
+    }
+
+    /**
+     * Estorna integralmente um pagamento (full refund).
+     *
+     * Lança a exception em caso de falha para que o fluxo de aprovação não
+     * marque a solicitação como aprovada quando o gateway recusar o estorno.
+     */
+    public function refundPayment(string $paymentId): array
+    {
+        try {
+            $client = new PaymentRefundClient();
+            $refund = $client->refundTotal((int) $paymentId, $this->requestOptions());
+
+            return [
+                'id'         => $refund->id,
+                'payment_id' => $refund->payment_id ?? (int) $paymentId,
+                'status'     => $refund->status,
+                'amount'     => $refund->amount ?? null,
+            ];
+
+        } catch (MPApiException $e) {
+            \Log::error('Erro ao estornar pagamento no Mercado Pago', [
+                'payment_id'  => $paymentId,
+                'message'     => $e->getMessage(),
+                'status_code' => $e->getStatusCode(),
+                'api_response' => $e->getApiResponse()?->getContent(),
+            ]);
+            throw $e;
+        } catch (\Exception $e) {
+            \Log::error('Erro ao estornar pagamento no Mercado Pago', [
+                'payment_id' => $paymentId,
+                'message'    => $e->getMessage(),
+            ]);
+            throw $e;
         }
     }
 }

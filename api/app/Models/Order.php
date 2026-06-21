@@ -81,6 +81,22 @@ class Order extends Model
     }
 
     /**
+     * Solicitações de cancelamento/estorno deste pedido
+     */
+    public function cancellations()
+    {
+        return $this->hasMany(OrderCancellation::class);
+    }
+
+    /**
+     * Última solicitação de cancelamento (para exibir status ao comprador)
+     */
+    public function latestCancellation()
+    {
+        return $this->hasOne(OrderCancellation::class)->latestOfMany();
+    }
+
+    /**
      * Gera uma referência única para o pedido
      */
     public static function generateReference(): string
@@ -115,6 +131,16 @@ class Order extends Model
     public function isPaid(): bool
     {
         return $this->status === OrderStatus::PAID;
+    }
+
+    /**
+     * Verifica se há uma solicitação de cancelamento ainda pendente
+     */
+    public function hasPendingCancellation(): bool
+    {
+        return $this->cancellations()
+            ->where('status', \App\Enums\OrderCancellationStatus::PENDING)
+            ->exists();
     }
 
     public function hasActiveReservation(): bool

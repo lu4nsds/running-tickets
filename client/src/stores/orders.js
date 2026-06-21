@@ -83,6 +83,37 @@ export const useOrdersStore = defineStore("orders", () => {
         }
     }
 
+    async function createCancellation(reference, reason) {
+        loading.value = true;
+        error.value = null;
+        try {
+            const response = await api.post(
+                `/orders/${reference}/cancellation`,
+                { reason },
+            );
+
+            // Atualiza na lista se existir
+            const index = orders.value.findIndex(
+                (o) => o.reference === reference,
+            );
+            if (index !== -1) {
+                orders.value[index] = {
+                    ...orders.value[index],
+                    cancellation: response.data.cancellation,
+                };
+            }
+
+            return response.data;
+        } catch (err) {
+            error.value =
+                err.response?.data?.message ||
+                "Erro ao solicitar cancelamento";
+            throw err;
+        } finally {
+            loading.value = false;
+        }
+    }
+
     function clearCurrentOrder() {
         currentOrder.value = null;
     }
@@ -96,6 +127,7 @@ export const useOrdersStore = defineStore("orders", () => {
         fetchOrderByReference,
         createOrder,
         cancelOrder,
+        createCancellation,
         clearCurrentOrder,
     };
 });

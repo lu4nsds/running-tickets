@@ -141,6 +141,11 @@ const router = createRouter({
                     component: () => import("@/views/admin/EventEditView.vue"),
                 },
                 {
+                    path: "events/:eventId/orders",
+                    name: "admin-event-orders",
+                    component: () => import("@/views/admin/EventOrdersView.vue"),
+                },
+                {
                     path: "events/:eventId/categories/create",
                     name: "admin-category-create",
                     component: () =>
