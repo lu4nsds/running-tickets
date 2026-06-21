@@ -166,19 +166,7 @@
 
                     <!-- Descrição -->
                     <div class="mt-4">
-                        <label
-                            for="description"
-                            class="block text-xs font-medium text-text-muted uppercase tracking-wider mb-2"
-                        >
-                            Descrição
-                        </label>
-                        <textarea
-                            id="description"
-                            v-model="form.description"
-                            rows="4"
-                            placeholder="Descreva os detalhes do evento, percurso, kits, etc..."
-                            class="w-full bg-surface border border-surface-elevated rounded-lg px-4 py-3 text-white placeholder-text-muted focus:outline-none focus:border-primary transition-colors resize-none"
-                        ></textarea>
+                        <MarkdownEditor v-model="form.description" />
                     </div>
                 </div>
 
@@ -552,6 +540,7 @@ import { useEventsStore } from "@/stores/events";
 import { useToast } from "@/composables/useToast";
 import ErrorState from "@/components/ui/ErrorState.vue";
 import { BRAZILIAN_STATES } from "@/constants/brazilianStates";
+import MarkdownEditor from "@/components/MarkdownEditor.vue";
 
 const route = useRoute();
 const router = useRouter();

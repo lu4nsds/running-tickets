@@ -15,12 +15,15 @@
         "@vueuse/core": "^14.2.1",
         "axios": "^1.7.9",
         "date-fns": "^4.1.0",
+        "dompurify": "^3.4.11",
+        "marked": "^18.0.5",
         "pinia": "^2.3.0",
         "vue": "^3.5.13",
         "vue-router": "^4.5.0"
     },
     "devDependencies": {
         "@playwright/test": "^1.60.0",
+        "@tailwindcss/typography": "^0.5.20",
         "@vitejs/plugin-vue": "^5.2.1",
         "autoprefixer": "^10.4.20",
         "postcss": "^8.4.49",

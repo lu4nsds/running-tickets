@@ -118,7 +118,9 @@
                             <div
                                 class="text-slate-300 leading-relaxed space-y-4 text-base"
                             >
-                                <p>{{ event.description }}</p>
+                                <CollapsibleContent v-if="event.description">
+                                    <MarkdownContent :source="event.description" />
+                                </CollapsibleContent>
                                 <div
                                     v-if="event.venue"
                                     class="flex items-center gap-2 text-sm text-slate-400"
@@ -593,6 +595,8 @@ import { useCheckoutStore } from "@/stores/checkout";
 import Navbar from "../components/Navbar.vue";
 import Footer from "../components/Footer.vue";
 import EventDetailsSkeleton from "../components/EventDetailsSkeleton.vue";
+import MarkdownContent from "../components/base/MarkdownContent.vue";
+import CollapsibleContent from "../components/base/CollapsibleContent.vue";
 
 const route = useRoute();
 const router = useRouter();
