@@ -119,6 +119,22 @@ const router = createRouter({
             name: "email-verificado",
             component: () => import("../views/EmailVerifiedView.vue"),
         },
+        // Páginas legais
+        {
+            path: "/termos-de-uso",
+            name: "terms-of-use",
+            component: () => import("../views/TermsOfUseView.vue"),
+        },
+        {
+            path: "/politica-de-privacidade",
+            name: "privacy-policy",
+            component: () => import("../views/PrivacyPolicyView.vue"),
+        },
+        {
+            path: "/politica-de-reembolso",
+            name: "refund-policy",
+            component: () => import("../views/RefundPolicyView.vue"),
+        },
     ],
     scrollBehavior(to, from, savedPosition) {
         if (savedPosition) {

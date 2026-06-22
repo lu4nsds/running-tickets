@@ -70,16 +70,22 @@
           <h3 class="mb-4 text-sm font-bold uppercase tracking-wider text-white">Suporte</h3>
           <ul class="space-y-3 text-sm">
             <li>
-              <a href="#" class="hover:text-primary transition-colors">Central de Ajuda</a>
+              <a
+                href="https://wa.me/5584998011385"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="hover:text-primary transition-colors"
+                >Fale Conosco</a
+              >
             </li>
             <li>
-              <a href="#" class="hover:text-primary transition-colors">Política de Privacidade</a>
+              <router-link to="/termos-de-uso" class="hover:text-primary transition-colors">Termos de Uso</router-link>
             </li>
             <li>
-              <a href="#" class="hover:text-primary transition-colors">Termos de Uso</a>
+              <router-link to="/politica-de-privacidade" class="hover:text-primary transition-colors">Política de Privacidade</router-link>
             </li>
             <li>
-              <a href="#" class="hover:text-primary transition-colors">Fale Conosco</a>
+              <router-link to="/politica-de-reembolso" class="hover:text-primary transition-colors">Política de Reembolso</router-link>
             </li>
           </ul>
         </div>

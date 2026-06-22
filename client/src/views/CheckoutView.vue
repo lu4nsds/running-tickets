@@ -430,9 +430,35 @@
                                 </p>
                             </div>
 
+                            <BaseCheckbox
+                                v-model="consentAccepted"
+                                class="mb-4"
+                            >
+                                Li e aceito os
+                                <router-link
+                                    :to="{ name: 'terms-of-use' }"
+                                    target="_blank"
+                                    class="text-primary hover:underline"
+                                    >Termos de Uso</router-link
+                                >, a
+                                <router-link
+                                    :to="{ name: 'privacy-policy' }"
+                                    target="_blank"
+                                    class="text-primary hover:underline"
+                                    >Política de Privacidade</router-link
+                                >
+                                e a
+                                <router-link
+                                    :to="{ name: 'refund-policy' }"
+                                    target="_blank"
+                                    class="text-primary hover:underline"
+                                    >Política de Reembolso</router-link
+                                >.
+                            </BaseCheckbox>
+
                             <button
                                 @click="proceedToPayment"
-                                :disabled="!isFormValid || isSubmitting"
+                                :disabled="!isFormValid || !consentAccepted || isSubmitting"
                                 class="w-full px-6 py-3 bg-primary text-background-dark font-bold rounded-lg hover:bg-primary/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-primary/20"
                             >
                                 <span
@@ -483,6 +509,7 @@ import Navbar from "../components/Navbar.vue";
 import Footer from "../components/Footer.vue";
 import CheckoutFormSkeleton from "../components/CheckoutFormSkeleton.vue";
 import CityAutocomplete from "../components/CityAutocomplete.vue";
+import BaseCheckbox from "../components/base/BaseCheckbox.vue";
 import { useAuthStore } from "../stores/auth";
 import { useCheckoutStore } from "../stores/checkout";
 import { useToast } from "../composables/useToast";
@@ -500,6 +527,7 @@ const eventData = ref(null);
 const errors = ref({});
 const isSubmitting = ref(false);
 const expandedParticipant = ref(0); // Primeiro participante expandido por padrão
+const consentAccepted = ref(false);
 
 const maxDate = computed(() => {
     const today = new Date();
@@ -723,6 +751,13 @@ function goBack() {
 async function proceedToPayment() {
     if (!validateForm()) {
         toast.error("Por favor, corrija os erros no formulário");
+        return;
+    }
+
+    if (!consentAccepted.value) {
+        toast.error(
+            "Você precisa aceitar os Termos de Uso, a Política de Privacidade e a Política de Reembolso",
+        );
         return;
     }
 
