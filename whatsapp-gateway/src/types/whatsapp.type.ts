@@ -1,23 +1,13 @@
-import type { WASocket } from '@whiskeysockets/baileys';
-
 export type GatewayStatus = 'connecting' | 'open' | 'closed' | 'error';
 
-export interface TenantSession {
-  socket: WASocket | null;
+// Shape persisted in Redis (hash `${REDIS_PREFIX}:state:<tenant>`).
+export interface SessionState {
   status: GatewayStatus;
-  lastQr: string | null;
-  isConnecting: boolean;
+  qr: string | null;
+  reconnectAttempts: number;
 }
 
 export interface SendMessageInput {
   phone: string;
   message: string;
-}
-
-export interface SendDocumentInput {
-  phone: string;
-  filename: string;
-  mimetype: string;
-  data: string;
-  caption?: string;
 }

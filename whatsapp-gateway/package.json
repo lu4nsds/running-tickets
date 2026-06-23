@@ -1,13 +1,13 @@
 {
-  "name": "running-tickets-whatsapp-gateway",
+  "name": "whatsapp-gateway",
   "private": true,
-  "version": "1.1.1",
-  "description": "RunningTickets WhatsApp Gateway",
+  "version": "1.1.0",
+  "description": "WhatsApp Gateway",
   "license": "UNLICENSED",
   "author": {
-    "name": "RunningTickets Team",
-    "email": "developers@runningtickets.com.br",
-    "url": "https://runningtickets.com.br"
+    "name": "Adevsoft Brasil",
+    "email": "pedrohenrykes@gmail.com",
+    "url": "https://adevsoft.com.br"
   },
   "scripts": {
     "build": "nest build",
@@ -74,6 +74,9 @@
       "ts"
     ],
     "rootDir": "src",
+    "setupFiles": [
+      "<rootDir>/test/setup-env.ts"
+    ],
     "testRegex": ".*\\.spec\\.ts$",
     "transform": {
       "^.+\\.(t|j)s$": "ts-jest"

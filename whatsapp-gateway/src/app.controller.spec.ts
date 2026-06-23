@@ -14,7 +14,7 @@ import { AppController } from '@src/app.controller';
 import { AppService } from '@src/app.service';
 
 const mockAppService = {
-  getStatus: jest.fn().mockReturnValue({ status: 'closed', qr: null }),
+  getStatus: jest.fn().mockResolvedValue({ status: 'closed', qr: null }),
 };
 
 describe('AppController', () => {
@@ -32,16 +32,16 @@ describe('AppController', () => {
   afterEach(() => jest.clearAllMocks());
 
   describe('status', () => {
-    it('should return session status for a tenant', () => {
-      const result = controller.status('test-uuid');
+    it('should return session status for a tenant', async () => {
+      const result = await controller.status('test-uuid');
       expect(result).toEqual({ status: 'closed', qr: null });
       expect(mockAppService.getStatus).toHaveBeenCalledWith('test-uuid');
     });
   });
 
   describe('qr', () => {
-    it('should return qr code for a tenant', () => {
-      const result = controller.qr('test-uuid');
+    it('should return qr code for a tenant', async () => {
+      const result = await controller.qr('test-uuid');
       expect(result).toEqual({ qr: null });
     });
   });

@@ -7,20 +7,22 @@ import {
   proto,
 } from '@whiskeysockets/baileys';
 import type Redis from 'ioredis';
+import { redisPrefix } from '@src/config/redis-keys';
 
-const SESSION_KEY_PREFIX = 'running-tickets:whatsapp:sessions';
-const AUTH_KEY_PREFIX = 'running-tickets:whatsapp:auth';
+function authPrefix(): string {
+  return `${redisPrefix()}:auth`;
+}
 
 function credKey(tenantUuid: string): string {
-  return `${AUTH_KEY_PREFIX}:${tenantUuid}:creds`;
+  return `${authPrefix()}:${tenantUuid}:creds`;
 }
 
 function signalKey(tenantUuid: string, type: string, id: string): string {
-  return `${AUTH_KEY_PREFIX}:${tenantUuid}:${type}-${id}`;
+  return `${authPrefix()}:${tenantUuid}:${type}-${id}`;
 }
 
 export function authPattern(tenantUuid: string): string {
-  return `${AUTH_KEY_PREFIX}:${tenantUuid}:*`;
+  return `${authPrefix()}:${tenantUuid}:*`;
 }
 
 export async function useRedisAuthState(
@@ -95,5 +97,3 @@ export async function useRedisAuthState(
 
   return { state, saveCreds };
 }
-
-export { SESSION_KEY_PREFIX };

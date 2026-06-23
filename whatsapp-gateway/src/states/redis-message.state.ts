@@ -1,15 +1,19 @@
 import { BufferJSON, proto } from '@whiskeysockets/baileys';
 import type Redis from 'ioredis';
+import { redisPrefix } from '@src/config/redis-keys';
 
-const MESSAGE_KEY_PREFIX = 'running-tickets:whatsapp:msgs';
 const MESSAGE_TTL_SECONDS = 60 * 60 * 24 * 7;
 
+function messagePrefix(): string {
+  return `${redisPrefix()}:msgs`;
+}
+
 function messageKey(tenantUuid: string, remoteJid: string, id: string): string {
-  return `${MESSAGE_KEY_PREFIX}:${tenantUuid}:${remoteJid}:${id}`;
+  return `${messagePrefix()}:${tenantUuid}:${remoteJid}:${id}`;
 }
 
 export function messagesPattern(tenantUuid: string): string {
-  return `${MESSAGE_KEY_PREFIX}:${tenantUuid}:*`;
+  return `${messagePrefix()}:${tenantUuid}:*`;
 }
 
 export async function cacheMessage(

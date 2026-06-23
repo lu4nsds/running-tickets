@@ -1,5 +1,6 @@
 import { Logger } from '@nestjs/common';
 import type { Logger as PinoLogger } from 'pino';
+import { LogNoiseAdapter } from '@src/adapters/log-noise.adapter';
 
 export class BaileysLoggerAdapter {
   private readonly minIndex: number;
@@ -42,6 +43,7 @@ export class BaileysLoggerAdapter {
       if (levelIndex < this.minIndex) return;
       const message =
         msg ?? (typeof obj === 'string' ? obj : JSON.stringify(obj));
+      if (LogNoiseAdapter.isNoisy(message)) return;
       this.logger[method](message);
     };
   }

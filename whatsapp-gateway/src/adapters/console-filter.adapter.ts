@@ -1,32 +1,38 @@
-const BAILEYS_NOISE = [
-  'Failed to decrypt message',
-  'Session error:',
-  'Closing session:',
-  'Removing old closed session:',
-  'Bad MAC',
-];
+import { LogNoiseAdapter } from '@src/adapters/log-noise.adapter';
 
 export class ConsoleFilterAdapter {
-  private static readonly originalError = console.error.bind(console);
-  private static readonly originalLog = console.log.bind(console);
+  private static readonly original = {
+    error: console.error.bind(console),
+    log: console.log.bind(console),
+    info: console.info.bind(console),
+    warn: console.warn.bind(console),
+    debug: console.debug.bind(console),
+  };
 
   static apply(): void {
     console.error = (...args: unknown[]) => {
-      if (ConsoleFilterAdapter.isNoise(args)) return;
-      ConsoleFilterAdapter.originalError(...args);
+      if (LogNoiseAdapter.hasNoisyArg(args)) return;
+      ConsoleFilterAdapter.original.error(...args);
     };
 
     console.log = (...args: unknown[]) => {
-      if (ConsoleFilterAdapter.isNoise(args)) return;
-      ConsoleFilterAdapter.originalLog(...args);
+      if (LogNoiseAdapter.hasNoisyArg(args)) return;
+      ConsoleFilterAdapter.original.log(...args);
     };
-  }
 
-  private static isNoise(args: unknown[]): boolean {
-    return args.some(
-      (arg) =>
-        typeof arg === 'string' &&
-        BAILEYS_NOISE.some((pattern) => arg.includes(pattern)),
-    );
+    console.info = (...args: unknown[]) => {
+      if (LogNoiseAdapter.hasNoisyArg(args)) return;
+      ConsoleFilterAdapter.original.info(...args);
+    };
+
+    console.warn = (...args: unknown[]) => {
+      if (LogNoiseAdapter.hasNoisyArg(args)) return;
+      ConsoleFilterAdapter.original.warn(...args);
+    };
+
+    console.debug = (...args: unknown[]) => {
+      if (LogNoiseAdapter.hasNoisyArg(args)) return;
+      ConsoleFilterAdapter.original.debug(...args);
+    };
   }
 }
