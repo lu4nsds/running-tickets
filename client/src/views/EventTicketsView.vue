@@ -369,15 +369,15 @@ const cancelReason = ref("");
 const submitting = ref(false);
 const selectedRefs = ref([]);
 
-// Pedidos pagos elegíveis a cancelamento (sem solicitação pendente/aprovada),
-// agrupando os ingressos por pedido para exibir na seleção do modal.
+// Pedidos elegíveis a cancelamento — a regra (pago, < 7 dias, ingresso ativo,
+// sem solicitação pendente/aprovada) é decidida no backend e exposta via
+// `order.can_request_cancellation`. Aqui apenas agrupamos os ingressos por
+// pedido para exibir na seleção do modal.
 const cancellableOrders = computed(() => {
     const byRef = new Map();
     for (const item of tickets.value) {
         const order = item.order;
-        if (!order || order.status !== "paid") continue;
-        const st = order.cancellation?.status;
-        if (st && st !== "rejected") continue; // já possui solicitação ativa
+        if (!order || !order.can_request_cancellation) continue;
         if (!byRef.has(order.reference)) {
             byRef.set(order.reference, {
                 reference: order.reference,

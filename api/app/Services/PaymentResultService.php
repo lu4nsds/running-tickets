@@ -23,6 +23,21 @@ class PaymentResultService
     {
         $status = $mpResponse['status'] ?? null;
 
+        // Guard de transição forward-only: o Mercado Pago entrega webhooks
+        // at-least-once e fora de ordem. Sem este guard, uma notificação
+        // 'pending'/'in_process' atrasada chegando após a aprovação rebaixaria
+        // um pedido PAID de volta a PENDING (escondendo ingressos e o botão de
+        // cancelamento). Só permitimos transições que avançam o estado.
+        if (! $this->canApply($order->status, $status)) {
+            Log::info('PaymentResultService: transição ignorada (forward-only)', [
+                'order_id' => $order->id,
+                'current_status' => $order->status->value,
+                'mp_status' => $status,
+            ]);
+
+            return;
+        }
+
         match (true) {
             $status === 'approved' => $this->markApproved($order, $mpResponse),
             in_array($status, ['pending', 'in_process', 'authorized'], true) => $this->markPending($order, $mpResponse),
@@ -32,6 +47,24 @@ class PaymentResultService
                 'order_id' => $order->id,
                 'mp_status' => $status,
             ]),
+        };
+    }
+
+    /**
+     * Decide se uma notificação do gateway pode ser aplicada ao pedido,
+     * considerando seu estado atual. Estados terminais não regridem:
+     *
+     * - PAID    → só pode avançar para REFUNDED (refunded/charged_back).
+     *             Um novo 'approved' é no-op idempotente.
+     * - REFUNDED/CANCELLED → terminais, nada é aplicado.
+     * - PENDING/PROCESSING/FAILED → ainda em aberto, qualquer status avança.
+     */
+    private function canApply(OrderStatus $current, ?string $mpStatus): bool
+    {
+        return match ($current) {
+            OrderStatus::PAID => in_array($mpStatus, ['refunded', 'charged_back'], true),
+            OrderStatus::REFUNDED, OrderStatus::CANCELLED => false,
+            default => true,
         };
     }
 
@@ -119,6 +152,7 @@ class PaymentResultService
 
         $order->update([
             'status' => OrderStatus::PAID,
+            'paid_at' => $order->paid_at ?? now(),
             'payment_gateway' => 'mercadopago',
             'payment_id' => $body['mp_payment_id'] ?: $order->payment_id,
             'fee_cents' => $feeCents,
@@ -187,6 +221,7 @@ class PaymentResultService
             if (str_contains($msg, 'token') || str_contains($msg, 'card_token')) {
                 return 'token_expired';
             }
+
             return 'mp_api_error';
         }
 
@@ -237,6 +272,7 @@ class PaymentResultService
             Log::warning('PaymentFailedMail não enviado: buyer_email ausente', [
                 'order_id' => $order->id,
             ]);
+
             return;
         }
 

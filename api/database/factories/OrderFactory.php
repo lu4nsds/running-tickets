@@ -18,7 +18,7 @@ class OrderFactory extends Factory
         return [
             'event_id' => Event::factory(),
             'organizer_id' => Organizer::factory(),
-            'reference' => 'ORD-' . now()->year . '-' . strtoupper(Str::random(8)),
+            'reference' => 'ORD-'.now()->year.'-'.strtoupper(Str::random(8)),
             'user_id' => null,
             'total_cents' => 5000,
             'currency' => 'BRL',
@@ -50,6 +50,7 @@ class OrderFactory extends Factory
         return $this->state(fn () => [
             'status' => OrderStatus::PAID,
             'reserved_until' => null,
+            'paid_at' => now(),
         ]);
     }
 

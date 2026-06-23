@@ -28,15 +28,17 @@ class Order extends Model
         'payment_response_body',
         'metadata',
         'reserved_until',
+        'paid_at',
     ];
 
     protected $casts = [
-        'status'                => OrderStatus::class,
-        'metadata'              => 'array',
+        'status' => OrderStatus::class,
+        'metadata' => 'array',
         'payment_response_body' => 'array',
-        'fee_cents'        => 'integer',
+        'fee_cents' => 'integer',
         'net_amount_cents' => 'integer',
-        'reserved_until'   => 'datetime',
+        'reserved_until' => 'datetime',
+        'paid_at' => 'datetime',
     ];
 
     /**
@@ -103,7 +105,7 @@ class Order extends Model
     {
         $year = now()->year;
         $random = strtoupper(Str::random(8));
-        
+
         return "ORD-{$year}-{$random}";
     }
 
@@ -141,6 +143,25 @@ class Order extends Model
         return $this->cancellations()
             ->where('status', \App\Enums\OrderCancellationStatus::PENDING)
             ->exists();
+    }
+
+    /**
+     * Regra de negócio (fonte única) para solicitação de cancelamento/estorno:
+     * pedido pago, dentro da janela de 7 dias da confirmação do pagamento, com
+     * ao menos um ingresso ativo e sem solicitação pendente/aprovada.
+     */
+    public function canRequestCancellation(): bool
+    {
+        return $this->isPaid()
+            && $this->paid_at !== null
+            && $this->paid_at->gt(now()->subDays(7))
+            && ! $this->hasPendingCancellation()
+            && ! $this->cancellations()
+                ->where('status', \App\Enums\OrderCancellationStatus::APPROVED)
+                ->exists()
+            && $this->items()
+                ->whereHas('ticket', fn ($q) => $q->where('status', \App\Enums\TicketStatus::ACTIVE->value))
+                ->exists();
     }
 
     public function hasActiveReservation(): bool

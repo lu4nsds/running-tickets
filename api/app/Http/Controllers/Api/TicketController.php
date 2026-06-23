@@ -44,6 +44,7 @@ class TicketController extends Controller
                     'order' => [
                         'reference' => $order->reference,
                         'status' => $order->status->value,
+                        'can_request_cancellation' => $order->canRequestCancellation(),
                         'cancellation' => $cancellation ? [
                             'status' => $cancellation->status->value,
                             'status_label' => $cancellation->status->label(),

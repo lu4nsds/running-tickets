@@ -32,19 +32,21 @@ class MercadoPagoWebhookController extends Controller
 
             if ($type !== 'payment') {
                 Log::info('Tipo de notificação ignorado', ['type' => $type]);
+
                 return response()->json(['status' => 'ignored'], 200);
             }
 
             $paymentId = $request->input('data.id');
 
-            if (!$paymentId) {
+            if (! $paymentId) {
                 Log::warning('Payment ID não encontrado no webhook');
+
                 return response()->json(['error' => 'Payment ID missing'], 400);
             }
 
             Log::info('Processando pagamento', [
                 'payment_id' => $paymentId,
-                'action'     => $request->input('action'),
+                'action' => $request->input('action'),
             ]);
 
             // Tenta buscar o pedido pelo payment_id primeiro (mais eficiente)
@@ -52,7 +54,7 @@ class MercadoPagoWebhookController extends Controller
 
             if ($order) {
                 Log::info('Pedido encontrado por payment_id', [
-                    'order_id'  => $order->id,
+                    'order_id' => $order->id,
                     'reference' => $order->reference,
                 ]);
 
@@ -60,6 +62,7 @@ class MercadoPagoWebhookController extends Controller
 
                 if ($payment) {
                     $this->updateOrderStatus($order, $payment);
+
                     return response()->json(['status' => 'processed'], 200);
                 }
             }
@@ -69,8 +72,9 @@ class MercadoPagoWebhookController extends Controller
 
             $payment = $this->mercadoPagoService->getPaymentById($paymentId);
 
-            if (!$payment) {
+            if (! $payment) {
                 Log::warning('Pagamento não encontrado no Mercado Pago', ['payment_id' => $paymentId]);
+
                 return response()->json(['status' => 'payment_not_found'], 200);
             }
 
@@ -82,27 +86,29 @@ class MercadoPagoWebhookController extends Controller
                 ])
                 ->first();
 
-            if (!$order) {
+            if (! $order) {
                 Log::warning('Pedido não encontrado para o pagamento', [
-                    'payment_id'         => $paymentId,
+                    'payment_id' => $paymentId,
                     'external_reference' => $payment['external_reference'],
                 ]);
+
                 return response()->json(['status' => 'order_not_found'], 200);
             }
 
             Log::info('Pedido encontrado por external_reference', [
-                'order_id'       => $order->id,
-                'reference'      => $order->reference,
+                'order_id' => $order->id,
+                'reference' => $order->reference,
                 'payment_status' => $payment['status'],
             ]);
 
             $this->updateOrderStatus($order, $payment);
+
             return response()->json(['status' => 'processed'], 200);
 
         } catch (\Exception $e) {
             Log::error('Erro ao processar webhook Mercado Pago', [
                 'message' => $e->getMessage(),
-                'trace'   => $e->getTraceAsString(),
+                'trace' => $e->getTraceAsString(),
             ]);
 
             // Retorna 200 para evitar que o Mercado Pago reenvie infinitamente
@@ -111,8 +117,10 @@ class MercadoPagoWebhookController extends Controller
     }
 
     /**
-     * Aplica o resultado do pagamento via PaymentResultService —
-     * mesma lógica usada pelo ProcessCardPaymentJob (idempotente).
+     * Aplica o resultado do pagamento via PaymentResultService — mesma lógica
+     * usada pelo ProcessCardPaymentJob. O serviço aplica um guard forward-only,
+     * tornando o reprocessamento de webhooks (at-least-once / fora de ordem)
+     * idempotente: pedidos já PAID/REFUNDED não regridem de status.
      */
     private function updateOrderStatus(Order $order, array $payment): void
     {
