@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\ReviewOrderCancellationRequest;
 use App\Http\Requests\StoreBatchOrderCancellationRequest;
 use App\Http\Resources\OrderCancellationResource;
+use App\Jobs\SendCancellationReviewedNotificationJob;
 use App\Models\Event;
 use App\Models\Order;
 use App\Models\OrderCancellation;
@@ -125,6 +126,8 @@ class OrderCancellationController extends Controller
             ], 500);
         }
 
+        SendCancellationReviewedNotificationJob::dispatch($result);
+
         return response()->json([
             'message' => 'Cancelamento aprovado e estorno realizado com sucesso.',
             'cancellation' => OrderCancellationResource::make($result),
@@ -147,6 +150,8 @@ class OrderCancellationController extends Controller
             $request->user(),
             $request->validated('review_notes'),
         );
+
+        SendCancellationReviewedNotificationJob::dispatch($result);
 
         return response()->json([
             'message' => 'Solicitação de cancelamento rejeitada.',
