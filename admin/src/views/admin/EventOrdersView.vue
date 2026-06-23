@@ -82,17 +82,18 @@
                         <tr class="text-left text-text-muted text-xs uppercase tracking-wider border-b border-surface-elevated">
                             <th class="px-5 py-3">Referência</th>
                             <th class="px-5 py-3">Comprador</th>
-                            <th class="px-5 py-3">Itens</th>
+                            <th class="px-5 py-3">Ingressos</th>
                             <th class="px-5 py-3">Total</th>
                             <th class="px-5 py-3">Status</th>
-                            <th class="px-5 py-3">Data</th>
+                            <th class="px-5 py-3">Data da compra</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr
                             v-for="order in store.orders"
                             :key="order.id"
-                            class="border-t border-surface-elevated"
+                            @click="openOrderDetails(order)"
+                            class="border-t border-surface-elevated cursor-pointer hover:bg-surface-elevated/30 transition-colors"
                         >
                             <td class="px-5 py-3 font-mono text-xs text-white">
                                 {{ order.reference }}
@@ -151,6 +152,20 @@
 
         <!-- Tab: Solicitações de cancelamento -->
         <div v-show="activeTab === 'requests'">
+            <!-- Busca -->
+            <div class="relative mb-4 max-w-md">
+                <span
+                    class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-text-muted text-[20px]"
+                    >search</span
+                >
+                <input
+                    v-model="cancellationSearchQuery"
+                    type="text"
+                    placeholder="Buscar por referência, e-mail ou CPF..."
+                    class="w-full bg-card-bg border border-surface-elevated rounded-lg pl-10 pr-3 py-2.5 text-sm text-white placeholder-text-muted focus:outline-none focus:border-primary"
+                />
+            </div>
+
             <LoadingState v-if="store.isLoading" message="Carregando..." />
             <template v-else>
             <div
@@ -168,8 +183,9 @@
                         <tr class="text-left text-text-muted text-xs uppercase tracking-wider border-b border-surface-elevated">
                             <th class="px-5 py-3">Pedido</th>
                             <th class="px-5 py-3">Solicitante</th>
-                            <th class="px-5 py-3">Motivo</th>
+                            <th class="px-5 py-3">Ingressos</th>
                             <th class="px-5 py-3">Status</th>
+                            <th class="px-5 py-3">Solicitado em</th>
                             <th class="px-5 py-3 text-right">Ações</th>
                         </tr>
                     </thead>
@@ -177,7 +193,8 @@
                         <tr
                             v-for="req in store.cancellations"
                             :key="req.id"
-                            class="border-t border-surface-elevated align-top"
+                            @click="openRequestDetails(req)"
+                            class="border-t border-surface-elevated align-top cursor-pointer hover:bg-surface-elevated/30 transition-colors"
                         >
                             <td class="px-5 py-3 font-mono text-xs text-white whitespace-nowrap">
                                 {{ req.order?.reference }}
@@ -191,14 +208,8 @@
                                     {{ req.requested_by_user?.email }}
                                 </div>
                             </td>
-                            <td class="px-5 py-3 text-text-secondary text-sm max-w-xs">
-                                {{ req.reason }}
-                                <div
-                                    v-if="req.review_notes"
-                                    class="text-text-muted text-xs mt-1"
-                                >
-                                    Obs.: {{ req.review_notes }}
-                                </div>
+                            <td class="px-5 py-3 text-text-secondary text-sm">
+                                {{ req.order?.items?.length || 0 }}
                             </td>
                             <td class="px-5 py-3">
                                 <span
@@ -208,19 +219,22 @@
                                     {{ req.status_label }}
                                 </span>
                             </td>
+                            <td class="px-5 py-3 text-text-muted text-xs">
+                                {{ formatDate(req.created_at) }}
+                            </td>
                             <td class="px-5 py-3 text-right whitespace-nowrap">
                                 <div
                                     v-if="req.status === 'pending'"
                                     class="flex items-center justify-end gap-2"
                                 >
                                     <button
-                                        @click="openApprove(req)"
+                                        @click.stop="openApprove(req)"
                                         class="px-3 py-1.5 bg-primary text-black rounded-lg text-xs font-medium hover:brightness-110 transition-colors"
                                     >
                                         Aprovar
                                     </button>
                                     <button
-                                        @click="openReject(req)"
+                                        @click.stop="openReject(req)"
                                         class="px-3 py-1.5 border border-red-500 text-red-500 rounded-lg text-xs font-medium hover:bg-red-500/10 transition-colors"
                                     >
                                         Rejeitar
@@ -305,6 +319,13 @@
                 </div>
             </template>
         </Modal>
+
+        <!-- Modal: Detalhes do pedido / ingressos -->
+        <OrderDetailsModal
+            v-model="detailsModal.open"
+            :order="detailsModal.order"
+            :cancellation="detailsModal.cancellation"
+        />
     </div>
 </template>
 
@@ -315,6 +336,7 @@ import { useOrdersStore } from "@/stores/orders";
 import { useEventsStore } from "@/stores/events";
 import { useToast } from "@/composables/useToast";
 import Modal from "@/components/ui/Modal.vue";
+import OrderDetailsModal from "@/components/orders/OrderDetailsModal.vue";
 import LoadingState from "@/components/ui/LoadingState.vue";
 import ErrorState from "@/components/ui/ErrorState.vue";
 
@@ -337,6 +359,20 @@ const approveModal = reactive({ open: false, request: null });
 const rejectModal = reactive({ open: false, request: null });
 const rejectNotes = ref("");
 
+const detailsModal = reactive({ open: false, order: null, cancellation: null });
+
+function openOrderDetails(order) {
+    detailsModal.order = order;
+    detailsModal.cancellation = null;
+    detailsModal.open = true;
+}
+
+function openRequestDetails(req) {
+    detailsModal.order = req.order;
+    detailsModal.cancellation = req;
+    detailsModal.open = true;
+}
+
 // Busca (referência / e-mail / CPF) com debounce
 const searchQuery = ref("");
 let searchTimer = null;
@@ -352,6 +388,16 @@ function changeOrdersPage(page) {
     store.fetchEventOrders(eventId, page, searchQuery.value.trim());
 }
 
+// Busca de cancelamentos (referência / e-mail / CPF) com debounce
+const cancellationSearchQuery = ref("");
+let cancellationSearchTimer = null;
+watch(cancellationSearchQuery, () => {
+    clearTimeout(cancellationSearchTimer);
+    cancellationSearchTimer = setTimeout(() => {
+        store.fetchCancellations(eventId, 1, cancellationSearchQuery.value.trim());
+    }, 400);
+});
+
 const pendingCancellationsCount = computed(
     () =>
         store.cancellations.filter((r) => r.status === "pending").length,
@@ -361,7 +407,11 @@ async function loadActiveTab() {
     if (activeTab.value === "orders") {
         await store.fetchEventOrders(eventId, 1, searchQuery.value.trim());
     } else {
-        await store.fetchCancellations(eventId);
+        await store.fetchCancellations(
+            eventId,
+            1,
+            cancellationSearchQuery.value.trim(),
+        );
     }
 }
 

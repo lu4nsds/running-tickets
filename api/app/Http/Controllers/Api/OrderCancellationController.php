@@ -12,6 +12,7 @@ use App\Models\Order;
 use App\Models\OrderCancellation;
 use App\Services\RefundService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use MercadoPago\Exceptions\MPApiException;
@@ -23,14 +24,37 @@ class OrderCancellationController extends Controller
     /**
      * Lista os cancelamentos de um evento (super admin).
      */
-    public function index(Event $event): JsonResponse
+    public function index(Request $request, Event $event): JsonResponse
     {
-        $cancellations = OrderCancellation::query()
+        $query = OrderCancellation::query()
             ->whereHas('order', fn ($q) => $q->where('event_id', $event->id))
-            ->with(['order.items.ticketType', 'requestedBy'])
+            ->with(['order.items.ticketType', 'order.items.category', 'order.items.ticket', 'requestedBy'])
             ->orderByRaw("CASE status WHEN 'pending' THEN 0 WHEN 'approved' THEN 1 ELSE 2 END")
-            ->orderBy('created_at', 'desc')
-            ->paginate(15);
+            ->orderBy('created_at', 'desc');
+
+        // Busca por referência do pedido, e-mail do comprador ou CPF do participante
+        $search = trim((string) $request->query('search', ''));
+        if ($search !== '') {
+            $digits = preg_replace('/\D/', '', $search);
+            // Só busca por CPF quando o termo é numérico (sem letras), para evitar
+            // que dígitos avulsos de uma referência/e-mail casem qualquer CPF.
+            $isCpfSearch = $digits !== '' && ! preg_match('/[a-zA-Z]/', $search);
+
+            $query->whereHas('order', function ($oq) use ($search, $digits, $isCpfSearch) {
+                $oq->where(function ($q) use ($search, $digits, $isCpfSearch) {
+                    $q->where('reference', 'like', "%{$search}%")
+                        ->orWhere('buyer_email', 'like', "%{$search}%");
+
+                    if ($isCpfSearch) {
+                        $q->orWhereHas('items', function ($iq) use ($digits) {
+                            $iq->whereRaw("JSON_EXTRACT(participant_data, '$.cpf') LIKE ?", ["%{$digits}%"]);
+                        });
+                    }
+                });
+            });
+        }
+
+        $cancellations = $query->paginate(10)->withQueryString();
 
         return OrderCancellationResource::collection($cancellations)->response();
     }

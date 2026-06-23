@@ -38,13 +38,13 @@ export const useOrdersStore = defineStore("orders", () => {
         }
     }
 
-    async function fetchCancellations(eventId, page = 1) {
+    async function fetchCancellations(eventId, page = 1, search = "") {
         isLoading.value = true;
         error.value = null;
         try {
-            const data = await adminOrdersApi.getCancellations(eventId, {
-                page,
-            });
+            const params = { page };
+            if (search) params.search = search;
+            const data = await adminOrdersApi.getCancellations(eventId, params);
             cancellations.value = data.data;
             cancellationsPagination.value = mapPagination(data.meta);
             return data;

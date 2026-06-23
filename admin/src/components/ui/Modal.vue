@@ -13,7 +13,8 @@
 
                 <!-- Modal Card -->
                 <div
-                    class="relative bg-card-bg border border-surface-elevated rounded-xl shadow-2xl max-w-md w-full p-6 animate-modal-enter"
+                    class="relative bg-card-bg border border-surface-elevated rounded-xl shadow-2xl w-full p-6 animate-modal-enter"
+                    :class="maxWidthClass"
                 >
                     <!-- Header -->
                     <div class="flex items-start justify-between mb-4">
@@ -57,6 +58,8 @@
 </template>
 
 <script setup>
+import { computed } from "vue";
+
 const props = defineProps({
     modelValue: {
         type: Boolean,
@@ -74,9 +77,23 @@ const props = defineProps({
         type: Boolean,
         default: true,
     },
+    size: {
+        type: String,
+        default: "md", // sm | md | lg | xl
+    },
 });
 
 const emit = defineEmits(["update:modelValue"]);
+
+const maxWidthClass = computed(
+    () =>
+        ({
+            sm: "max-w-sm",
+            md: "max-w-md",
+            lg: "max-w-lg",
+            xl: "max-w-2xl",
+        })[props.size] || "max-w-md",
+);
 
 const close = () => {
     if (props.closeOnOverlay) {
