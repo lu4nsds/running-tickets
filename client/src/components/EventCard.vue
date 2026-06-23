@@ -43,7 +43,9 @@
 
             <div class="mt-auto flex items-center justify-between">
                 <div>
-                    <p class="text-xs text-slate-400">A partir de</p>
+                    <p v-if="hasPrice" class="text-xs text-slate-400">
+                        A partir de
+                    </p>
                     <p class="text-lg font-bold text-white">
                         {{ formattedPrice }}
                     </p>
@@ -120,25 +122,32 @@ const formattedTime = computed(() => {
     }
 });
 
-// Calcula menor preço dos ticket_types
+// Tipos de ingresso ativos do evento
+const activeTicketTypes = computed(
+    () => props.event.ticket_types?.filter((type) => type.active) ?? [],
+);
+
+// Menor preço (em centavos) entre os ingressos ativos pagos; null se não houver
 const minPriceCents = computed(() => {
-    if (!props.event.ticket_types || props.event.ticket_types.length === 0) {
-        return 0;
-    }
-    const prices = props.event.ticket_types
-        .filter((type) => type.active && type.price_cents > 0)
+    const prices = activeTicketTypes.value
+        .filter((type) => type.price_cents > 0)
         .map((type) => type.price_cents);
 
-    return prices.length > 0 ? Math.min(...prices) : 0;
+    return prices.length > 0 ? Math.min(...prices) : null;
 });
 
+// Mostra "A partir de" só quando há um preço real a exibir
+const hasPrice = computed(() => minPriceCents.value !== null);
+
 const formattedPrice = computed(() => {
-    const price = minPriceCents.value;
-    if (price === 0) return "Gratuito";
+    // Sem nenhum tipo de ingresso ativo → vendas não disponíveis
+    if (activeTicketTypes.value.length === 0) return "Indisponível";
+    // Há ingressos ativos, mas todos sem preço → gratuito de fato
+    if (minPriceCents.value === null) return "Gratuito";
     return new Intl.NumberFormat("pt-BR", {
         style: "currency",
         currency: "BRL",
-    }).format(price / 100);
+    }).format(minPriceCents.value / 100);
 });
 
 // Navegar para detalhes do evento

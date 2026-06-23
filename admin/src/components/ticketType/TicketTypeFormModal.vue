@@ -111,61 +111,26 @@
             <!-- Data de Início e Fim das Vendas (lado a lado) -->
             <div class="grid grid-cols-2 gap-4">
                 <!-- Data Início -->
-                <div>
-                    <label
-                        for="ticket-start-sale"
-                        class="block text-sm font-medium text-white mb-2"
-                    >
-                        Início das Vendas
-                    </label>
-                    <div class="relative">
-                        <span
-                            class="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-[20px] text-text-muted"
-                        >
-                            event
-                        </span>
-                        <input
-                            id="ticket-start-sale"
-                            v-model="form.start_sale"
-                            type="datetime-local"
-                            class="w-full pl-11 pr-4 py-2.5 bg-surface-elevated border border-surface-elevated text-white rounded-lg focus:outline-none focus:border-primary transition-colors"
-                            :disabled="isSubmitting"
-                        />
-                    </div>
-                    <p
-                        v-if="errors.start_sale"
-                        class="mt-1 text-sm text-red-500"
-                    >
-                        {{ errors.start_sale[0] }}
-                    </p>
-                </div>
+                <BaseDateInput
+                    id="ticket-start-sale"
+                    v-model="form.start_sale"
+                    with-time
+                    label="Início das Vendas"
+                    icon="event"
+                    :disabled="isSubmitting"
+                    :error="errors.start_sale?.[0]"
+                />
 
                 <!-- Data Fim -->
-                <div>
-                    <label
-                        for="ticket-end-sale"
-                        class="block text-sm font-medium text-white mb-2"
-                    >
-                        Fim das Vendas
-                    </label>
-                    <div class="relative">
-                        <span
-                            class="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-[20px] text-text-muted"
-                        >
-                            event_busy
-                        </span>
-                        <input
-                            id="ticket-end-sale"
-                            v-model="form.end_sale"
-                            type="datetime-local"
-                            class="w-full pl-11 pr-4 py-2.5 bg-surface-elevated border border-surface-elevated text-white rounded-lg focus:outline-none focus:border-primary transition-colors"
-                            :disabled="isSubmitting"
-                        />
-                    </div>
-                    <p v-if="errors.end_sale" class="mt-1 text-sm text-red-500">
-                        {{ errors.end_sale[0] }}
-                    </p>
-                </div>
+                <BaseDateInput
+                    id="ticket-end-sale"
+                    v-model="form.end_sale"
+                    with-time
+                    label="Fim das Vendas"
+                    icon="event_busy"
+                    :disabled="isSubmitting"
+                    :error="errors.end_sale?.[0]"
+                />
             </div>
 
             <!-- Descrição -->
@@ -253,6 +218,7 @@
 <script setup>
 import { ref, watch, computed } from "vue";
 import Modal from "@/components/ui/Modal.vue";
+import BaseDateInput from "@/components/ui/BaseDateInput.vue";
 import axios from "@/api/axios";
 import { useToast } from "@/composables/useToast";
 
@@ -302,23 +268,6 @@ const reaisToCents = (reais) => {
     return Math.round(parseFloat(reais || 0) * 100);
 };
 
-const toUTCString = (localStr) => {
-    if (!localStr) return undefined;
-    return new Date(localStr).toISOString();
-};
-
-// Formatar datetime para datetime-local input
-const formatDatetimeLocal = (datetime) => {
-    if (!datetime) return "";
-    const date = new Date(datetime);
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, "0");
-    const day = String(date.getDate()).padStart(2, "0");
-    const hours = String(date.getHours()).padStart(2, "0");
-    const minutes = String(date.getMinutes()).padStart(2, "0");
-    return `${year}-${month}-${day}T${hours}:${minutes}`;
-};
-
 // Reset form helper (definido antes dos watches)
 const resetForm = () => {
     form.value = {
@@ -343,12 +292,8 @@ watch(
                 description: newTicketType.description || "",
                 price_cents: newTicketType.price_cents || 0,
                 quota: newTicketType.quota || null,
-                start_sale: newTicketType.start_sale
-                    ? formatDatetimeLocal(newTicketType.start_sale)
-                    : "",
-                end_sale: newTicketType.end_sale
-                    ? formatDatetimeLocal(newTicketType.end_sale)
-                    : "",
+                start_sale: newTicketType.start_sale || "",
+                end_sale: newTicketType.end_sale || "",
                 active: newTicketType.active ?? true,
             };
             priceInReais.value = centsToReais(newTicketType.price_cents || 0);
@@ -382,8 +327,8 @@ const handleSubmit = async () => {
             description: form.value.description || undefined,
             price_cents: reaisToCents(priceInReais.value),
             quota: form.value.quota || undefined,
-            start_sale: toUTCString(form.value.start_sale),
-            end_sale: toUTCString(form.value.end_sale),
+            start_sale: form.value.start_sale || undefined,
+            end_sale: form.value.end_sale || undefined,
             active: form.value.active,
         };
 

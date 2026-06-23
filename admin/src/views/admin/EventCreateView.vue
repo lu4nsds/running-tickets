@@ -166,6 +166,23 @@
                 </div>
 
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <!-- Data de Início -->
+                    <BaseDateInput
+                        id="date_start"
+                        v-model="form.date_start"
+                        with-time
+                        label="Data e Hora de Início *"
+                        :error="errors.date_start"
+                    />
+
+                    <!-- Data de Término -->
+                    <BaseDateInput
+                        id="date_end"
+                        v-model="form.date_end"
+                        with-time
+                        label="Data e Hora de Término"
+                        :error="errors.date_end"
+                    />
                     <!-- Estado -->
                     <div>
                         <label
@@ -266,52 +283,6 @@
                             class="text-red-500 text-sm mt-1"
                         >
                             {{ errors.venue }}
-                        </p>
-                    </div>
-
-                    <!-- Data de Início -->
-                    <div>
-                        <label
-                            for="date_start"
-                            class="block text-xs font-medium text-text-muted uppercase tracking-wider mb-2"
-                        >
-                            Data e Hora de Início *
-                        </label>
-                        <input
-                            id="date_start"
-                            v-model="form.date_start"
-                            type="datetime-local"
-                            class="w-full bg-surface border border-surface-elevated rounded-lg px-4 py-3 text-white focus:outline-none focus:border-primary transition-colors"
-                            :class="{ 'border-red-500': errors.date_start }"
-                        />
-                        <p
-                            v-if="errors.date_start"
-                            class="text-red-500 text-sm mt-1"
-                        >
-                            {{ errors.date_start }}
-                        </p>
-                    </div>
-
-                    <!-- Data de Término -->
-                    <div>
-                        <label
-                            for="date_end"
-                            class="block text-xs font-medium text-text-muted uppercase tracking-wider mb-2"
-                        >
-                            Data e Hora de Término
-                        </label>
-                        <input
-                            id="date_end"
-                            v-model="form.date_end"
-                            type="datetime-local"
-                            class="w-full bg-surface border border-surface-elevated rounded-lg px-4 py-3 text-white focus:outline-none focus:border-primary transition-colors"
-                            :class="{ 'border-red-500': errors.date_end }"
-                        />
-                        <p
-                            v-if="errors.date_end"
-                            class="text-red-500 text-sm mt-1"
-                        >
-                            {{ errors.date_end }}
                         </p>
                     </div>
                 </div>
@@ -543,6 +514,7 @@ import { useEventsStore } from "@/stores/events";
 import { useToast } from "@/composables/useToast";
 import { BRAZILIAN_STATES } from "@/constants/brazilianStates";
 import MarkdownEditor from "@/components/MarkdownEditor.vue";
+import BaseDateInput from "@/components/ui/BaseDateInput.vue";
 
 const router = useRouter();
 const store = useEventsStore();
@@ -670,11 +642,6 @@ const validate = () => {
     return isValid;
 };
 
-const toUTCString = (localStr) => {
-    if (!localStr) return undefined;
-    return new Date(localStr).toISOString();
-};
-
 // Submit
 const handleSubmit = async () => {
     if (!validate()) {
@@ -694,9 +661,9 @@ const handleSubmit = async () => {
         formData.append("state", form.state);
         formData.append("city", form.city);
         formData.append("venue", form.venue);
-        formData.append("date_start", toUTCString(form.date_start));
+        formData.append("date_start", form.date_start);
         if (form.date_end) {
-            formData.append("date_end", toUTCString(form.date_end));
+            formData.append("date_end", form.date_end);
         }
         if (form.max_participants) {
             formData.append("max_participants", form.max_participants);

@@ -263,37 +263,20 @@
                                     </p>
                                 </div>
 
-                                <div>
-                                    <label
-                                        class="block text-sm font-medium text-slate-300 mb-2"
-                                    >
-                                        Data de Nascimento
-                                        <span class="text-red-500">*</span>
-                                    </label>
-                                    <input
-                                        v-model="participant.birthdate"
-                                        type="date"
-                                        required
-                                        :max="maxDate"
-                                        :min="minDate"
-                                        @change="validateBirthdateField(participant, index)"
-                                        class="w-full px-4 py-3 bg-surface-darker border border-border-dark rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-primary transition-colors"
-                                    />
-                                    <p
-                                        v-if="
-                                            errors[
-                                                `participants.${index}.birthdate`
-                                            ]
-                                        "
-                                        class="mt-1 text-sm text-red-500"
-                                    >
-                                        {{
-                                            errors[
-                                                `participants.${index}.birthdate`
-                                            ]
-                                        }}
-                                    </p>
-                                </div>
+                                <BaseDateInput
+                                    :id="`participant-birthdate-${index}`"
+                                    v-model="participant.birthdate"
+                                    label="Data de Nascimento"
+                                    required
+                                    :min-date="minDate"
+                                    :max-date="maxDate"
+                                    :error="
+                                        errors[`participants.${index}.birthdate`]
+                                    "
+                                    @update:model-value="
+                                        validateBirthdateField(participant, index)
+                                    "
+                                />
 
                                 <div>
                                     <label
@@ -412,24 +395,6 @@
                         </div>
 
                         <div class="mt-6 pt-6 border-t border-border-dark">
-                            <div class="flex items-start gap-2 text-xs mb-4">
-                                <svg
-                                    class="w-4 h-4 text-primary flex-shrink-0 mt-0.5"
-                                    fill="currentColor"
-                                    viewBox="0 0 20 20"
-                                >
-                                    <path
-                                        fill-rule="evenodd"
-                                        d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"
-                                        clip-rule="evenodd"
-                                    />
-                                </svg>
-                                <p class="text-slate-400">
-                                    Pagamento seguro via Mercado Pago. Seus
-                                    dados estão protegidos.
-                                </p>
-                            </div>
-
                             <BaseCheckbox
                                 v-model="consentAccepted"
                                 class="mb-4"
@@ -510,6 +475,7 @@ import Footer from "../components/Footer.vue";
 import CheckoutFormSkeleton from "../components/CheckoutFormSkeleton.vue";
 import CityAutocomplete from "../components/CityAutocomplete.vue";
 import BaseCheckbox from "../components/base/BaseCheckbox.vue";
+import BaseDateInput from "../components/base/BaseDateInput.vue";
 import { useAuthStore } from "../stores/auth";
 import { useCheckoutStore } from "../stores/checkout";
 import { useToast } from "../composables/useToast";

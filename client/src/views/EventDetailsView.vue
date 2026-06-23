@@ -169,9 +169,9 @@
                                     ]"
                                 >
                                     <div
-                                        class="flex items-center gap-4 flex-wrap"
+                                        class="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:gap-4"
                                     >
-                                        <div class="flex-grow min-w-[200px]">
+                                        <div class="flex-grow sm:min-w-[200px]">
                                             <div
                                                 class="flex items-center gap-2 mb-1 flex-wrap"
                                             >
@@ -236,7 +236,7 @@
                                         </div>
 
                                         <div
-                                            class="text-right flex flex-col items-end gap-1"
+                                            class="flex flex-col items-start gap-1 sm:items-end sm:text-right"
                                         >
                                             <span
                                                 class="text-lg font-black text-primary"
@@ -251,7 +251,7 @@
 
                                         <div
                                             :class="[
-                                                'flex items-center rounded-lg border p-1 h-9 ml-4',
+                                                'flex items-center rounded-lg border p-1 h-9 sm:ml-4',
                                                 ticket.is_sold_out
                                                     ? 'bg-surface-darker/50 border-border-dark'
                                                     : 'bg-surface-darker border-border-dark',

@@ -83,19 +83,20 @@
                             >
                                 Data
                             </h3>
-                            <input
+                            <BaseDateInput
+                                id="filter-date-from"
                                 v-model="filters.date_from"
-                                @change="applyFilters"
-                                type="date"
                                 placeholder="De"
-                                class="w-full rounded-lg border-border-dark bg-surface-dark py-2.5 px-3 text-sm text-white focus:border-primary focus:ring-primary mb-2"
+                                :max-date="filters.date_to"
+                                class="mb-2"
+                                @update:model-value="applyFilters"
                             />
-                            <input
+                            <BaseDateInput
+                                id="filter-date-to"
                                 v-model="filters.date_to"
-                                @change="applyFilters"
-                                type="date"
                                 placeholder="Até"
-                                class="w-full rounded-lg border-border-dark bg-surface-dark py-2.5 px-3 text-sm text-white focus:border-primary focus:ring-primary"
+                                :min-date="filters.date_from"
+                                @update:model-value="applyFilters"
                             />
                         </div>
 
@@ -355,6 +356,7 @@ import { useEventsStore } from "../stores/events";
 import Navbar from "../components/Navbar.vue";
 import Footer from "../components/Footer.vue";
 import EventCard from "../components/EventCard.vue";
+import BaseDateInput from "../components/base/BaseDateInput.vue";
 
 const route = useRoute();
 const eventsStore = useEventsStore();

@@ -186,66 +186,26 @@
         <!-- Data de Início e Fim das Vendas -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
           <!-- Data Início -->
-          <div class="space-y-2">
-            <label
-              for="start_sale"
-              class="block text-sm font-medium text-text-muted"
-            >
-              Início das Vendas
-            </label>
-            <div class="relative">
-              <div
-                class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"
-              >
-                <span class="material-symbols-outlined text-text-muted"
-                  >event</span
-                >
-              </div>
-              <input
-                id="start_sale"
-                v-model="form.start_sale"
-                type="datetime-local"
-                class="block w-full pl-10 pr-3 py-3 bg-surface border border-surface-elevated rounded-lg text-white focus:outline-none focus:border-primary transition-all"
-                :class="{
-                  'border-red-500': errors.start_sale,
-                }"
-                :disabled="isSubmitting"
-              />
-            </div>
-            <p v-if="errors.start_sale" class="text-xs text-red-500">
-              {{ errors.start_sale[0] }}
-            </p>
-          </div>
+          <BaseDateInput
+            id="start_sale"
+            v-model="form.start_sale"
+            with-time
+            label="Início das Vendas"
+            icon="event"
+            :disabled="isSubmitting"
+            :error="errors.start_sale?.[0]"
+          />
 
           <!-- Data Fim -->
-          <div class="space-y-2">
-            <label
-              for="end_sale"
-              class="block text-sm font-medium text-text-muted"
-            >
-              Fim das Vendas
-            </label>
-            <div class="relative">
-              <div
-                class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"
-              >
-                <span class="material-symbols-outlined text-text-muted"
-                  >event_busy</span
-                >
-              </div>
-              <input
-                id="end_sale"
-                v-model="form.end_sale"
-                type="datetime-local"
-                class="block w-full pl-10 pr-3 py-3 bg-surface border border-surface-elevated rounded-lg text-white focus:outline-none focus:border-primary transition-all"
-                :class="{ 'border-red-500': errors.end_sale }"
-                :disabled="isSubmitting"
-              />
-            </div>
-            <p v-if="errors.end_sale" class="text-xs text-red-500">
-              {{ errors.end_sale[0] }}
-            </p>
-          </div>
+          <BaseDateInput
+            id="end_sale"
+            v-model="form.end_sale"
+            with-time
+            label="Fim das Vendas"
+            icon="event_busy"
+            :disabled="isSubmitting"
+            :error="errors.end_sale?.[0]"
+          />
         </div>
 
         <!-- Descrição -->
@@ -338,6 +298,7 @@ import { ref, computed, onMounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useToast } from "@/composables/useToast";
 import axios from "@/api/axios";
+import BaseDateInput from "@/components/ui/BaseDateInput.vue";
 
 const route = useRoute();
 const router = useRouter();
@@ -377,23 +338,6 @@ const reaisToCents = (reais) => {
   return Math.round(parseFloat(reais || 0) * 100);
 };
 
-const toUTCString = (localStr) => {
-  if (!localStr) return undefined;
-  return new Date(localStr).toISOString();
-};
-
-// Formatar datetime para datetime-local input
-const formatDatetimeLocal = (datetime) => {
-  if (!datetime) return "";
-  const date = new Date(datetime);
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  const hours = String(date.getHours()).padStart(2, "0");
-  const minutes = String(date.getMinutes()).padStart(2, "0");
-  return `${year}-${month}-${day}T${hours}:${minutes}`;
-};
-
 const fetchEventName = async () => {
   try {
     const response = await axios.get(`/admin/events/${eventId.value}`);
@@ -420,12 +364,8 @@ const fetchTicketType = async () => {
       description: ticketType.description || "",
       price_cents: ticketType.price_cents || 0,
       quota: ticketType.quota || null,
-      start_sale: ticketType.start_sale
-        ? formatDatetimeLocal(ticketType.start_sale)
-        : "",
-      end_sale: ticketType.end_sale
-        ? formatDatetimeLocal(ticketType.end_sale)
-        : "",
+      start_sale: ticketType.start_sale || "",
+      end_sale: ticketType.end_sale || "",
       active: ticketType.active ?? true,
     };
     priceInReais.value = centsToReais(ticketType.price_cents || 0);
@@ -447,8 +387,8 @@ const handleSubmit = async () => {
       description: form.value.description || undefined,
       price_cents: reaisToCents(priceInReais.value),
       quota: form.value.quota || undefined,
-      start_sale: toUTCString(form.value.start_sale),
-      end_sale: toUTCString(form.value.end_sale),
+      start_sale: form.value.start_sale || undefined,
+      end_sale: form.value.end_sale || undefined,
       active: form.value.active,
     };
 
