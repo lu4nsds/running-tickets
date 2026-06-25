@@ -55,7 +55,7 @@ class OrderCancellationController extends Controller
             });
         }
 
-        $cancellations = $query->paginate(10)->withQueryString();
+        $cancellations = $query->paginate($request->per_page ?? 10)->withQueryString();
 
         return OrderCancellationResource::collection($cancellations)->response();
     }

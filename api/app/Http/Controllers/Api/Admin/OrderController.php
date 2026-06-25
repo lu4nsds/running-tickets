@@ -45,7 +45,7 @@ class OrderController extends Controller
             });
         }
 
-        $orders = $query->paginate(10)->withQueryString();
+        $orders = $query->paginate($request->per_page ?? 10)->withQueryString();
 
         return OrderResource::collection($orders)->response();
     }

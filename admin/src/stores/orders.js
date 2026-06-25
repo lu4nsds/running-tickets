@@ -6,15 +6,18 @@ export const useOrdersStore = defineStore("orders", () => {
     // State
     const orders = ref([]);
     const cancellations = ref([]);
-    const ordersPagination = ref({ currentPage: 1, lastPage: 1, total: 0 });
-    const cancellationsPagination = ref({ currentPage: 1, lastPage: 1, total: 0 });
+    const ordersPagination = ref({ currentPage: 1, lastPage: 1, perPage: 6, total: 0 });
+    const cancellationsPagination = ref({ currentPage: 1, lastPage: 1, perPage: 6, total: 0 });
     const isLoading = ref(false);
     const error = ref(null);
+
+    const PER_PAGE = 6;
 
     function mapPagination(meta) {
         return {
             currentPage: meta?.current_page ?? 1,
             lastPage: meta?.last_page ?? 1,
+            perPage: meta?.per_page ?? PER_PAGE,
             total: meta?.total ?? 0,
         };
     }
@@ -23,7 +26,7 @@ export const useOrdersStore = defineStore("orders", () => {
         isLoading.value = true;
         error.value = null;
         try {
-            const params = { page };
+            const params = { page, per_page: PER_PAGE };
             if (search) params.search = search;
             const data = await adminOrdersApi.getEventOrders(eventId, params);
             orders.value = data.data;
@@ -42,7 +45,7 @@ export const useOrdersStore = defineStore("orders", () => {
         isLoading.value = true;
         error.value = null;
         try {
-            const params = { page };
+            const params = { page, per_page: PER_PAGE };
             if (search) params.search = search;
             const data = await adminOrdersApi.getCancellations(eventId, params);
             cancellations.value = data.data;

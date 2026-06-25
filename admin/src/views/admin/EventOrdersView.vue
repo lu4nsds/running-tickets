@@ -1,5 +1,5 @@
 <template>
-    <div class="p-6 max-w-6xl mx-auto">
+    <div>
         <!-- Breadcrumb -->
         <nav class="flex items-center gap-2 text-sm text-text-muted mb-6">
             <router-link to="/admin/events" class="hover:text-white transition-colors">
@@ -11,8 +11,11 @@
             </span>
         </nav>
 
-        <div class="flex items-center gap-3 mb-6">
-            <h1 class="text-2xl font-bold text-white">Pedidos</h1>
+        <div class="mb-6">
+            <h1 class="text-3xl font-extrabold text-white">Pedidos</h1>
+            <p class="text-text-secondary mt-1">
+                Pedidos e solicitações de cancelamento do evento
+            </p>
         </div>
 
         <!-- Tabs -->
@@ -65,89 +68,104 @@
                 />
             </div>
 
-            <LoadingState v-if="store.isLoading" message="Carregando..." />
-            <template v-else>
+            <!-- Empty state -->
             <div
-                v-if="store.orders.length === 0"
+                v-if="!store.isLoading && store.orders.length === 0"
                 class="text-center py-16 text-text-muted"
             >
                 Nenhum pedido encontrado.
             </div>
-            <div
-                v-else
-                class="bg-card-bg border border-surface-elevated rounded-xl overflow-hidden"
-            >
+
+            <!-- Tabela -->
+            <div v-else class="bg-card-bg rounded-xl border border-surface-elevated">
                 <table class="w-full">
                     <thead>
-                        <tr class="text-left text-text-muted text-xs uppercase tracking-wider border-b border-surface-elevated">
-                            <th class="px-5 py-3">Referência</th>
-                            <th class="px-5 py-3">Comprador</th>
-                            <th class="px-5 py-3">Ingressos</th>
-                            <th class="px-5 py-3">Total</th>
-                            <th class="px-5 py-3">Status</th>
-                            <th class="px-5 py-3">Data da compra</th>
+                        <tr class="border-b border-surface-elevated">
+                            <th class="text-left text-text-muted text-xs font-medium uppercase tracking-wider px-6 py-4">Referência</th>
+                            <th class="text-left text-text-muted text-xs font-medium uppercase tracking-wider px-6 py-4">Comprador</th>
+                            <th class="text-left text-text-muted text-xs font-medium uppercase tracking-wider px-6 py-4">Ingressos</th>
+                            <th class="text-left text-text-muted text-xs font-medium uppercase tracking-wider px-6 py-4">Total</th>
+                            <th class="text-left text-text-muted text-xs font-medium uppercase tracking-wider px-6 py-4">Status</th>
+                            <th class="text-left text-text-muted text-xs font-medium uppercase tracking-wider px-6 py-4">Data da compra</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        <tr
-                            v-for="order in store.orders"
-                            :key="order.id"
-                            @click="openOrderDetails(order)"
-                            class="border-t border-surface-elevated cursor-pointer hover:bg-surface-elevated/30 transition-colors"
-                        >
-                            <td class="px-5 py-3 font-mono text-xs text-white">
-                                {{ order.reference }}
-                            </td>
-                            <td class="px-5 py-3 text-text-secondary text-sm">
-                                {{ order.buyer_email || "—" }}
-                            </td>
-                            <td class="px-5 py-3 text-text-secondary text-sm">
-                                {{ order.items?.length || 0 }}
-                            </td>
-                            <td class="px-5 py-3 text-white text-sm">
-                                {{ order.total_formatted }}
-                            </td>
-                            <td class="px-5 py-3">
-                                <span
-                                    class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium"
-                                    :class="statusClass(order.status)"
-                                >
-                                    {{ order.status_label }}
-                                </span>
-                            </td>
-                            <td class="px-5 py-3 text-text-muted text-xs">
-                                {{ formatDate(order.created_at) }}
-                            </td>
-                        </tr>
+                    <tbody
+                        class="divide-y divide-surface-elevated"
+                        style="min-height: 462px"
+                    >
+                        <!-- Skeleton -->
+                        <template v-if="store.isLoading">
+                            <tr
+                                v-for="n in 6"
+                                :key="'orders-skeleton-' + n"
+                                class="h-[77px]"
+                            >
+                                <td class="px-6 py-4">
+                                    <div class="h-4 w-32 bg-surface-elevated rounded animate-pulse"></div>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <div class="h-4 w-40 bg-surface-elevated rounded animate-pulse"></div>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <div class="h-4 w-8 bg-surface-elevated rounded animate-pulse"></div>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <div class="h-4 w-20 bg-surface-elevated rounded animate-pulse"></div>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <div class="h-6 w-16 bg-surface-elevated rounded-full animate-pulse"></div>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <div class="h-4 w-24 bg-surface-elevated rounded animate-pulse"></div>
+                                </td>
+                            </tr>
+                        </template>
+
+                        <!-- Linhas -->
+                        <template v-else>
+                            <tr
+                                v-for="order in store.orders"
+                                :key="order.id"
+                                @click="openOrderDetails(order)"
+                                class="h-[77px] cursor-pointer hover:bg-white/[0.02] transition-colors"
+                            >
+                                <td class="px-6 py-4 font-mono text-xs text-white">
+                                    {{ order.reference }}
+                                </td>
+                                <td class="px-6 py-4 text-text-secondary text-sm">
+                                    {{ order.buyer_email || "—" }}
+                                </td>
+                                <td class="px-6 py-4 text-text-secondary text-sm">
+                                    {{ order.items?.length || 0 }}
+                                </td>
+                                <td class="px-6 py-4 text-white text-sm">
+                                    {{ order.total_formatted }}
+                                </td>
+                                <td class="px-6 py-4">
+                                    <span
+                                        class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium"
+                                        :class="statusClass(order.status)"
+                                    >
+                                        {{ order.status_label }}
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 text-text-muted text-xs">
+                                    {{ formatDate(order.created_at) }}
+                                </td>
+                            </tr>
+                        </template>
                     </tbody>
                 </table>
-            </div>
 
-            <!-- Paginação -->
-            <div
-                v-if="store.ordersPagination.lastPage > 1"
-                class="flex justify-center items-center gap-4 mt-4"
-            >
-                <button
-                    @click="changeOrdersPage(store.ordersPagination.currentPage - 1)"
-                    :disabled="store.ordersPagination.currentPage <= 1"
-                    class="flex items-center justify-center w-8 h-8 rounded-lg border border-surface-elevated text-text-muted hover:text-white hover:border-primary transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                >
-                    <span class="material-symbols-outlined text-base">chevron_left</span>
-                </button>
-                <span class="text-text-muted text-sm">
-                    {{ store.ordersPagination.currentPage }} /
-                    {{ store.ordersPagination.lastPage }}
-                </span>
-                <button
-                    @click="changeOrdersPage(store.ordersPagination.currentPage + 1)"
-                    :disabled="store.ordersPagination.currentPage >= store.ordersPagination.lastPage"
-                    class="flex items-center justify-center w-8 h-8 rounded-lg border border-surface-elevated text-text-muted hover:text-white hover:border-primary transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                >
-                    <span class="material-symbols-outlined text-base">chevron_right</span>
-                </button>
+                <BasePagination
+                    :current-page="store.ordersPagination.currentPage"
+                    :last-page="store.ordersPagination.lastPage"
+                    :per-page="store.ordersPagination.perPage"
+                    :total="store.ordersPagination.total"
+                    :disabled="store.isLoading"
+                    @change="changeOrdersPage"
+                />
             </div>
-            </template>
         </div>
 
         <!-- Tab: Solicitações de cancelamento -->
@@ -166,89 +184,138 @@
                 />
             </div>
 
-            <LoadingState v-if="store.isLoading" message="Carregando..." />
-            <template v-else>
+            <!-- Empty state -->
             <div
-                v-if="store.cancellations.length === 0"
+                v-if="!store.isLoading && store.cancellations.length === 0"
                 class="text-center py-16 text-text-muted"
             >
                 Nenhuma solicitação de cancelamento.
             </div>
-            <div
-                v-else
-                class="bg-card-bg border border-surface-elevated rounded-xl overflow-hidden"
-            >
+
+            <!-- Tabela -->
+            <div v-else class="bg-card-bg rounded-xl border border-surface-elevated">
                 <table class="w-full">
                     <thead>
-                        <tr class="text-left text-text-muted text-xs uppercase tracking-wider border-b border-surface-elevated">
-                            <th class="px-5 py-3">Pedido</th>
-                            <th class="px-5 py-3">Solicitante</th>
-                            <th class="px-5 py-3">Ingressos</th>
-                            <th class="px-5 py-3">Status</th>
-                            <th class="px-5 py-3">Solicitado em</th>
-                            <th class="px-5 py-3 text-right">Ações</th>
+                        <tr class="border-b border-surface-elevated">
+                            <th class="text-left text-text-muted text-xs font-medium uppercase tracking-wider px-6 py-4">Pedido</th>
+                            <th class="text-left text-text-muted text-xs font-medium uppercase tracking-wider px-6 py-4">Solicitante</th>
+                            <th class="text-left text-text-muted text-xs font-medium uppercase tracking-wider px-6 py-4">Ingressos</th>
+                            <th class="text-left text-text-muted text-xs font-medium uppercase tracking-wider px-6 py-4">Status</th>
+                            <th class="text-left text-text-muted text-xs font-medium uppercase tracking-wider px-6 py-4">Solicitado em</th>
+                            <th class="text-right text-text-muted text-xs font-medium uppercase tracking-wider px-6 py-4">Ações</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        <tr
-                            v-for="req in store.cancellations"
-                            :key="req.id"
-                            @click="openRequestDetails(req)"
-                            class="border-t border-surface-elevated align-top cursor-pointer hover:bg-surface-elevated/30 transition-colors"
-                        >
-                            <td class="px-5 py-3 font-mono text-xs text-white whitespace-nowrap">
-                                {{ req.order?.reference }}
-                                <div class="text-text-muted">
-                                    {{ req.order?.total_formatted }}
-                                </div>
-                            </td>
-                            <td class="px-5 py-3 text-text-secondary text-sm">
-                                {{ req.requested_by_user?.name || "—" }}
-                                <div class="text-text-muted text-xs">
-                                    {{ req.requested_by_user?.email }}
-                                </div>
-                            </td>
-                            <td class="px-5 py-3 text-text-secondary text-sm">
-                                {{ req.order?.items?.length || 0 }}
-                            </td>
-                            <td class="px-5 py-3">
-                                <span
-                                    class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium"
-                                    :class="requestStatusClass(req.status)"
-                                >
-                                    {{ req.status_label }}
-                                </span>
-                            </td>
-                            <td class="px-5 py-3 text-text-muted text-xs">
-                                {{ formatDate(req.created_at) }}
-                            </td>
-                            <td class="px-5 py-3 text-right whitespace-nowrap">
-                                <div
-                                    v-if="req.status === 'pending'"
-                                    class="flex items-center justify-end gap-2"
-                                >
-                                    <button
-                                        @click.stop="openApprove(req)"
-                                        class="px-3 py-1.5 bg-primary text-black rounded-lg text-xs font-medium hover:brightness-110 transition-colors"
+                    <tbody
+                        class="divide-y divide-surface-elevated"
+                        style="min-height: 462px"
+                    >
+                        <!-- Skeleton -->
+                        <template v-if="store.isLoading">
+                            <tr
+                                v-for="n in 6"
+                                :key="'requests-skeleton-' + n"
+                                class="h-[77px]"
+                            >
+                                <td class="px-6 py-4">
+                                    <div class="space-y-2">
+                                        <div class="h-4 w-32 bg-surface-elevated rounded animate-pulse"></div>
+                                        <div class="h-3 w-20 bg-surface-elevated rounded animate-pulse"></div>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <div class="space-y-2">
+                                        <div class="h-4 w-32 bg-surface-elevated rounded animate-pulse"></div>
+                                        <div class="h-3 w-40 bg-surface-elevated rounded animate-pulse"></div>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <div class="h-4 w-8 bg-surface-elevated rounded animate-pulse"></div>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <div class="h-6 w-16 bg-surface-elevated rounded-full animate-pulse"></div>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <div class="h-4 w-24 bg-surface-elevated rounded animate-pulse"></div>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <div class="flex items-center justify-end gap-2">
+                                        <div class="h-7 w-16 bg-surface-elevated rounded-lg animate-pulse"></div>
+                                        <div class="h-7 w-16 bg-surface-elevated rounded-lg animate-pulse"></div>
+                                    </div>
+                                </td>
+                            </tr>
+                        </template>
+
+                        <!-- Linhas -->
+                        <template v-else>
+                            <tr
+                                v-for="req in store.cancellations"
+                                :key="req.id"
+                                @click="openRequestDetails(req)"
+                                class="h-[77px] cursor-pointer hover:bg-white/[0.02] transition-colors"
+                            >
+                                <td class="px-6 py-4 font-mono text-xs text-white whitespace-nowrap">
+                                    {{ req.order?.reference }}
+                                    <div class="text-text-muted">
+                                        {{ req.order?.total_formatted }}
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 text-text-secondary text-sm">
+                                    {{ req.requested_by_user?.name || "—" }}
+                                    <div class="text-text-muted text-xs">
+                                        {{ req.requested_by_user?.email }}
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 text-text-secondary text-sm">
+                                    {{ req.order?.items?.length || 0 }}
+                                </td>
+                                <td class="px-6 py-4">
+                                    <span
+                                        class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium"
+                                        :class="requestStatusClass(req.status)"
                                     >
-                                        Aprovar
-                                    </button>
-                                    <button
-                                        @click.stop="openReject(req)"
-                                        class="px-3 py-1.5 border border-red-500 text-red-500 rounded-lg text-xs font-medium hover:bg-red-500/10 transition-colors"
+                                        {{ req.status_label }}
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 text-text-muted text-xs">
+                                    {{ formatDate(req.created_at) }}
+                                </td>
+                                <td class="px-6 py-4 text-right whitespace-nowrap">
+                                    <div
+                                        v-if="req.status === 'pending'"
+                                        class="flex items-center justify-end gap-2"
                                     >
-                                        Rejeitar
-                                    </button>
-                                </div>
-                                <span v-else class="text-text-muted text-xs">
-                                    Avaliada
-                                </span>
-                            </td>
-                        </tr>
+                                        <button
+                                            @click.stop="openApprove(req)"
+                                            class="px-3 py-1.5 bg-primary text-black rounded-lg text-xs font-medium hover:brightness-110 transition-colors"
+                                        >
+                                            Aprovar
+                                        </button>
+                                        <button
+                                            @click.stop="openReject(req)"
+                                            class="px-3 py-1.5 border border-red-500 text-red-500 rounded-lg text-xs font-medium hover:bg-red-500/10 transition-colors"
+                                        >
+                                            Rejeitar
+                                        </button>
+                                    </div>
+                                    <span v-else class="text-text-muted text-xs">
+                                        Avaliada
+                                    </span>
+                                </td>
+                            </tr>
+                        </template>
                     </tbody>
                 </table>
+
+                <BasePagination
+                    :current-page="store.cancellationsPagination.currentPage"
+                    :last-page="store.cancellationsPagination.lastPage"
+                    :per-page="store.cancellationsPagination.perPage"
+                    :total="store.cancellationsPagination.total"
+                    :disabled="store.isLoading"
+                    @change="changeCancellationsPage"
+                />
             </div>
-            </template>
         </div>
         </template>
 
@@ -337,8 +404,8 @@ import { useEventsStore } from "@/stores/events";
 import { useToast } from "@/composables/useToast";
 import Modal from "@/components/ui/Modal.vue";
 import OrderDetailsModal from "@/components/orders/OrderDetailsModal.vue";
-import LoadingState from "@/components/ui/LoadingState.vue";
 import ErrorState from "@/components/ui/ErrorState.vue";
+import BasePagination from "@/components/ui/BasePagination.vue";
 
 const route = useRoute();
 const store = useOrdersStore();
@@ -397,6 +464,11 @@ watch(cancellationSearchQuery, () => {
         store.fetchCancellations(eventId, 1, cancellationSearchQuery.value.trim());
     }, 400);
 });
+
+function changeCancellationsPage(page) {
+    if (page < 1 || page > store.cancellationsPagination.lastPage) return;
+    store.fetchCancellations(eventId, page, cancellationSearchQuery.value.trim());
+}
 
 const pendingCancellationsCount = computed(
     () =>
