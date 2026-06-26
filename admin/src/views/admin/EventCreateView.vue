@@ -331,6 +331,40 @@
                         </p>
                     </div>
 
+                    <!-- Link dos Resultados -->
+                    <div>
+                        <label
+                            for="results_url"
+                            class="block text-xs font-medium text-text-muted uppercase tracking-wider mb-2"
+                        >
+                            Link dos Resultados
+                        </label>
+                        <div class="relative">
+                            <span
+                                class="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-text-muted text-[20px]"
+                            >
+                                leaderboard
+                            </span>
+                            <input
+                                id="results_url"
+                                v-model="form.results_url"
+                                type="url"
+                                placeholder="https://resultados.exemplo.com/evento"
+                                class="w-full bg-surface border border-surface-elevated rounded-lg pl-10 pr-4 py-3 text-white placeholder-text-muted focus:outline-none focus:border-primary transition-colors"
+                            />
+                        </div>
+                        <p class="text-text-muted text-xs mt-1">
+                            Exibido aos participantes quando o evento estiver
+                            encerrado.
+                        </p>
+                        <p
+                            v-if="errors.results_url"
+                            class="text-red-500 text-sm mt-1"
+                        >
+                            {{ errors.results_url }}
+                        </p>
+                    </div>
+
                     <!-- Modo de Repasse (Informativo) -->
                     <div>
                         <div
@@ -362,7 +396,9 @@
             </div>
 
             <!-- Banner -->
-            <div class="bg-card-bg border border-surface-elevated p-6">
+            <div
+                class="bg-card-bg border border-surface-elevated rounded-b-xl p-6"
+            >
                 <div class="flex items-center gap-3 mb-6">
                     <div
                         class="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center"
@@ -427,57 +463,6 @@
                 </div>
             </div>
 
-            <!-- Status -->
-            <div
-                class="bg-card-bg border border-surface-elevated rounded-b-xl p-6"
-            >
-                <div class="flex items-center gap-3 mb-6">
-                    <div
-                        class="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center"
-                    >
-                        <span
-                            class="material-symbols-outlined text-primary text-[18px]"
-                            >toggle_on</span
-                        >
-                    </div>
-                    <h3 class="text-white font-semibold">Status do Evento</h3>
-                </div>
-
-                <div
-                    class="bg-surface-elevated rounded-lg p-5 border border-white/5 flex items-center justify-between group hover:border-white/10 transition-colors"
-                >
-                    <div>
-                        <p class="text-white font-medium">Evento Ativo</p>
-                        <p class="text-text-muted text-sm">
-                            Ao ativar, o evento ficará visível para o público e
-                            poderá receber inscrições.
-                        </p>
-                    </div>
-                    <button
-                        type="button"
-                        @click="
-                            form.status =
-                                form.status === 'ativo' ? 'inativo' : 'ativo'
-                        "
-                        :class="[
-                            'relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none',
-                            form.status === 'ativo'
-                                ? 'bg-primary'
-                                : 'bg-surface',
-                        ]"
-                    >
-                        <span
-                            :class="[
-                                'inline-block h-4 w-4 transform rounded-full bg-white transition-transform',
-                                form.status === 'ativo'
-                                    ? 'translate-x-6'
-                                    : 'translate-x-1',
-                            ]"
-                        />
-                    </button>
-                </div>
-            </div>
-
             <!-- Actions -->
             <div class="flex items-center justify-end gap-4 pt-6">
                 <router-link
@@ -537,7 +522,7 @@ const form = reactive({
     date_start: "",
     date_end: "",
     max_participants: null,
-    status: "inativo",
+    results_url: "",
 });
 
 const errors = reactive({
@@ -549,6 +534,7 @@ const errors = reactive({
     venue: "",
     date_start: "",
     date_end: "",
+    results_url: "",
     banner: "",
 });
 
@@ -668,7 +654,9 @@ const handleSubmit = async () => {
         if (form.max_participants) {
             formData.append("max_participants", form.max_participants);
         }
-        formData.append("status", form.status);
+        if (form.results_url) {
+            formData.append("results_url", form.results_url);
+        }
 
         if (bannerFile.value) {
             formData.append("banner", bannerFile.value);

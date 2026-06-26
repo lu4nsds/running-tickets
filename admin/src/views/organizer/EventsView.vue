@@ -38,9 +38,13 @@
                         class="w-full bg-surface border border-surface-elevated rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-primary transition-colors"
                         @change="fetchEvents"
                     >
-                        <option value="">Todos os status</option>
-                        <option value="ativo">Ativos</option>
-                        <option value="inativo">Inativos</option>
+                        <option
+                            v-for="option in EVENT_STATUS_OPTIONS"
+                            :key="option.value"
+                            :value="option.value"
+                        >
+                            {{ option.label }}
+                        </option>
                     </select>
                 </div>
             </div>

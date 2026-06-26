@@ -37,7 +37,7 @@
                                 clip-rule="evenodd"
                             />
                         </svg>
-                        {{ event.status.toUpperCase() }}
+                        {{ statusLabel }}
                     </span>
                     <h1
                         class="text-4xl md:text-6xl font-black text-white tracking-tight mb-2 uppercase drop-shadow-lg"
@@ -142,7 +142,7 @@
                         </section>
 
                         <!-- Inscrições -->
-                        <section id="inscricoes">
+                        <section v-if="!isFinished" id="inscricoes">
                             <div class="flex items-center justify-between mb-6">
                                 <h2
                                     class="text-2xl font-bold text-white flex items-center gap-2"
@@ -359,7 +359,65 @@
                     <!-- Right Column - Sidebar Resumo -->
                     <div class="lg:col-span-4 lg:sticky lg:top-24">
                         <div class="flex flex-col gap-6">
+                            <!-- Evento encerrado: resultados -->
                             <div
+                                v-if="isFinished"
+                                class="bg-surface-dark rounded-xl border border-border-dark p-6 shadow-2xl"
+                            >
+                                <h3
+                                    class="text-lg font-bold text-white mb-2 border-b border-border-dark/50 pb-4"
+                                >
+                                    Evento Encerrado
+                                </h3>
+                                <p class="text-slate-400 text-sm mt-4 mb-6">
+                                    As inscrições para este evento estão
+                                    encerradas.
+                                    <template v-if="hasResults">
+                                        Confira os resultados da prova.
+                                    </template>
+                                </p>
+                                <a
+                                    v-if="hasResults"
+                                    :href="event.results_url"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    class="w-full group relative flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 text-background-dark font-bold text-lg h-14 rounded-lg transition-all shadow-[0_0_20px_rgba(0,230,118,0.2)]"
+                                >
+                                    <svg
+                                        class="w-5 h-5"
+                                        fill="currentColor"
+                                        viewBox="0 0 20 20"
+                                    >
+                                        <path
+                                            d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z"
+                                        />
+                                    </svg>
+                                    Ver resultados
+                                </a>
+                                <div
+                                    v-else
+                                    class="flex items-center gap-3 rounded-lg bg-surface-darker/50 border border-border-dark/50 p-4"
+                                >
+                                    <svg
+                                        class="w-5 h-5 flex-shrink-0 text-primary"
+                                        fill="currentColor"
+                                        viewBox="0 0 20 20"
+                                    >
+                                        <path
+                                            fill-rule="evenodd"
+                                            d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z"
+                                            clip-rule="evenodd"
+                                        />
+                                    </svg>
+                                    <p class="text-slate-300 text-sm">
+                                        Os resultados estarão disponíveis em
+                                        breve.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div
+                                v-else
                                 class="bg-surface-dark rounded-xl border border-border-dark p-6 shadow-2xl"
                             >
                                 <h3
@@ -606,7 +664,25 @@ const event = ref(null);
 const loading = ref(true);
 const quantities = ref({});
 
+// Labels de status (PT) para exibição — valores armazenados em inglês
+const STATUS_LABELS = {
+    active: "Ativo",
+    inactive: "Inativo",
+    finished: "Encerrado",
+};
+
 // Computed
+const statusLabel = computed(() => {
+    const status = event.value?.status;
+    return (STATUS_LABELS[status] ?? status ?? "").toUpperCase();
+});
+
+const isFinished = computed(() => event.value?.status === "finished");
+
+const hasResults = computed(
+    () => isFinished.value && !!event.value?.results_url,
+);
+
 const filteredTickets = computed(() => {
     if (!event.value?.ticket_types) return [];
     return event.value.ticket_types;

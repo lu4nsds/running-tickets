@@ -25,11 +25,11 @@ class UpdateEventRequest extends FormRequest
     public function rules(): array
     {
         $eventId = $this->route('event')->id;
-        
+
         return [
             'organizer_id' => 'sometimes|required|exists:organizers,id',
             'title' => 'sometimes|required|string|max:255',
-            'slug' => 'sometimes|required|string|max:255|unique:events,slug,' . $eventId,
+            'slug' => 'sometimes|required|string|max:255|unique:events,slug,'.$eventId,
             'description' => 'nullable|string',
             'state' => 'sometimes|required|string|size:2',
             'city' => 'sometimes|required|string|max:100',
@@ -39,6 +39,7 @@ class UpdateEventRequest extends FormRequest
             'max_participants' => 'nullable|integer|min:1',
             'banner' => 'nullable|image|mimes:jpeg,png,webp|max:2048',
             'banner_url' => 'nullable|url',
+            'results_url' => 'nullable|url',
             'status' => ['sometimes', Rule::in(EventStatus::values())],
             'meta' => 'nullable|array',
         ];

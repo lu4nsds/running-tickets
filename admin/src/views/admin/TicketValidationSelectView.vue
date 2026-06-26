@@ -200,7 +200,7 @@ const fetchEvents = async () => {
 
         const response = await axios.get(endpoint, {
             params: {
-                status: "ativo",
+                status: "active",
                 per_page: 100,
             },
         });

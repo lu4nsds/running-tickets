@@ -42,7 +42,7 @@ class OrderController extends Controller
         // Super admin vê todos os pedidos
         if ($user->isSuperAdmin()) {
             // Sem filtro - vê tudo
-        } 
+        }
         // Organizador vê pedidos dos seus eventos
         elseif ($user->organizers()->exists()) {
             $organizerIds = $user->organizers->pluck('id');
@@ -69,7 +69,7 @@ class OrderController extends Controller
         $user = $request->user();
 
         // Guest não pode acessar via API
-        if (!$user) {
+        if (! $user) {
             return response()->json([
                 'message' => 'Autenticação necessária.',
             ], 401);
@@ -133,10 +133,12 @@ class OrderController extends Controller
                     })
                     ->update(['status' => OrderStatus::CANCELLED->value]);
             }
-            
-            if ($event->status !== EventStatus::ATIVO) {
+
+            if ($event->status !== EventStatus::ACTIVE) {
+                DB::rollBack();
+
                 return response()->json([
-                    'message' => 'Este evento não está disponível para compra de ingressos.'
+                    'message' => 'Este evento não está disponível para compra de ingressos.',
                 ], 422);
             }
 
@@ -144,15 +146,15 @@ class OrderController extends Controller
             $ticketTypes = [];
             foreach ($request->items as $itemData) {
                 $ticketTypeId = $itemData['ticket_type_id'];
-                
-                if (!isset($ticketTypes[$ticketTypeId])) {
+
+                if (! isset($ticketTypes[$ticketTypeId])) {
                     $ticketType = TicketType::findOrFail($ticketTypeId);
                     $ticketTypes[$ticketTypeId] = [
                         'model' => $ticketType,
-                        'count' => 0
+                        'count' => 0,
                     ];
                 }
-                
+
                 $ticketTypes[$ticketTypeId]['count']++;
             }
 
@@ -161,20 +163,24 @@ class OrderController extends Controller
                 $ticketType = $data['model'];
                 $requestedQuantity = $data['count'];
 
-                if (!$ticketType->isAvailableForPurchase()) {
+                if (! $ticketType->isAvailableForPurchase()) {
+                    DB::rollBack();
+
                     return response()->json([
                         'message' => "O ingresso '{$ticketType->name}' não está disponível para compra.",
-                        'errors' => ['ticket_type_id' => ["Ingresso indisponível: {$ticketType->name}"]]
+                        'errors' => ['ticket_type_id' => ["Ingresso indisponível: {$ticketType->name}"]],
                     ], 422);
                 }
 
                 $availableQuantity = $ticketType->getAvailableQuantity();
                 if ($availableQuantity !== null && $requestedQuantity > $availableQuantity) {
+                    DB::rollBack();
+
                     return response()->json([
                         'message' => "Quantidade solicitada para '{$ticketType->name}' excede o disponível.",
                         'errors' => ['ticket_type_id' => [
-                            "Apenas {$availableQuantity} ingressos disponíveis para '{$ticketType->name}'"
-                        ]]
+                            "Apenas {$availableQuantity} ingressos disponíveis para '{$ticketType->name}'",
+                        ]],
                     ], 422);
                 }
             }
@@ -220,7 +226,7 @@ class OrderController extends Controller
 
         } catch (\Exception $e) {
             DB::rollBack();
-            
+
             Log::error('Erro ao criar pedido', [
                 'message' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
@@ -241,14 +247,14 @@ class OrderController extends Controller
     public function processPayment(ProcessPaymentRequest $request, Order $order): JsonResponse
     {
         // Pedido precisa estar em estado pagável (PENDING ou FAILED) com reserva ativa.
-        if (!$order->status->isPayable()) {
+        if (! $order->status->isPayable()) {
             return response()->json([
-                'message' => 'Este pedido não pode receber pagamento. Status atual: ' . $order->status->value,
+                'message' => 'Este pedido não pode receber pagamento. Status atual: '.$order->status->value,
                 'error_code' => 'invalid_status',
             ], 422);
         }
 
-        if (!$order->hasActiveReservation()) {
+        if (! $order->hasActiveReservation()) {
             return response()->json([
                 'message' => 'A reserva dos ingressos expirou. Inicie um novo pedido.',
                 'error_code' => 'reservation_expired',
@@ -386,7 +392,7 @@ class OrderController extends Controller
             ->where('reference', $reference)
             ->first();
 
-        if (!$order) {
+        if (! $order) {
             return response()->json(['message' => 'Pedido não encontrado.'], 404);
         }
 
@@ -418,15 +424,15 @@ class OrderController extends Controller
         $user = $request->user();
 
         // Verifica autorização (mesma lógica do show)
-        if (!$user->isSuperAdmin() 
-            && !$user->canAccessOrganizer($order->organizer_id)
+        if (! $user->isSuperAdmin()
+            && ! $user->canAccessOrganizer($order->organizer_id)
             && $order->user_id !== $user->id) {
             return response()->json([
                 'message' => 'Pedido não encontrado.',
             ], 404);
         }
 
-        if (!$order->canCancel()) {
+        if (! $order->canCancel()) {
             return response()->json([
                 'message' => 'Este pedido não pode ser cancelado.',
             ], 422);

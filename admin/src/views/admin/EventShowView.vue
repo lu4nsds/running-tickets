@@ -1225,19 +1225,22 @@ const formatDistance = (value) => {
 // Status helpers
 const getStatusLabel = (status) => {
     const labels = {
-        ativo: "Ativo",
-        inativo: "Inativo",
+        active: "Ativo",
+        inactive: "Inativo",
+        finished: "Encerrado",
     };
     return labels[status] || status;
 };
 
 const getStatusBadgeClass = (status) => {
     const classes = {
-        ativo: "px-3 py-1 rounded-full text-xs font-semibold bg-primary text-black",
-        inativo:
+        active: "px-3 py-1 rounded-full text-xs font-semibold bg-primary text-black",
+        inactive:
             "px-3 py-1 rounded-full text-xs font-semibold bg-yellow-500 text-black",
+        finished:
+            "px-3 py-1 rounded-full text-xs font-semibold bg-gray-500 text-white",
     };
-    return classes[status] || classes.inativo;
+    return classes[status] || classes.inactive;
 };
 
 const getCategoryStatusLabel = (active) => active ? "Ativa" : "Inativa";

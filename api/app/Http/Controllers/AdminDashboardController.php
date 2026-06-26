@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\EventStatus;
 use App\Models\Event;
 use App\Models\Order;
 use App\Models\Organizer;
@@ -14,9 +15,9 @@ class AdminDashboardController extends Controller
 {
     private function resolveDateRange(Request $request): array
     {
-        $preset    = $request->input('preset', 'current_month');
+        $preset = $request->input('preset', 'current_month');
         $startDate = $request->input('start_date');
-        $endDate   = $request->input('end_date');
+        $endDate = $request->input('end_date');
 
         if ($preset === 'custom' && $startDate && $endDate) {
             return [
@@ -30,19 +31,19 @@ class AdminDashboardController extends Controller
 
         return match ($preset) {
             'current_month' => [$now->copy()->startOfMonth(), $now->copy()->endOfDay(), 'current_month'],
-            'current_year'  => [$now->copy()->startOfYear(), $now->copy()->endOfDay(), 'current_year'],
-            '7d'            => [$now->copy()->subDays(7)->startOfDay(), $now->copy()->endOfDay(), '7d'],
-            '30d'           => [$now->copy()->subDays(30)->startOfDay(), $now->copy()->endOfDay(), '30d'],
-            default         => [$now->copy()->startOfMonth(), $now->copy()->endOfDay(), 'current_month'],
+            'current_year' => [$now->copy()->startOfYear(), $now->copy()->endOfDay(), 'current_year'],
+            '7d' => [$now->copy()->subDays(7)->startOfDay(), $now->copy()->endOfDay(), '7d'],
+            '30d' => [$now->copy()->subDays(30)->startOfDay(), $now->copy()->endOfDay(), '30d'],
+            default => [$now->copy()->startOfMonth(), $now->copy()->endOfDay(), 'current_month'],
         };
     }
 
     public function index(Request $request)
     {
         $request->validate([
-            'preset'     => 'nullable|in:current_month,current_year,7d,30d,custom',
+            'preset' => 'nullable|in:current_month,current_year,7d,30d,custom',
             'start_date' => 'nullable|date|required_if:preset,custom',
-            'end_date'   => 'nullable|date|after_or_equal:start_date|required_if:preset,custom',
+            'end_date' => 'nullable|date|after_or_equal:start_date|required_if:preset,custom',
         ]);
 
         [$startDate, $endDate, $presetKey] = $this->resolveDateRange($request);
@@ -64,8 +65,8 @@ class AdminDashboardController extends Controller
 
             $eventStats = [
                 'total_organizers' => Organizer::whereBetween('created_at', [$startDate, $endDate])->count(),
-                'total_events'     => Event::whereBetween('created_at', [$startDate, $endDate])->count(),
-                'active_events'    => Event::where('status', 'ativo')->whereBetween('created_at', [$startDate, $endDate])->count(),
+                'total_events' => Event::whereBetween('created_at', [$startDate, $endDate])->count(),
+                'active_events' => Event::where('status', EventStatus::ACTIVE->value)->whereBetween('created_at', [$startDate, $endDate])->count(),
                 'events_in_period' => Event::whereBetween('created_at', [$startDate, $endDate])->count(),
             ];
 
@@ -97,13 +98,13 @@ class AdminDashboardController extends Controller
                 ->first();
 
             $healthMetrics = [
-                'conversion_rate'  => $platformHealth->total_orders > 0
+                'conversion_rate' => $platformHealth->total_orders > 0
                     ? round(($platformHealth->paid_orders / $platformHealth->total_orders) * 100, 2)
                     : 0,
                 'cancellation_rate' => $platformHealth->total_orders > 0
                     ? round(($platformHealth->cancelled_orders / $platformHealth->total_orders) * 100, 2)
                     : 0,
-                'avg_order_value'  => $platformSummary->paid_orders > 0
+                'avg_order_value' => $platformSummary->paid_orders > 0
                     ? round($platformSummary->total_revenue / $platformSummary->paid_orders)
                     : 0,
             ];
@@ -124,12 +125,12 @@ class AdminDashboardController extends Controller
                 ->withCount([
                     'orders as paid_orders' => function ($query) {
                         $query->where('status', 'paid');
-                    }
+                    },
                 ])
                 ->get()
                 ->filter(function ($event) {
                     $totalCapacity = DB::table('ticket_types')->where('event_id', $event->id)->sum('quota');
-                    $ticketsSold   = DB::table('order_items')
+                    $ticketsSold = DB::table('order_items')
                         ->join('orders', 'order_items.order_id', '=', 'orders.id')
                         ->join('ticket_types', 'order_items.ticket_type_id', '=', 'ticket_types.id')
                         ->where('ticket_types.event_id', $event->id)
@@ -140,7 +141,7 @@ class AdminDashboardController extends Controller
                 })
                 ->map(function ($event) {
                     $totalCapacity = DB::table('ticket_types')->where('event_id', $event->id)->sum('quota');
-                    $ticketsSold   = DB::table('order_items')
+                    $ticketsSold = DB::table('order_items')
                         ->join('orders', 'order_items.order_id', '=', 'orders.id')
                         ->join('ticket_types', 'order_items.ticket_type_id', '=', 'ticket_types.id')
                         ->where('ticket_types.event_id', $event->id)
@@ -148,14 +149,14 @@ class AdminDashboardController extends Controller
                         ->count();
 
                     return [
-                        'event_id'         => $event->id,
-                        'event_name'       => $event->title,
-                        'event_date'       => $event->date_start,
+                        'event_id' => $event->id,
+                        'event_name' => $event->title,
+                        'event_date' => $event->date_start,
                         'days_until_event' => now()->diffInDays($event->date_start, false),
-                        'tickets_sold'     => $ticketsSold,
-                        'total_capacity'   => $totalCapacity,
-                        'occupancy_rate'   => round(($ticketsSold / $totalCapacity) * 100, 2),
-                        'severity'         => $ticketsSold < ($totalCapacity * 0.1) ? 'high' : 'medium',
+                        'tickets_sold' => $ticketsSold,
+                        'total_capacity' => $totalCapacity,
+                        'occupancy_rate' => round(($ticketsSold / $totalCapacity) * 100, 2),
+                        'severity' => $ticketsSold < ($totalCapacity * 0.1) ? 'high' : 'medium',
                     ];
                 })
                 ->values();
@@ -198,17 +199,17 @@ class AdminDashboardController extends Controller
                 ->get();
 
             return [
-                'summary'         => array_merge((array) $platformSummary, $eventStats),
-                'top_organizers'  => $topOrganizers,
+                'summary' => array_merge((array) $platformSummary, $eventStats),
+                'top_organizers' => $topOrganizers,
                 'platform_health' => $healthMetrics,
-                'sales_trend'     => $salesTrend,
-                'alerts'          => $alerts,
+                'sales_trend' => $salesTrend,
+                'alerts' => $alerts,
                 'upcoming_events' => $upcomingEvents,
-                'fee_breakdown'   => $feeBreakdown,
+                'fee_breakdown' => $feeBreakdown,
                 'pending_payouts' => $pendingPayouts,
                 'applied_filters' => [
                     'start_date' => $startDate->format('Y-m-d'),
-                    'end_date'   => $endDate->format('Y-m-d'),
+                    'end_date' => $endDate->format('Y-m-d'),
                 ],
             ];
         });
@@ -238,17 +239,17 @@ class AdminDashboardController extends Controller
                 ->withCount([
                     'orders as paid_orders' => function ($query) {
                         $query->where('status', 'paid');
-                    }
+                    },
                 ])
                 ->withSum([
                     'orders as revenue' => function ($query) {
                         $query->where('status', 'paid');
-                    }
+                    },
                 ], 'total_cents')
                 ->get()
                 ->map(function ($event) {
                     $totalCapacity = DB::table('ticket_types')->where('event_id', $event->id)->sum('quota');
-                    $ticketsSold   = DB::table('order_items')
+                    $ticketsSold = DB::table('order_items')
                         ->join('orders', 'order_items.order_id', '=', 'orders.id')
                         ->join('ticket_types', 'order_items.ticket_type_id', '=', 'ticket_types.id')
                         ->where('ticket_types.event_id', $event->id)
@@ -256,13 +257,13 @@ class AdminDashboardController extends Controller
                         ->count();
 
                     return [
-                        'id'             => $event->id,
-                        'name'           => $event->title,
-                        'date'           => $event->date_start,
-                        'revenue'        => $event->revenue ?? 0,
-                        'orders'         => $event->paid_orders,
-                        'tickets_sold'   => $ticketsSold,
-                        'capacity'       => $totalCapacity,
+                        'id' => $event->id,
+                        'name' => $event->title,
+                        'date' => $event->date_start,
+                        'revenue' => $event->revenue ?? 0,
+                        'orders' => $event->paid_orders,
+                        'tickets_sold' => $ticketsSold,
+                        'capacity' => $totalCapacity,
                         'occupancy_rate' => $totalCapacity > 0 ? round(($ticketsSold / $totalCapacity) * 100, 2) : 0,
                     ];
                 });
@@ -282,13 +283,13 @@ class AdminDashboardController extends Controller
 
             return [
                 'organizer' => [
-                    'id'         => $organizer->id,
-                    'name'       => $organizer->name,
-                    'email'      => $organizer->email,
+                    'id' => $organizer->id,
+                    'name' => $organizer->name,
+                    'email' => $organizer->email,
                     'created_at' => $organizer->created_at,
                 ],
-                'summary'       => $summary,
-                'events'        => $events,
+                'summary' => $summary,
+                'events' => $events,
                 'sales_history' => $salesHistory,
             ];
         });

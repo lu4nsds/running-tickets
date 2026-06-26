@@ -4,12 +4,13 @@ namespace App\Enums;
 
 /**
  * Status do evento - controle manual
- * Permite ao organizador suspender temporariamente um evento
+ * Permite ao organizador suspender temporariamente um evento ou marcá-lo como encerrado
  */
 enum EventStatus: string
 {
-    case ATIVO = 'ativo';
-    case INATIVO = 'inativo';
+    case ACTIVE = 'active';
+    case INACTIVE = 'inactive';
+    case FINISHED = 'finished';
 
     /**
      * Retorna todos os valores possíveis
@@ -24,9 +25,10 @@ enum EventStatus: string
      */
     public function label(): string
     {
-        return match($this) {
-            self::ATIVO => 'Ativo',
-            self::INATIVO => 'Inativo',
+        return match ($this) {
+            self::ACTIVE => 'Ativo',
+            self::INACTIVE => 'Inativo',
+            self::FINISHED => 'Encerrado',
         };
     }
 
@@ -35,6 +37,6 @@ enum EventStatus: string
      */
     public function canAcceptOrders(): bool
     {
-        return $this === self::ATIVO;
+        return $this === self::ACTIVE;
     }
 }

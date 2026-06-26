@@ -10,8 +10,12 @@ export const useEventStatus = () => {
      */
     const getVisualStatus = (event) => {
         // Status manual tem prioridade
-        if (event.status === EVENT_STATUS.INATIVO) {
+        if (event.status === EVENT_STATUS.INACTIVE) {
             return VISUAL_STATUS.INATIVO;
+        }
+
+        if (event.status === EVENT_STATUS.FINISHED) {
+            return VISUAL_STATUS.ENCERRADO;
         }
 
         // Status baseado em datas

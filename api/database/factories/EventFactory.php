@@ -22,19 +22,29 @@ class EventFactory extends Factory
         return [
             'organizer_id' => Organizer::factory(),
             'title' => $title,
-            'slug' => Str::slug($title) . '-' . Str::random(6),
+            'slug' => Str::slug($title).'-'.Str::random(6),
             'description' => fake()->paragraph(),
             'city' => fake()->city(),
             'state' => 'SP',
             'venue' => fake()->company(),
             'date_start' => now()->addDays(30),
             'date_end' => now()->addDays(31),
-            'status' => EventStatus::ATIVO->value,
+            'results_url' => null,
+            'status' => EventStatus::ACTIVE->value,
         ];
     }
 
-    public function inativo(): static
+    public function inactive(): static
     {
-        return $this->state(fn () => ['status' => EventStatus::INATIVO->value]);
+        return $this->state(fn () => ['status' => EventStatus::INACTIVE->value]);
+    }
+
+    public function finished(): static
+    {
+        return $this->state(fn () => [
+            'status' => EventStatus::FINISHED->value,
+            'date_start' => now()->subDays(31),
+            'date_end' => now()->subDays(30),
+        ]);
     }
 }

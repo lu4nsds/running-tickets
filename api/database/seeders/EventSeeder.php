@@ -88,7 +88,7 @@ class EventSeeder extends Seeder
                         'date_start'      => now()->addDays($daysInFuture),
                         'date_end'        => now()->addDays($daysInFuture)->addHours($template['duration_hours']),
                         'max_participants' => $template['max_participants'],
-                        'status'          => EventStatus::ATIVO->value,
+                        'status'          => EventStatus::ACTIVE->value,
                         'meta'            => [
                             'distance' => $template['distance'],
                             'kit'      => 'camisa + medalha',

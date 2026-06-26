@@ -572,8 +572,9 @@ let searchTimeout = null;
 // Status tabs
 const statusTabs = [
     { label: "Todos", value: "" },
-    { label: "Ativos", value: "ativo" },
-    { label: "Inativos", value: "inativo" },
+    { label: "Ativos", value: "active" },
+    { label: "Inativos", value: "inactive" },
+    { label: "Encerrados", value: "finished" },
 ];
 
 // Computed
@@ -635,16 +636,18 @@ const formatDateTime = (date) => {
 
 const getStatusClass = (status) => {
     const classes = {
-        ativo: "bg-primary/10 text-primary",
-        inativo: "bg-yellow-500/10 text-yellow-400",
+        active: "bg-primary/10 text-primary",
+        inactive: "bg-yellow-500/10 text-yellow-400",
+        finished: "bg-gray-500/10 text-gray-400",
     };
     return classes[status] || "bg-surface-elevated text-text-muted";
 };
 
 const getStatusLabel = (status) => {
     const labels = {
-        ativo: "Ativo",
-        inativo: "Inativo",
+        active: "Ativo",
+        inactive: "Inativo",
+        finished: "Encerrado",
     };
     return labels[status] || status;
 };

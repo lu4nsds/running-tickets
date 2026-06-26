@@ -26,21 +26,22 @@ class EventResource extends JsonResource
             'date_end' => $this->date_end,
             'max_participants' => $this->max_participants,
             'banner_url' => $this->banner_full_url,
+            'results_url' => $this->results_url,
             'status' => $this->status,
             'meta' => $this->meta,
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
-            
+
             // Estatísticas (quando carregadas via withCount/aggregate)
             'participants_count' => $this->when(isset($this->participants_count), $this->participants_count ?? 0),
-            'total_revenue'     => $this->when(isset($this->total_revenue), $this->total_revenue ?? 0),
+            'total_revenue' => $this->when(isset($this->total_revenue), $this->total_revenue ?? 0),
             'total_net_revenue' => $this->when(isset($this->total_net_revenue), $this->total_net_revenue ?? 0),
             'remaining_spots' => $this->when(
                 isset($this->participants_count) && $this->max_participants,
-                fn() => max(0, $this->max_participants - ($this->participants_count ?? 0))
+                fn () => max(0, $this->max_participants - ($this->participants_count ?? 0))
             ),
             'ticket_stats' => $this->when(isset($this->ticket_stats), $this->ticket_stats),
-            
+
             // Relacionamentos
             'organizer' => $this->whenLoaded('organizer', function () {
                 return new OrganizerResource($this->organizer);

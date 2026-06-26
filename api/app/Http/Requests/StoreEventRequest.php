@@ -35,6 +35,7 @@ class StoreEventRequest extends FormRequest
             'max_participants' => 'nullable|integer|min:1',
             'banner' => 'nullable|image|mimes:jpeg,png,webp|max:2048',
             'banner_url' => 'nullable|url',
+            'results_url' => 'nullable|url|max:2048',
             'meta' => 'nullable|array',
         ];
     }

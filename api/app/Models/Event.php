@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\EventStatus;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Storage;
@@ -23,6 +24,7 @@ class Event extends Model
         'date_end',
         'max_participants',
         'banner_url',
+        'results_url',
         'status',
         'meta',
     ];
@@ -40,7 +42,7 @@ class Event extends Model
      */
     public function getBannerFullUrlAttribute(): ?string
     {
-        if (!$this->banner_url) {
+        if (! $this->banner_url) {
             return null;
         }
 
@@ -50,7 +52,16 @@ class Event extends Model
         }
 
         // Serve via proxy do Laravel (evita problemas de ACL no bucket S3)
-        return url('/api/storage/' . $this->banner_url);
+        return url('/api/storage/'.$this->banner_url);
+    }
+
+    /**
+     * Escopo: eventos visíveis publicamente (ativos ou encerrados)
+     * Eventos encerrados continuam acessíveis para exibir o link de resultados
+     */
+    public function scopePubliclyVisible(Builder $query): void
+    {
+        $query->whereIn('status', [EventStatus::ACTIVE, EventStatus::FINISHED]);
     }
 
     /**
@@ -87,14 +98,13 @@ class Event extends Model
 
     /**
      * Estatísticas de tickets do evento
-     * @return array
      */
     public function getTicketStatistics(): array
     {
         // Busca todos os tickets do evento (apenas de pedidos pagos)
         $tickets = Ticket::whereHas('orderItem.order', function ($q) {
             $q->where('event_id', $this->id)
-              ->where('status', 'paid');
+                ->where('status', 'paid');
         })->get();
 
         $validated = $tickets->where('status', \App\Enums\TicketStatus::USED)->count();
