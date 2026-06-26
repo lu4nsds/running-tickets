@@ -71,7 +71,7 @@ class EventController extends Controller
 
         $paidOrders = $event->orders()
             ->where('status', 'paid')
-            ->selectRaw('SUM(total_cents) as total, SUM(COALESCE(net_amount_cents, 0)) as net')
+            ->selectRaw('SUM(total_cents) as total, SUM(COALESCE(net_amount_cents, total_cents)) as net')
             ->first();
 
         $event->total_revenue     = $paidOrders->total ?? 0;

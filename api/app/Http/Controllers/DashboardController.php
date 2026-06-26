@@ -40,7 +40,7 @@ class DashboardController extends Controller
                     'orders as total_net_revenue' => function ($query) {
                         $query->where('status', OrderStatus::PAID->value);
                     }
-                ], 'net_amount_cents')
+                ], DB::raw('COALESCE(net_amount_cents, total_cents)'))
                 ->withSum([
                     'orders as total_fees' => function ($query) {
                         $query->where('status', OrderStatus::PAID->value);
@@ -177,7 +177,7 @@ class DashboardController extends Controller
                     SUM(CASE WHEN status = 'cancelled' THEN 1 ELSE 0 END) as cancelled_orders,
                     SUM(CASE WHEN status = 'paid' THEN total_cents ELSE 0 END) / 100 as total_revenue,
                     SUM(CASE WHEN status = 'pending' THEN total_cents ELSE 0 END) / 100 as pending_revenue,
-                    SUM(CASE WHEN status = 'paid' THEN COALESCE(net_amount_cents, 0) ELSE 0 END) / 100 as total_net_revenue,
+                    SUM(CASE WHEN status = 'paid' THEN COALESCE(net_amount_cents, total_cents) ELSE 0 END) / 100 as total_net_revenue,
                     SUM(CASE WHEN status = 'paid' THEN COALESCE(fee_cents, 0) ELSE 0 END) / 100 as total_fees,
                     SUM(CASE WHEN status = 'paid' THEN total_cents ELSE 0 END) as paid_total_cents_raw,
                     SUM(CASE WHEN status = 'pending' THEN total_cents ELSE 0 END) as pending_total_cents_raw

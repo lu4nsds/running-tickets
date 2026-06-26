@@ -58,7 +58,7 @@ class AdminDashboardController extends Controller
                     SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending_orders,
                     SUM(CASE WHEN status = 'paid' THEN total_cents ELSE 0 END) as total_revenue,
                     SUM(CASE WHEN status = 'pending' THEN total_cents ELSE 0 END) as pending_revenue,
-                    SUM(CASE WHEN status = 'paid' THEN COALESCE(net_amount_cents, 0) ELSE 0 END) as total_net_revenue,
+                    SUM(CASE WHEN status = 'paid' THEN COALESCE(net_amount_cents, total_cents) ELSE 0 END) as total_net_revenue,
                     SUM(CASE WHEN status = 'paid' THEN COALESCE(fee_cents, 0) ELSE 0 END) as total_fees
                 ")->first();
 
@@ -177,8 +177,8 @@ class AdminDashboardController extends Controller
                 ->whereBetween('created_at', [$startDate, $endDate])
                 ->where('status', 'paid')
                 ->selectRaw('
-                    COALESCE(SUM(fee_cents), 0) as total_fees,
-                    COALESCE(SUM(net_amount_cents), 0) as total_net
+                    SUM(COALESCE(fee_cents, 0)) as total_fees,
+                    SUM(COALESCE(net_amount_cents, total_cents)) as total_net
                 ')
                 ->first();
 
@@ -189,7 +189,7 @@ class AdminDashboardController extends Controller
                 ->select(
                     'organizers.id as organizer_id',
                     'organizers.name as organizer_name',
-                    DB::raw('COALESCE(SUM(orders.net_amount_cents), SUM(orders.total_cents)) as amount_to_transfer'),
+                    DB::raw('SUM(COALESCE(orders.net_amount_cents, orders.total_cents)) as amount_to_transfer'),
                     DB::raw('ROUND(AVG(CASE WHEN orders.total_cents > 0 AND orders.fee_cents > 0 THEN orders.fee_cents / orders.total_cents * 100 END), 1) as avg_fee_rate'),
                     DB::raw('MIN(DATEDIFF(events.date_start, NOW())) as nearest_event_days')
                 )

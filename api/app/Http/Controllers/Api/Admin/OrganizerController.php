@@ -54,7 +54,7 @@ class OrganizerController extends Controller
         // Calcular total de vendas (apenas pedidos pagos)
         $paidOrders = $organizer->orders()
             ->where('status', OrderStatus::PAID)
-            ->selectRaw('SUM(total_cents) as total, SUM(COALESCE(net_amount_cents, 0)) as net')
+            ->selectRaw('SUM(total_cents) as total, SUM(COALESCE(net_amount_cents, total_cents)) as net')
             ->first();
 
         $organizer->total_sales = $paidOrders->total ?? 0;

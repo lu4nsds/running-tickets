@@ -29,6 +29,17 @@ class PaymentResultService
         // um pedido PAID de volta a PENDING (escondendo ingressos e o botão de
         // cancelamento). Só permitimos transições que avançam o estado.
         if (! $this->canApply($order->status, $status)) {
+            // Backfill: um pedido já PAGO pode ter ficado sem fee/net se a
+            // primeira aprovação chegou antes de o Mercado Pago liquidar o
+            // valor recebido. Uma aprovação posterior traz esses dados — então
+            // preenchemos apenas fee_cents/net_amount_cents, sem reprocessar
+            // status, ingressos ou e-mails (o guard forward-only segue valendo).
+            if ($order->status === OrderStatus::PAID
+                && $status === 'approved'
+                && $order->net_amount_cents === null) {
+                $this->backfillFees($order, $mpResponse);
+            }
+
             Log::info('PaymentResultService: transição ignorada (forward-only)', [
                 'order_id' => $order->id,
                 'current_status' => $order->status->value,
@@ -127,15 +138,55 @@ class PaymentResultService
         $this->sendFailureEmail($order->fresh());
     }
 
-    private function markApproved(Order $order, array $mpResponse): void
+    /**
+     * Extrai fee_cents/net_amount_cents da resposta do Mercado Pago.
+     * Retorna [null, null] quando o valor líquido recebido ainda não foi
+     * liquidado pelo gateway. Fonte única usada por markApproved e backfillFees.
+     *
+     * @return array{0: ?int, 1: ?int} [feeCents, netCents]
+     */
+    private function extractFees(array $mpResponse): array
     {
         $netReceived = $mpResponse['transaction_details']['net_received_amount'] ?? null;
-        $feeCents = $netReceived !== null
-            ? (int) round((($mpResponse['transaction_amount'] ?? 0) - $netReceived) * 100)
-            : null;
-        $netCents = $netReceived !== null
-            ? (int) round($netReceived * 100)
-            : null;
+
+        if ($netReceived === null) {
+            return [null, null];
+        }
+
+        $feeCents = (int) round((($mpResponse['transaction_amount'] ?? 0) - $netReceived) * 100);
+        $netCents = (int) round($netReceived * 100);
+
+        return [$feeCents, $netCents];
+    }
+
+    /**
+     * Preenche fee_cents/net_amount_cents de um pedido já PAGO que ficou sem
+     * esses valores. Não toca em status nem dispara efeitos colaterais.
+     */
+    private function backfillFees(Order $order, array $mpResponse): void
+    {
+        [$feeCents, $netCents] = $this->extractFees($mpResponse);
+
+        if ($netCents === null) {
+            return;
+        }
+
+        $order->update([
+            'fee_cents' => $feeCents,
+            'net_amount_cents' => $netCents,
+        ]);
+
+        Log::info('PaymentResultService: fee/net preenchidos via backfill', [
+            'order_id' => $order->id,
+            'fee_cents' => $feeCents,
+            'net_amount_cents' => $netCents,
+        ]);
+    }
+
+    private function markApproved(Order $order, array $mpResponse): void
+    {
+        [$feeCents, $netCents] = $this->extractFees($mpResponse);
+        $netReceived = $mpResponse['transaction_details']['net_received_amount'] ?? null;
 
         $body = [
             'outcome' => 'approved',

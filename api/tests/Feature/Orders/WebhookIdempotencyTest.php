@@ -91,6 +91,46 @@ class WebhookIdempotencyTest extends TestCase
         $this->assertSame(OrderStatus::REFUNDED, $order->fresh()->status);
     }
 
+    public function test_late_approved_webhook_backfills_missing_fee_and_net_on_paid_order(): void
+    {
+        Mail::fake();
+        Queue::fake();
+        $order = $this->paidOrder();
+        $order->update(['fee_cents' => null, 'net_amount_cents' => null]);
+
+        app(PaymentResultService::class)->apply($order, [
+            'status' => 'approved',
+            'id' => '1234567890',
+            'transaction_amount' => 100.0,
+            'transaction_details' => ['net_received_amount' => 95.0],
+        ]);
+
+        $fresh = $order->fresh();
+        $this->assertSame(OrderStatus::PAID, $fresh->status);
+        $this->assertSame(9500, $fresh->net_amount_cents);
+        $this->assertSame(500, $fresh->fee_cents);
+        // backfill não deve reprocessar efeitos: nenhum job de ingressos disparado
+        Queue::assertNothingPushed();
+    }
+
+    public function test_late_approved_webhook_does_not_overwrite_existing_fee_and_net(): void
+    {
+        Mail::fake();
+        $order = $this->paidOrder();
+        $order->update(['fee_cents' => 300, 'net_amount_cents' => 9700]);
+
+        app(PaymentResultService::class)->apply($order, [
+            'status' => 'approved',
+            'id' => '1234567890',
+            'transaction_amount' => 100.0,
+            'transaction_details' => ['net_received_amount' => 95.0],
+        ]);
+
+        $fresh = $order->fresh();
+        $this->assertSame(9700, $fresh->net_amount_cents);
+        $this->assertSame(300, $fresh->fee_cents);
+    }
+
     public function test_pending_order_still_advances_to_paid_on_approval(): void
     {
         Mail::fake();
