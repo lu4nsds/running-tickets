@@ -857,7 +857,7 @@ const getEventStatusLabel = (event) => {
     const start = new Date(event.date_start);
     const end = new Date(event.date_end);
 
-    if (event.status !== EVENT_STATUS.ATIVO) return "Inativo";
+    if (event.status !== EVENT_STATUS.ACTIVE) return "Inativo";
     if (now < start) return "Inscrições abertas";
     if (now >= start && now <= end) return "Em andamento";
     return "Encerrado";
@@ -868,7 +868,7 @@ const getEventStatusClass = (event) => {
     const start = new Date(event.date_start);
     const end = new Date(event.date_end);
 
-    if (event.status !== EVENT_STATUS.ATIVO) {
+    if (event.status !== EVENT_STATUS.ACTIVE) {
         return "text-text-muted text-xs";
     }
     if (now < start) {
