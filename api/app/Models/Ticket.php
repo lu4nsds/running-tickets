@@ -54,6 +54,26 @@ class Ticket extends Model
     }
 
     /**
+     * Ordena os tickets pela data de compra (data de criação do pedido).
+     *
+     * Usa a mesma técnica de subquery correlacionada do scopeOrderByEventDate,
+     * apontando para orders.created_at (data real da compra), e não para
+     * tickets.created_at, que é gerado de forma assíncrona após o pagamento.
+     * Default desc: comprados mais recentemente aparecem primeiro.
+     */
+    public function scopeOrderByPurchaseDate(Builder $query, string $direction = 'desc'): void
+    {
+        $query->orderBy(
+            OrderItem::query()
+                ->select('orders.created_at')
+                ->join('orders', 'orders.id', '=', 'order_items.order_id')
+                ->whereColumn('order_items.id', 'tickets.order_item_id')
+                ->limit(1),
+            $direction,
+        );
+    }
+
+    /**
      * Gera um código único para o ticket
      */
     public static function generateCode(): string

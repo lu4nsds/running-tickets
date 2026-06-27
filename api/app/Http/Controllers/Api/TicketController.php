@@ -29,9 +29,12 @@ class TicketController extends Controller
             });
         }
 
-        // Ordenação canônica: evento mais próximo de ocorrer primeiro.
-        // O frontend ainda reordena por aba (próximas asc / histórico desc).
-        $tickets = $query->orderByEventDate()->get();
+        // Na tela de um evento específico, ordena por data de compra (pedido mais
+        // recente primeiro). Na listagem geral agrupada, mantém a ordenação canônica
+        // por data do evento (o frontend ainda reordena por aba: próximas asc / histórico desc).
+        $tickets = $request->has('event_id')
+            ? $query->orderByPurchaseDate()->get()
+            : $query->orderByEventDate()->get();
 
         return response()->json([
             'data' => $tickets->map(function ($ticket) {
