@@ -552,6 +552,9 @@
                                     >
                                         <th class="pb-3">Nome</th>
                                         <th class="pb-3">Valor</th>
+                                        <th class="pb-3">Início vendas</th>
+                                        <th class="pb-3">Fim vendas</th>
+                                        <th class="pb-3">Ingressos</th>
                                         <th class="pb-3">Status</th>
                                         <th class="pb-3 text-right">Ações</th>
                                     </tr>
@@ -574,6 +577,16 @@
                                                         100,
                                                 )
                                             }}
+                                        </td>
+                                        <td class="py-3 text-text-muted">
+                                            {{ formatDate(ticket.start_sale) }}
+                                        </td>
+                                        <td class="py-3 text-text-muted">
+                                            {{ formatDate(ticket.end_sale) }}
+                                        </td>
+                                        <td class="py-3 text-white">
+                                            {{ ticket.sold_count ?? 0 }} /
+                                            {{ ticket.quota ?? "Ilimitado" }}
                                         </td>
                                         <td class="py-3">
                                             <span
@@ -632,7 +645,7 @@
                                         :key="'empty-ticket-' + n"
                                         class="border-t border-surface-elevated h-[65px]"
                                     >
-                                        <td colspan="4"></td>
+                                        <td colspan="7"></td>
                                     </tr>
                                 </tbody>
                             </table>
@@ -1284,7 +1297,7 @@ const getTicketStatus = (ticket) => {
     const endSale = ticket.end_sale ? new Date(ticket.end_sale) : null;
 
     // Verifica se está esgotado (quota preenchida)
-    if (ticket.quota && ticket.tickets_sold_count >= ticket.quota) {
+    if (ticket.quota && (ticket.sold_count ?? 0) >= ticket.quota) {
         return "soldout";
     }
 
