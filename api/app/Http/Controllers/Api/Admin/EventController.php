@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\Admin;
 
+use App\Enums\OrderStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreEventRequest;
 use App\Http\Requests\UpdateEventRequest;
@@ -53,13 +54,19 @@ class EventController extends Controller
 
     public function show(Event $event)
     {
+        $paidOrderItems = function ($query) {
+            $query->whereHas('order', function ($q) {
+                $q->where('status', OrderStatus::PAID->value);
+            });
+        };
+
         $event->load([
             'organizer',
-            'categories' => function ($query) {
-                $query->withCount('orderItems');
+            'categories' => function ($query) use ($paidOrderItems) {
+                $query->withCount(['orderItems' => $paidOrderItems]);
             },
-            'ticketTypes' => function ($query) {
-                $query->withCount('orderItems');
+            'ticketTypes' => function ($query) use ($paidOrderItems) {
+                $query->withCount(['orderItems' => $paidOrderItems]);
             },
         ]);
 
