@@ -10,7 +10,8 @@
         <div
             v-if="visible"
             :class="[
-                'fixed right-4 top-20 z-50 max-w-md w-full sm:w-96',
+                'fixed top-20 left-4 right-4 z-50',
+                'sm:left-auto sm:right-4 sm:w-96 sm:max-w-md',
                 'bg-surface-darker border rounded-xl p-4 shadow-2xl',
                 'flex items-start gap-3',
                 typeClasses[type].border,
@@ -41,10 +42,10 @@
             </div>
 
             <div class="flex-1 min-w-0">
-                <h3 v-if="title" class="text-white font-semibold text-sm mb-1">
+                <h3 v-if="title" class="text-white font-semibold text-sm mb-1 break-words">
                     {{ title }}
                 </h3>
-                <p class="text-slate-400 text-sm">
+                <p class="text-slate-400 text-sm break-words">
                     {{ message }}
                 </p>
             </div>
