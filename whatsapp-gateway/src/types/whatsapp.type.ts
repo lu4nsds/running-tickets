@@ -9,5 +9,12 @@ export interface SessionState {
 
 export interface SendMessageInput {
   phone: string;
-  message: string;
+  // Text body for plain sends; doubles as the caption when a document is sent.
+  message?: string;
+  // Optional document attachment. When `data` (base64) is present the payload is
+  // delivered as a document instead of plain text.
+  filename?: string;
+  mimetype?: string;
+  data?: string;
+  caption?: string;
 }

@@ -51,6 +51,10 @@ export class AppController {
     return this.appService.sendMessage(tenantUuid, {
       phone: body.phone,
       message: body.message,
+      filename: body.filename,
+      mimetype: body.mimetype,
+      data: body.data,
+      caption: body.caption,
     });
   }
 }

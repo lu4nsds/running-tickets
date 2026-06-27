@@ -35,7 +35,7 @@ class GenerateOrderTicketsJob implements ShouldQueue
         ]);
 
         // Carrega os itens se não estiverem carregados
-        if (!$this->order->relationLoaded('items')) {
+        if (! $this->order->relationLoaded('items')) {
             $this->order->load('items');
         }
 
@@ -46,6 +46,7 @@ class GenerateOrderTicketsJob implements ShouldQueue
                     'order_item_id' => $item->id,
                     'ticket_id' => $item->ticket->id,
                 ]);
+
                 continue;
             }
 
@@ -88,7 +89,7 @@ class GenerateOrderTicketsJob implements ShouldQueue
                 ->generate($ticket->code);
 
             // Define o caminho do arquivo
-            $path = 'tickets/' . $ticket->code . '.svg';
+            $path = 'tickets/'.$ticket->code.'.svg';
 
             // Salva o arquivo no storage
             Storage::put($path, $qrCode);
@@ -164,13 +165,13 @@ class GenerateOrderTicketsJob implements ShouldQueue
     {
         $this->order->load(['items.ticket', 'items.ticketType', 'items.category', 'event']);
 
-        $event      = $this->order->event;
+        $event = $this->order->event;
         $buyerPhone = $this->order->buyer_phone;
-        $eventDate  = $event->date_start
+        $eventDate = $event->date_start
             ? $event->date_start->format('d/m/Y \à\s H:i')
             : 'a confirmar';
         $locationParts = array_filter([$event->venue, $event->city, $event->state]);
-        $locationLine  = $locationParts ? '📍 ' . implode(' - ', $locationParts) . "\n" : '';
+        $locationLine = $locationParts ? '📍 '.implode(' - ', $locationParts)."\n" : '';
 
         // 1. Envia para o COMPRADOR com TODOS os ingressos
         if ($buyerPhone) {
@@ -184,18 +185,18 @@ class GenerateOrderTicketsJob implements ShouldQueue
             }
 
             $message = __('whatsapp.ticket_buyer', [
-                'event'    => $event->title,
-                'date'     => $eventDate,
+                'event' => $event->title,
+                'date' => $eventDate,
                 'location' => $locationLine,
-                'tickets'  => implode("\n", $ticketLines),
+                'tickets' => implode("\n", $ticketLines),
             ]);
 
             $sent = $whatsApp->send($buyerPhone, $message);
 
             Log::info('WhatsApp comprador', [
-                'order_id'    => $this->order->id,
+                'order_id' => $this->order->id,
                 'buyer_phone' => $buyerPhone,
-                'sent'        => $sent,
+                'sent' => $sent,
             ]);
 
             // Envia PDF de cada ingresso para o comprador
@@ -204,9 +205,9 @@ class GenerateOrderTicketsJob implements ShouldQueue
                     continue;
                 }
 
-                $name    = $item->participant_data['name'] ?? 'Participante';
+                $name = $item->participant_data['name'] ?? 'Participante';
                 $pdfPath = $pdfService->generateTicketPdf($item);
-                $whatsApp->sendDocument($buyerPhone, $pdfPath, "ingresso-{$name}.pdf");
+                $whatsApp->send($buyerPhone, documentPath: $pdfPath, filename: "ingresso-{$name}.pdf");
                 $pdfService->cleanupTempPdfs([$pdfPath]);
             }
         }
@@ -215,37 +216,38 @@ class GenerateOrderTicketsJob implements ShouldQueue
         foreach ($this->order->items as $item) {
             $participantPhone = $item->participant_data['phone'] ?? null;
 
-            if (!$participantPhone || $participantPhone === $buyerPhone) {
+            if (! $participantPhone || $participantPhone === $buyerPhone) {
                 if ($participantPhone === $buyerPhone) {
                     Log::info('WhatsApp participante é comprador, já notificado', [
                         'order_item_id' => $item->id,
                     ]);
                 }
+
                 continue;
             }
 
             $message = __('whatsapp.ticket_participant', [
-                'name'     => $item->participant_data['name'] ?? 'Participante',
-                'event'    => $event->title,
-                'date'     => $eventDate,
+                'name' => $item->participant_data['name'] ?? 'Participante',
+                'event' => $event->title,
+                'date' => $eventDate,
                 'location' => $locationLine,
-                'code'     => $item->ticket?->code ?? 'N/A',
+                'code' => $item->ticket?->code ?? 'N/A',
             ]);
 
             $sent = $whatsApp->send($participantPhone, $message);
 
             Log::info('WhatsApp participante', [
-                'order_id'          => $this->order->id,
-                'order_item_id'     => $item->id,
+                'order_id' => $this->order->id,
+                'order_item_id' => $item->id,
                 'participant_phone' => $participantPhone,
-                'sent'              => $sent,
+                'sent' => $sent,
             ]);
 
             // Envia PDF do ingresso para o participante
             if ($item->ticket) {
-                $name    = $item->participant_data['name'] ?? 'Participante';
+                $name = $item->participant_data['name'] ?? 'Participante';
                 $pdfPath = $pdfService->generateTicketPdf($item);
-                $whatsApp->sendDocument($participantPhone, $pdfPath, "ingresso-{$name}.pdf");
+                $whatsApp->send($participantPhone, documentPath: $pdfPath, filename: "ingresso-{$name}.pdf");
                 $pdfService->cleanupTempPdfs([$pdfPath]);
             }
         }

@@ -10,7 +10,7 @@ import makeWASocket, {
   DisconnectReason,
   fetchLatestBaileysVersion,
 } from '@whiskeysockets/baileys';
-import type { WASocket } from '@whiskeysockets/baileys';
+import type { AnyMessageContent, WASocket } from '@whiskeysockets/baileys';
 import type Redis from 'ioredis';
 import { BaileysLoggerAdapter } from '@src/adapters/baileys-logger.adapter';
 import { GatewayConfig } from '@src/config/gateway.config';
@@ -37,6 +37,12 @@ import {
 //                 ignore events from a socket that has already been replaced.
 //   - reopen:     ask the manager to build a fresh connection (reconnect).
 //   - deregister: remove this connection from the manager's registry.
+// Discriminated payload for `send`: either a plain text body or a base64
+// document (e.g. the ticket PDF) with an optional caption.
+export type SendContent =
+  | { text: string }
+  | { data: string; mimetype: string; filename: string; caption?: string };
+
 export interface TenantConnectionHooks {
   isActive(connection: TenantConnection): boolean;
   reopen(): Promise<void>;
@@ -128,9 +134,10 @@ export class TenantConnection {
     }
   }
 
-  // Resolve the recipient JID, send the text and cache the outbound message so
-  // the `getMessage` hook can replay it. Assumes the socket is open.
-  async send(phone: string, message: string): Promise<{ jid: string }> {
+  // Resolve the recipient JID, send the message (text or base64 document) and
+  // cache the outbound message so the `getMessage` hook can replay it. Assumes
+  // the socket is open.
+  async send(phone: string, content: SendContent): Promise<{ jid: string }> {
     const onWhatsApp = await this.socket.onWhatsApp(`${phone}@s.whatsapp.net`);
     const result = onWhatsApp?.[0];
 
@@ -140,7 +147,17 @@ export class TenantConnection {
       );
     }
 
-    const sent = await this.socket.sendMessage(result.jid, { text: message });
+    const payload: AnyMessageContent =
+      'text' in content
+        ? { text: content.text }
+        : {
+            document: Buffer.from(content.data, 'base64'),
+            mimetype: content.mimetype,
+            fileName: content.filename,
+            caption: content.caption ?? '',
+          };
+
+    const sent = await this.socket.sendMessage(result.jid, payload);
 
     await cacheMessage(
       this.redis,

@@ -290,7 +290,7 @@ describe('TenantConnection', () => {
     it('resolves the JID, sends the text and caches the outbound message', async () => {
       await conn.open();
 
-      const result = await conn.send('5511999998888', 'hello');
+      const result = await conn.send('5511999998888', { text: 'hello' });
 
       expect(lastSocket().sendMessage).toHaveBeenCalledWith(
         '5511999@s.whatsapp.net',
@@ -300,11 +300,34 @@ describe('TenantConnection', () => {
       expect(result).toEqual({ jid: '5511999@s.whatsapp.net' });
     });
 
+    it('resolves the JID, sends a document and caches the outbound message', async () => {
+      await conn.open();
+
+      const result = await conn.send('5511999998888', {
+        data: Buffer.from('pdf-bytes').toString('base64'),
+        mimetype: 'application/pdf',
+        filename: 'ingresso.pdf',
+        caption: 'Seu ingresso',
+      });
+
+      expect(lastSocket().sendMessage).toHaveBeenCalledWith(
+        '5511999@s.whatsapp.net',
+        {
+          document: Buffer.from('pdf-bytes'),
+          mimetype: 'application/pdf',
+          fileName: 'ingresso.pdf',
+          caption: 'Seu ingresso',
+        },
+      );
+      expect(mockCacheMessage).toHaveBeenCalled();
+      expect(result).toEqual({ jid: '5511999@s.whatsapp.net' });
+    });
+
     it('rejects when the number has no WhatsApp account', async () => {
       await conn.open();
       lastSocket().onWhatsApp.mockResolvedValueOnce([{ exists: false }]);
 
-      await expect(conn.send('5511000', 'hi')).rejects.toBeInstanceOf(
+      await expect(conn.send('5511000', { text: 'hi' })).rejects.toBeInstanceOf(
         BadRequestException,
       );
     });

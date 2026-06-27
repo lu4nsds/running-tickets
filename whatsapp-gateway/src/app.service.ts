@@ -108,10 +108,21 @@ export class AppService {
     input: SendMessageInput,
   ): Promise<{ ok: true; phone: string }> {
     const phone = normalizeBrazilPhone(input.phone);
+    const isDocument = !!input.data;
     const message = input.message?.trim();
 
-    if (!phone || !message) {
-      throw new BadRequestException('phone and message are required');
+    if (!phone) {
+      throw new BadRequestException('phone is required');
+    }
+
+    if (isDocument) {
+      if (!input.filename || !input.mimetype) {
+        throw new BadRequestException(
+          'filename and mimetype are required when sending a document',
+        );
+      }
+    } else if (!message) {
+      throw new BadRequestException('message is required');
     }
 
     let conn = this.manager.getConnection(tenantUuid);
@@ -133,7 +144,18 @@ export class AppService {
       );
     }
 
-    const { jid } = await conn.send(phone, message);
+    const { jid } = await conn.send(
+      phone,
+      isDocument
+        ? {
+            data: input.data!,
+            mimetype: input.mimetype!,
+            filename: input.filename!,
+            caption: input.caption ?? message,
+          }
+        : { text: message! },
+    );
+
     return { ok: true, phone: jid };
   }
 
