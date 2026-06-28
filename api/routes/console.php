@@ -12,16 +12,16 @@ Artisan::command('inspire', function () {
 // O parâmetro --minutes=60 mantém suporte a pedidos legados sem reserved_until.
 Schedule::command('orders:cancel-expired --minutes=60')
     ->runInBackground()
-    ->withoutOverlapping()
-    ->everyMinute();
+    ->withoutOverlapping(30)
+    ->everyFiveMinutes();
 
 // Reconcilia pedidos de cartão presos em PROCESSING consultando o MP, caso o
 // webhook não tenha chegado (ex.: ambiente local ou atraso do gateway).
 Schedule::command('payments:reconcile-pending --minutes=30')
     ->runInBackground()
-    ->withoutOverlapping()
-    ->everyMinute();
+    ->withoutOverlapping(30)
+    ->everyFiveMinutes();
 
 // Remover tokens Sanctum expirados do banco diariamente
 Schedule::command('sanctum:prune-expired --hours=8')
-    ->daily();
+    ->dailyAt('03:00');
