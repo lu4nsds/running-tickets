@@ -315,7 +315,7 @@
                 :checked="form.category_ids.includes(category.id)"
                 @change="toggleCategory(category.id)"
                 :disabled="isSubmitting"
-                class="w-4 h-4 accent-primary"
+                class="h-4 w-4 shrink-0 cursor-pointer appearance-auto rounded accent-primary focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-surface disabled:cursor-not-allowed disabled:opacity-50"
               />
               <span class="text-sm text-white">
                 {{ category.name }}

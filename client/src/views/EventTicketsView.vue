@@ -240,7 +240,7 @@
                                 :value="order.reference"
                                 :checked="selectedRefs.includes(order.reference)"
                                 @change="toggleRef(order.reference)"
-                                class="mt-0.5 h-4 w-4 rounded border-border-dark bg-surface-dark text-primary focus:ring-primary"
+                                class="mt-0.5 h-4 w-4 shrink-0 cursor-pointer rounded accent-primary focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background-dark disabled:cursor-not-allowed disabled:opacity-50"
                             />
                             <span class="min-w-0">
                                 <span class="block text-sm font-semibold text-slate-100">
