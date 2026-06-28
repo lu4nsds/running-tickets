@@ -17,7 +17,7 @@ class TicketTypeResource extends JsonResource
         $soldCount = $this->sold_count ?? $this->order_items_count ?? 0;
         $available = $this->quota ? max(0, $this->quota - $soldCount) : null;
         $soldPercentage = $this->quota && $this->quota > 0 ? round(($soldCount / $this->quota) * 100) : 0;
-        
+
         return [
             'id' => $this->id,
             'event_id' => $this->event_id,
@@ -32,13 +32,16 @@ class TicketTypeResource extends JsonResource
             'active' => $this->active,
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
-            
+
             // Contadores de vendas
             'sold_count' => $soldCount,
             'available' => $available,
             'is_sold_out' => $this->quota && $soldCount >= $this->quota,
             'sold_percentage' => $soldPercentage,
-            
+
+            // Categorias vinculadas (vazio = todas as categorias do evento liberadas)
+            'category_ids' => $this->whenLoaded('categories', fn () => $this->categories->pluck('id')),
+
             // Relacionamentos opcionais
             'event' => new EventResource($this->whenLoaded('event')),
         ];

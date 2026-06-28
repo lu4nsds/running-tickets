@@ -65,13 +65,14 @@ class EventStatusResultsTest extends TestCase
     {
         $organizer = Organizer::factory()->create();
         $event = Event::factory()->for($organizer)->finished()->create();
-        Category::factory()->for($event)->create();
+        $category = Category::factory()->for($event)->create();
         $ticketType = TicketType::factory()->for($event)->create();
 
         $payload = [
             'event_id' => $event->id,
             'items' => [[
                 'ticket_type_id' => $ticketType->id,
+                'category_id' => $category->id,
                 'participant_data' => [
                     'name' => 'Comprador Teste',
                     'email' => 'comprador@test.com',

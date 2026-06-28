@@ -3,7 +3,6 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
 
 class StoreOrderRequest extends FormRequest
 {
@@ -23,9 +22,9 @@ class StoreOrderRequest extends FormRequest
     {
         return [
             'event_id' => ['required', 'integer', 'exists:events,id'],
-            'items'    => ['required', 'array', 'min:1'],
+            'items' => ['required', 'array', 'min:1'],
             'items.*.ticket_type_id' => ['required', 'integer', 'exists:ticket_types,id'],
-            'items.*.category_id' => ['nullable', 'integer', 'exists:categories,id'],
+            'items.*.category_id' => ['required', 'integer', 'exists:categories,id'],
             'items.*.participant_data' => ['required', 'array'],
             'items.*.participant_data.name' => ['required', 'string', 'max:255'],
             'items.*.participant_data.email' => ['required', 'email', 'max:255'],
@@ -40,14 +39,15 @@ class StoreOrderRequest extends FormRequest
                     $itemIndex = $matches[1] ?? 0;
 
                     $eventId = $this->input('event_id');
-                    
+
                     // Verifica CPFs duplicados no mesmo pedido
                     $cpfsInRequest = collect($this->input('items'))
                         ->pluck('participant_data.cpf')
                         ->filter();
-                    
+
                     if ($cpfsInRequest->duplicates()->contains($value)) {
                         $fail('O CPF não pode ser duplicado no mesmo pedido.');
+
                         return;
                     }
 
@@ -87,6 +87,7 @@ class StoreOrderRequest extends FormRequest
             'items.min' => 'É necessário adicionar pelo menos um participante.',
             'items.*.ticket_type_id.required' => 'O tipo de ingresso é obrigatório.',
             'items.*.ticket_type_id.exists' => 'O tipo de ingresso selecionado não existe.',
+            'items.*.category_id.required' => 'A categoria é obrigatória.',
             'items.*.category_id.exists' => 'A categoria selecionada não existe.',
             'items.*.participant_data.required' => 'Os dados do participante são obrigatórios.',
             'items.*.participant_data.name.required' => 'O nome é obrigatório.',
@@ -123,11 +124,12 @@ class StoreOrderRequest extends FormRequest
                 if (isset($item['participant_data']['phone'])) {
                     $item['participant_data']['phone'] = preg_replace('/[^0-9+]/', '', $item['participant_data']['phone']);
                 }
+
                 return $item;
             })->toArray();
         }
 
-        if (!empty($mergeData)) {
+        if (! empty($mergeData)) {
             $this->merge($mergeData);
         }
     }
@@ -144,7 +146,7 @@ class StoreOrderRequest extends FormRequest
 
             foreach ($ticketTypeIds as $ticketTypeId) {
                 $ticketType = \App\Models\TicketType::find($ticketTypeId);
-                if (!$ticketType) {
+                if (! $ticketType) {
                     continue;
                 }
 
@@ -153,10 +155,11 @@ class StoreOrderRequest extends FormRequest
                         'items',
                         "O tipo de ingresso ID {$ticketTypeId} não pertence ao evento selecionado."
                     );
+
                     continue;
                 }
 
-                if (!$ticketType->isAvailableForPurchase()) {
+                if (! $ticketType->isAvailableForPurchase()) {
                     $validator->errors()->add(
                         'items',
                         "O tipo de ingresso \"{$ticketType->name}\" não está disponível para compra."
@@ -172,7 +175,7 @@ class StoreOrderRequest extends FormRequest
 
             foreach ($categoryIds as $categoryId) {
                 $category = \App\Models\Category::find($categoryId);
-                if (!$category) {
+                if (! $category) {
                     continue;
                 }
 
@@ -181,13 +184,39 @@ class StoreOrderRequest extends FormRequest
                         'items',
                         "A categoria ID {$categoryId} não pertence ao evento selecionado."
                     );
+
                     continue;
                 }
 
-                if (!$category->active) {
+                if (! $category->active) {
                     $validator->errors()->add(
                         'items',
                         "A categoria \"{$category->name}\" não está disponível."
+                    );
+                }
+            }
+
+            // Valida o vínculo categoria <-> tipo de ingresso item a item.
+            // Se o lote possui categorias vinculadas, a categoria escolhida
+            // precisa estar entre elas. Lotes sem vínculo aceitam qualquer
+            // categoria ativa do evento (validada acima).
+            foreach (collect($this->input('items')) as $index => $item) {
+                $ticketTypeId = $item['ticket_type_id'] ?? null;
+                $categoryId = $item['category_id'] ?? null;
+
+                if (! $ticketTypeId || ! $categoryId) {
+                    continue;
+                }
+
+                $ticketType = \App\Models\TicketType::with('categories:id')->find($ticketTypeId);
+                if (! $ticketType || $ticketType->categories->isEmpty()) {
+                    continue;
+                }
+
+                if (! $ticketType->categories->pluck('id')->contains((int) $categoryId)) {
+                    $validator->errors()->add(
+                        "items.{$index}.category_id",
+                        'A categoria selecionada não está disponível para este tipo de ingresso.'
                     );
                 }
             }

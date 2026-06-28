@@ -698,6 +698,7 @@ const selectedTickets = computed(() => {
             name: ticket.name,
             price_cents: ticket.price_cents,
             quantity: quantities.value[ticket.id] || 0,
+            category_ids: ticket.category_ids || [],
         }));
 });
 

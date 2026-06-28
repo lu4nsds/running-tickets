@@ -136,7 +136,9 @@
                                             Selecione a categoria
                                         </option>
                                         <option
-                                            v-for="category in categories"
+                                            v-for="category in categoriesForParticipant(
+                                                participant,
+                                            )"
                                             :key="category.id"
                                             :value="category.id"
                                         >
@@ -531,6 +533,20 @@ const totalAmount = computed(() => {
     );
 });
 
+// Categorias disponíveis para o lote do participante.
+// Lote com categorias vinculadas → apenas elas; lote sem vínculo → todas.
+function categoriesForParticipant(participant) {
+    const ticket = selectedTickets.value.find(
+        (t) => t.id === participant.ticket_type_id,
+    );
+    if (ticket?.category_ids?.length) {
+        return categories.value.filter((c) =>
+            ticket.category_ids.includes(c.id),
+        );
+    }
+    return categories.value;
+}
+
 const isFormValid = computed(() => {
     return participants.value.every(
         (p) => p.name && p.email && p.phone && p.cpf && isValidBirthdate(p.birthdate) && p.category_id,
@@ -829,6 +845,16 @@ onMounted(async () => {
             participants.value[0].name = authStore.user.name || "";
             participants.value[0].email = authStore.user.email || "";
         }
+
+        // Remove categoria selecionada que não esteja disponível para o lote
+        participants.value.forEach((p) => {
+            if (
+                p.category_id &&
+                !categoriesForParticipant(p).some((c) => c.id === p.category_id)
+            ) {
+                p.category_id = "";
+            }
+        });
     } catch (error) {
         console.error("Erro ao carregar dados do checkout:", error);
         toast.error("Erro ao carregar dados");

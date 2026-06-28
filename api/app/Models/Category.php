@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Category extends Model
 {
@@ -39,5 +40,13 @@ class Category extends Model
     public function orderItems()
     {
         return $this->hasMany(OrderItem::class);
+    }
+
+    /**
+     * Tipos de ingresso aos quais esta categoria está vinculada
+     */
+    public function ticketTypes(): BelongsToMany
+    {
+        return $this->belongsToMany(TicketType::class, 'ticket_type_categories');
     }
 }

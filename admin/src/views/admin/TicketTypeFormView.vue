@@ -257,6 +257,49 @@
             ></div>
           </label>
         </div>
+
+        <!-- Categorias Vinculadas -->
+        <div class="space-y-2">
+          <label class="block text-sm font-medium text-text-muted">
+            Categorias Vinculadas
+          </label>
+          <p class="text-xs text-text-muted">
+            Selecione quais categorias este lote aceita no checkout. Se nenhuma
+            for marcada, todas as categorias do evento ficam disponíveis.
+          </p>
+
+          <div
+            v-if="availableCategories.length"
+            class="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1"
+          >
+            <label
+              v-for="category in availableCategories"
+              :key="category.id"
+              class="flex items-center gap-3 p-3 bg-surface border border-surface-elevated rounded-lg cursor-pointer hover:border-primary transition-colors"
+              :class="{
+                'border-primary': form.category_ids.includes(category.id),
+              }"
+            >
+              <input
+                type="checkbox"
+                :value="category.id"
+                :checked="form.category_ids.includes(category.id)"
+                @change="toggleCategory(category.id)"
+                :disabled="isSubmitting"
+                class="w-4 h-4 accent-primary"
+              />
+              <span class="text-sm text-white">
+                {{ category.name }}
+                <span v-if="category.distance" class="text-text-muted">
+                  - {{ category.distance }}K
+                </span>
+              </span>
+            </label>
+          </div>
+          <p v-else class="text-xs text-text-muted italic">
+            Este evento ainda não possui categorias cadastradas.
+          </p>
+        </div>
       </form>
 
       <!-- Footer -->
@@ -309,6 +352,7 @@ const ticketTypeId = computed(() => route.params.ticketTypeId);
 const isEditMode = computed(() => !!ticketTypeId.value);
 
 const eventName = ref("Carregando...");
+const availableCategories = ref([]);
 const priceInReais = ref("");
 const form = ref({
   name: "",
@@ -318,7 +362,17 @@ const form = ref({
   start_sale: "",
   end_sale: "",
   active: true,
+  category_ids: [],
 });
+
+const toggleCategory = (categoryId) => {
+  const index = form.value.category_ids.indexOf(categoryId);
+  if (index === -1) {
+    form.value.category_ids.push(categoryId);
+  } else {
+    form.value.category_ids.splice(index, 1);
+  }
+};
 
 const errors = ref({});
 const isSubmitting = ref(false);
@@ -342,6 +396,7 @@ const fetchEventName = async () => {
   try {
     const response = await axios.get(`/admin/events/${eventId.value}`);
     eventName.value = response.data.data.title;
+    availableCategories.value = response.data.data.categories || [];
   } catch (error) {
     console.error("Erro ao buscar evento:", error);
     eventName.value = "Evento";
@@ -367,6 +422,7 @@ const fetchTicketType = async () => {
       start_sale: ticketType.start_sale || "",
       end_sale: ticketType.end_sale || "",
       active: ticketType.active ?? true,
+      category_ids: ticketType.category_ids || [],
     };
     priceInReais.value = centsToReais(ticketType.price_cents || 0);
   } catch (error) {
@@ -390,6 +446,7 @@ const handleSubmit = async () => {
       start_sale: form.value.start_sale || undefined,
       end_sale: form.value.end_sale || undefined,
       active: form.value.active,
+      category_ids: form.value.category_ids,
     };
 
     if (isEditMode.value) {

@@ -89,6 +89,7 @@ class EventController extends Controller
                 $query->where('active', true)
                     ->where(fn ($q) => $q->whereNull('start_sale')->orWhere('start_sale', '<=', now()))
                     ->where(fn ($q) => $q->whereNull('end_sale')->orWhere('end_sale', '>=', now()))
+                    ->with('categories:id')
                     ->withCount([
                         'orderItems as sold_count' => function ($q) {
                             $q->whereHas('order', function ($oq) {

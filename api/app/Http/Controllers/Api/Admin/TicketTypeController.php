@@ -18,6 +18,7 @@ class TicketTypeController extends Controller
     public function index(Request $request, Event $event)
     {
         $ticketTypes = TicketType::where('event_id', $event->id)
+            ->with('categories')
             ->orderBy('name')
             ->paginate(20);
 
@@ -32,9 +33,14 @@ class TicketTypeController extends Controller
         $validated = $request->validated();
         $validated['event_id'] = $event->id;
 
-        $ticketType = TicketType::create($validated);
+        // category_ids não é coluna — sincroniza no pivot após criar
+        $categoryIds = $validated['category_ids'] ?? [];
+        unset($validated['category_ids']);
 
-        return (new TicketTypeResource($ticketType))
+        $ticketType = TicketType::create($validated);
+        $ticketType->categories()->sync($categoryIds);
+
+        return (new TicketTypeResource($ticketType->load('categories')))
             ->response()
             ->setStatusCode(201);
     }
@@ -47,11 +53,11 @@ class TicketTypeController extends Controller
         // Verificar se o ticket type pertence ao evento
         if ($ticketType->event_id !== $event->id) {
             return response()->json([
-                'message' => 'Este tipo de ingresso não pertence a este evento.'
+                'message' => 'Este tipo de ingresso não pertence a este evento.',
             ], 404);
         }
 
-        return new TicketTypeResource($ticketType);
+        return new TicketTypeResource($ticketType->load('categories'));
     }
 
     /**
@@ -62,14 +68,24 @@ class TicketTypeController extends Controller
         // Verificar se o ticket type pertence ao evento
         if ($ticketType->event_id !== $event->id) {
             return response()->json([
-                'message' => 'Este tipo de ingresso não pertence a este evento.'
+                'message' => 'Este tipo de ingresso não pertence a este evento.',
             ], 404);
         }
 
         $validated = $request->validated();
+
+        // category_ids não é coluna — sincroniza no pivot quando enviado
+        $syncCategories = array_key_exists('category_ids', $validated);
+        $categoryIds = $validated['category_ids'] ?? [];
+        unset($validated['category_ids']);
+
         $ticketType->update($validated);
 
-        return new TicketTypeResource($ticketType);
+        if ($syncCategories) {
+            $ticketType->categories()->sync($categoryIds);
+        }
+
+        return new TicketTypeResource($ticketType->load('categories'));
     }
 
     /**
@@ -80,24 +96,24 @@ class TicketTypeController extends Controller
         // Verificar se o ticket type pertence ao evento
         if ($ticketType->event_id !== $event->id) {
             return response()->json([
-                'message' => 'Este tipo de ingresso não pertence a este evento.'
+                'message' => 'Este tipo de ingresso não pertence a este evento.',
             ], 404);
         }
 
         // Verificar se existem inscrições vinculadas
         $orderItemsCount = $ticketType->orderItems()->count();
-        
+
         if ($orderItemsCount > 0) {
             return response()->json([
                 'message' => "Não é possível excluir este tipo de ingresso pois existem {$orderItemsCount} inscrições vinculadas.",
-                'order_items_count' => $orderItemsCount
+                'order_items_count' => $orderItemsCount,
             ], 422);
         }
 
         $ticketType->delete();
 
         return response()->json([
-            'message' => 'Tipo de ingresso excluído com sucesso.'
+            'message' => 'Tipo de ingresso excluído com sucesso.',
         ], 200);
     }
 }

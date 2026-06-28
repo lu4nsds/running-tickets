@@ -39,6 +39,8 @@ class StoreTicketTypeRequest extends FormRequest
             'end_sale' => ['nullable', 'date', 'after_or_equal:start_sale'],
             'attributes' => ['nullable', 'array'],
             'active' => ['boolean'],
+            'category_ids' => ['nullable', 'array'],
+            'category_ids.*' => ['integer', Rule::exists('categories', 'id')->where('event_id', $eventId)],
         ];
     }
 
@@ -61,6 +63,8 @@ class StoreTicketTypeRequest extends FormRequest
             'end_sale.date' => 'A data de fim das vendas deve ser uma data válida.',
             'end_sale.after_or_equal' => 'A data de fim das vendas deve ser posterior ou igual à data de início.',
             'attributes.array' => 'Os atributos devem ser um objeto JSON.',
+            'category_ids.array' => 'As categorias devem ser uma lista.',
+            'category_ids.*.exists' => 'Uma das categorias selecionadas não pertence a este evento.',
         ];
     }
 
@@ -69,7 +73,7 @@ class StoreTicketTypeRequest extends FormRequest
      */
     protected function prepareForValidation(): void
     {
-        if (!$this->has('currency')) {
+        if (! $this->has('currency')) {
             $this->merge(['currency' => 'BRL']);
         }
     }

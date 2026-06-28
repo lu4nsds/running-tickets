@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\OrderStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class TicketType extends Model
 {
@@ -47,11 +48,21 @@ class TicketType extends Model
     }
 
     /**
+     * Categorias vinculadas a este tipo de ingresso.
+     *
+     * Quando vazio, o checkout libera todas as categorias ativas do evento.
+     */
+    public function categories(): BelongsToMany
+    {
+        return $this->belongsToMany(Category::class, 'ticket_type_categories');
+    }
+
+    /**
      * Verifica se este tipo de ingresso está disponível para compra
      */
     public function isAvailableForPurchase(): bool
     {
-        if (!$this->active) {
+        if (! $this->active) {
             return false;
         }
 
@@ -87,13 +98,13 @@ class TicketType extends Model
             ->whereHas('order', function ($query) {
                 $query->where(function ($q) {
                     $q->where('status', OrderStatus::PAID->value)
-                      ->orWhere(function ($q2) {
-                          $q2->whereIn('status', [
-                              OrderStatus::PENDING->value,
-                              OrderStatus::PROCESSING->value,
-                              OrderStatus::FAILED->value,
-                          ])->where('reserved_until', '>', now());
-                      });
+                        ->orWhere(function ($q2) {
+                            $q2->whereIn('status', [
+                                OrderStatus::PENDING->value,
+                                OrderStatus::PROCESSING->value,
+                                OrderStatus::FAILED->value,
+                            ])->where('reserved_until', '>', now());
+                        });
                 });
             })
             ->count();
