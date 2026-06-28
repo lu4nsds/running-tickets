@@ -1122,7 +1122,11 @@ async function fetchInstallments(bin) {
 
         if (result?.length) {
             // Correto: usar payer_costs, não installments
-            installments.value = result[0].payer_costs || [];
+            const maxInstallments =
+                Number(import.meta.env.VITE_MERCADOPAGO_MAX_INSTALLMENTS) || 3;
+            installments.value = (result[0].payer_costs || []).filter(
+                (c) => c.installments <= maxInstallments,
+            );
             selectedInstallment.value = installments.value[0] || null;
         } else {
             installments.value = [];

@@ -45,6 +45,7 @@ class MercadoPagoService
             $isLocal = str_contains($appUrl, 'localhost') || str_contains($appUrl, '127.0.0.1');
 
             unset($payer['phone']);
+            $installments = min($installments, (int) config('mercadopago.max_installments', 3));
             $payload = [
                 'transaction_amount' => (float) ($amountCents / 100),
                 'token' => $token,

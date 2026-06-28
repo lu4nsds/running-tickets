@@ -18,7 +18,7 @@ class ProcessPaymentRequest extends FormRequest
             'payment_method' => ['required', 'in:credit_card,debit_card,pix'],
             'token' => ['required_if:payment_method,credit_card,debit_card', 'nullable', 'string'],
             'payment_method_id' => ['required_if:payment_method,credit_card,debit_card', 'nullable', 'string'],
-            'installments' => ['nullable', 'integer', 'min:1', 'max:12'],
+            'installments' => ['nullable', 'integer', 'min:1', 'max:'.config('mercadopago.max_installments', 3)],
             'payer' => ['required', 'array'],
             'payer.email' => ['required', 'email', 'regex:/^[\x00-\x7F]+$/'],
             'payer.phone' => ['required', 'string', 'max:20'],
@@ -34,6 +34,7 @@ class ProcessPaymentRequest extends FormRequest
             'payer.email.regex' => 'O e-mail deve conter apenas caracteres ASCII (sem acentos).',
             'payment_method.in' => 'Método de pagamento inválido.',
             'token.required_if' => 'Token do cartão é obrigatório para pagamentos com cartão.',
+            'installments.max' => 'O número máximo de parcelas permitido é :max.',
         ];
     }
 }
