@@ -320,7 +320,7 @@
               <span class="text-sm text-white">
                 {{ category.name }}
                 <span v-if="category.distance" class="text-text-muted">
-                  - {{ category.distance }}K
+                  - {{ parseFloat(category.distance) }}km
                 </span>
               </span>
             </label>

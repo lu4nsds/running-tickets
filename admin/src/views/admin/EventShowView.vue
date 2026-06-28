@@ -378,7 +378,8 @@
                                                     formatDistance(
                                                         category.distance,
                                                     )
-                                                }}k
+                                                }}
+                                                km
                                             </span>
                                         </td>
                                         <td class="py-3">

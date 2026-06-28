@@ -143,9 +143,9 @@
                                             :value="category.id"
                                         >
                                             {{ category.name }}
-                                            <span v-if="category.distance">
-                                                - {{ category.distance }}K
-                                            </span>
+                                            <template v-if="category.distance">
+                                                - {{ parseFloat(category.distance) }}km
+                                            </template>
                                         </option>
                                     </select>
                                     <p
