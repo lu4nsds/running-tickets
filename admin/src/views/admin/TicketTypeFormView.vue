@@ -230,6 +230,35 @@
           </p>
         </div>
 
+        <!-- Tamanho de Camiseta -->
+        <div
+          class="flex items-center justify-between p-4 bg-surface/50 rounded-lg border border-surface-elevated"
+        >
+          <div class="flex items-center gap-3">
+            <span class="material-symbols-outlined text-primary">
+              checkroom
+            </span>
+            <div>
+              <p class="text-sm font-bold text-white">Tamanho de Camiseta</p>
+              <p class="text-xs text-text-muted">
+                Permite que o participante selecione o tamanho da camiseta no
+                checkout.
+              </p>
+            </div>
+          </div>
+          <label class="relative inline-flex items-center cursor-pointer">
+            <input
+              v-model="form.allows_shirt_size"
+              type="checkbox"
+              class="sr-only peer"
+              :disabled="isSubmitting"
+            />
+            <div
+              class="w-11 h-6 bg-surface-elevated rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-text-muted after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary peer-checked:after:bg-background"
+            ></div>
+          </label>
+        </div>
+
         <!-- Status -->
         <div
           class="flex items-center justify-between p-4 bg-surface/50 rounded-lg border border-surface-elevated"
@@ -362,6 +391,7 @@ const form = ref({
   start_sale: "",
   end_sale: "",
   active: true,
+  allows_shirt_size: false,
   category_ids: [],
 });
 
@@ -422,6 +452,7 @@ const fetchTicketType = async () => {
       start_sale: ticketType.start_sale || "",
       end_sale: ticketType.end_sale || "",
       active: ticketType.active ?? true,
+      allows_shirt_size: ticketType.allows_shirt_size ?? false,
       category_ids: ticketType.category_ids || [],
     };
     priceInReais.value = centsToReais(ticketType.price_cents || 0);
@@ -446,6 +477,7 @@ const handleSubmit = async () => {
       start_sale: form.value.start_sale || undefined,
       end_sale: form.value.end_sale || undefined,
       active: form.value.active,
+      allows_shirt_size: form.value.allows_shirt_size,
       category_ids: form.value.category_ids,
     };
 

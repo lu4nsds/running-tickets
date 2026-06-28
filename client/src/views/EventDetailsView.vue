@@ -699,6 +699,7 @@ const selectedTickets = computed(() => {
             price_cents: ticket.price_cents,
             quantity: quantities.value[ticket.id] || 0,
             category_ids: ticket.category_ids || [],
+            allows_shirt_size: ticket.allows_shirt_size ?? false,
         }));
 });
 

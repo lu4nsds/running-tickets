@@ -280,7 +280,7 @@
                                     "
                                 />
 
-                                <div>
+                                <div v-if="allowsShirtSize(participant)">
                                     <label
                                         class="block text-sm font-medium text-slate-300 mb-2"
                                     >
@@ -547,6 +547,14 @@ function categoriesForParticipant(participant) {
     return categories.value;
 }
 
+// Indica se o lote do participante oferece seleção de tamanho de camiseta.
+function allowsShirtSize(participant) {
+    const ticket = selectedTickets.value.find(
+        (t) => t.id === participant.ticket_type_id,
+    );
+    return ticket?.allows_shirt_size ?? false;
+}
+
 const isFormValid = computed(() => {
     return participants.value.every(
         (p) => p.name && p.email && p.phone && p.cpf && isValidBirthdate(p.birthdate) && p.category_id,
@@ -758,7 +766,7 @@ async function proceedToPayment() {
                     phone: p.phone.replace(/\D/g, ""),
                     cpf: p.cpf.replace(/\D/g, ""),
                     birthdate: p.birthdate,
-                    shirt_size: p.shirt_size || null,
+                    shirt_size: allowsShirtSize(p) ? p.shirt_size || null : null,
                     city: p.city || null,
                     team: p.team || null,
                 },

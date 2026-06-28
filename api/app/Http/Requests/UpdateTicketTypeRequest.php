@@ -43,6 +43,7 @@ class UpdateTicketTypeRequest extends FormRequest
             'end_sale' => ['nullable', 'date', 'after_or_equal:start_sale'],
             'attributes' => ['nullable', 'array'],
             'active' => ['boolean'],
+            'allows_shirt_size' => ['boolean'],
             'category_ids' => ['nullable', 'array'],
             'category_ids.*' => ['integer', Rule::exists('categories', 'id')->where('event_id', $eventId)],
         ];

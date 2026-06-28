@@ -196,27 +196,39 @@ class StoreOrderRequest extends FormRequest
                 }
             }
 
-            // Valida o vínculo categoria <-> tipo de ingresso item a item.
-            // Se o lote possui categorias vinculadas, a categoria escolhida
-            // precisa estar entre elas. Lotes sem vínculo aceitam qualquer
-            // categoria ativa do evento (validada acima).
+            // Validações por item que dependem do tipo de ingresso:
+            //  - Vínculo categoria <-> lote: se o lote possui categorias
+            //    vinculadas, a categoria escolhida precisa estar entre elas
+            //    (lotes sem vínculo aceitam qualquer categoria ativa do evento).
+            //  - Tamanho de camiseta: só é aceito se o lote o oferecer.
             foreach (collect($this->input('items')) as $index => $item) {
                 $ticketTypeId = $item['ticket_type_id'] ?? null;
-                $categoryId = $item['category_id'] ?? null;
-
-                if (! $ticketTypeId || ! $categoryId) {
+                if (! $ticketTypeId) {
                     continue;
                 }
 
                 $ticketType = \App\Models\TicketType::with('categories:id')->find($ticketTypeId);
-                if (! $ticketType || $ticketType->categories->isEmpty()) {
+                if (! $ticketType) {
                     continue;
                 }
 
-                if (! $ticketType->categories->pluck('id')->contains((int) $categoryId)) {
+                $categoryId = $item['category_id'] ?? null;
+                if (
+                    $categoryId
+                    && $ticketType->categories->isNotEmpty()
+                    && ! $ticketType->categories->pluck('id')->contains((int) $categoryId)
+                ) {
                     $validator->errors()->add(
                         "items.{$index}.category_id",
                         'A categoria selecionada não está disponível para este tipo de ingresso.'
+                    );
+                }
+
+                $shirtSize = $item['participant_data']['shirt_size'] ?? null;
+                if ($shirtSize && ! $ticketType->allows_shirt_size) {
+                    $validator->errors()->add(
+                        "items.{$index}.participant_data.shirt_size",
+                        'Este tipo de ingresso não permite seleção de tamanho de camiseta.'
                     );
                 }
             }

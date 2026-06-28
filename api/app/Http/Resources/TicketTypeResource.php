@@ -30,6 +30,7 @@ class TicketTypeResource extends JsonResource
             'end_sale' => $this->end_sale,
             'attributes' => $this->attributes,
             'active' => $this->active,
+            'allows_shirt_size' => $this->allows_shirt_size,
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
 

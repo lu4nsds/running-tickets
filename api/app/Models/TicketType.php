@@ -22,6 +22,7 @@ class TicketType extends Model
         'end_sale',
         'attributes',
         'active',
+        'allows_shirt_size',
     ];
 
     protected $casts = [
@@ -29,6 +30,7 @@ class TicketType extends Model
         'start_sale' => 'datetime',
         'end_sale' => 'datetime',
         'active' => 'boolean',
+        'allows_shirt_size' => 'boolean',
     ];
 
     /**
