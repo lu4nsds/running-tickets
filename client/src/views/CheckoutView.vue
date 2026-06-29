@@ -280,14 +280,44 @@
                                     "
                                 />
 
+                                <div>
+                                    <label
+                                        class="block text-sm font-medium text-slate-300 mb-2"
+                                    >
+                                        Sexo
+                                        <span class="text-red-500">*</span>
+                                    </label>
+                                    <select
+                                        v-model="participant.gender"
+                                        required
+                                        class="w-full px-4 py-3 bg-surface-darker border border-border-dark rounded-lg text-white focus:outline-none focus:border-primary transition-colors"
+                                    >
+                                        <option value="">Selecione</option>
+                                        <option value="M">Masculino</option>
+                                        <option value="F">Feminino</option>
+                                    </select>
+                                    <p
+                                        v-if="
+                                            errors[`participants.${index}.gender`]
+                                        "
+                                        class="mt-1 text-sm text-red-500"
+                                    >
+                                        {{
+                                            errors[`participants.${index}.gender`]
+                                        }}
+                                    </p>
+                                </div>
+
                                 <div v-if="allowsShirtSize(participant)">
                                     <label
                                         class="block text-sm font-medium text-slate-300 mb-2"
                                     >
                                         Tamanho da Camisa
+                                        <span class="text-red-500">*</span>
                                     </label>
                                     <select
                                         v-model="participant.shirt_size"
+                                        required
                                         class="w-full px-4 py-3 bg-surface-darker border border-border-dark rounded-lg text-white focus:outline-none focus:border-primary transition-colors"
                                     >
                                         <option value="">Selecione</option>
@@ -298,6 +328,16 @@
                                         <option value="GG">GG</option>
                                         <option value="XG">XG</option>
                                     </select>
+                                    <p
+                                        v-if="
+                                            errors[`participants.${index}.shirt_size`]
+                                        "
+                                        class="mt-1 text-sm text-red-500"
+                                    >
+                                        {{
+                                            errors[`participants.${index}.shirt_size`]
+                                        }}
+                                    </p>
                                 </div>
 
                                 <div>
@@ -556,9 +596,7 @@ function allowsShirtSize(participant) {
 }
 
 const isFormValid = computed(() => {
-    return participants.value.every(
-        (p) => p.name && p.email && p.phone && p.cpf && isValidBirthdate(p.birthdate) && p.category_id,
-    );
+    return participants.value.every((p) => isParticipantComplete(p));
 });
 
 function isParticipantComplete(participant) {
@@ -568,7 +606,9 @@ function isParticipantComplete(participant) {
         participant.phone &&
         participant.cpf &&
         isValidBirthdate(participant.birthdate) &&
-        participant.category_id
+        participant.gender &&
+        participant.category_id &&
+        (!allowsShirtSize(participant) || participant.shirt_size)
     );
 }
 
@@ -662,6 +702,7 @@ function initializeParticipants() {
                 phone: "",
                 cpf: "",
                 birthdate: "",
+                gender: "",
                 shirt_size: "",
                 city: "",
                 team: "",
@@ -729,6 +770,19 @@ function validateForm() {
                 : "Ano inválido. Informe uma data de nascimento real";
             hasErrors = true;
         }
+
+        // Sexo
+        if (!participant.gender) {
+            errors.value[`participants.${index}.gender`] = "Selecione o sexo";
+            hasErrors = true;
+        }
+
+        // Tamanho da camisa (obrigatório quando o lote oferece)
+        if (allowsShirtSize(participant) && !participant.shirt_size) {
+            errors.value[`participants.${index}.shirt_size`] =
+                "Selecione o tamanho da camisa";
+            hasErrors = true;
+        }
     });
 
     return !hasErrors;
@@ -766,6 +820,7 @@ async function proceedToPayment() {
                     phone: p.phone.replace(/\D/g, ""),
                     cpf: p.cpf.replace(/\D/g, ""),
                     birthdate: p.birthdate,
+                    gender: p.gender,
                     shirt_size: allowsShirtSize(p) ? p.shirt_size || null : null,
                     city: p.city || null,
                     team: p.team || null,

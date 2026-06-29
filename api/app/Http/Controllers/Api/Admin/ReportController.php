@@ -38,7 +38,7 @@ class ReportController extends Controller
 
             $sheet->setCellValue("A{$rowNum}", str_pad($index + 1, $pad, '0', STR_PAD_LEFT));
             $sheet->setCellValue("B{$rowNum}", $participant['name'] ?? null);
-            $sheet->setCellValue("C{$rowNum}", $this->resolveGender($category?->gender));
+            $sheet->setCellValue("C{$rowNum}", $this->resolveGender($participant['gender'] ?? null));
             $sheet->setCellValue("E{$rowNum}", $participant['team'] ?? null);
             $sheet->setCellValue("F{$rowNum}", $category ? $this->formatDistance($category->distance) : null);
             $sheet->setCellValue("G{$rowNum}", $category?->name ?? null);

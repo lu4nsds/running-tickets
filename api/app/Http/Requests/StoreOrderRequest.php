@@ -66,6 +66,7 @@ class StoreOrderRequest extends FormRequest
                 },
             ],
             'items.*.participant_data.birthdate' => ['required', 'date', 'before:today'],
+            'items.*.participant_data.gender' => ['required', 'string', 'in:M,F'],
             'items.*.participant_data.shirt_size' => ['nullable', 'string', 'in:PP,P,M,G,GG,XG'],
             'items.*.participant_data.city' => ['nullable', 'string', 'max:255'],
             'items.*.participant_data.team' => ['nullable', 'string', 'max:255'],
@@ -100,6 +101,8 @@ class StoreOrderRequest extends FormRequest
             'items.*.participant_data.birthdate.required' => 'A data de nascimento é obrigatória.',
             'items.*.participant_data.birthdate.date' => 'A data de nascimento deve ser uma data válida.',
             'items.*.participant_data.birthdate.before' => 'A data de nascimento deve ser anterior a hoje.',
+            'items.*.participant_data.gender.required' => 'O sexo é obrigatório.',
+            'items.*.participant_data.gender.in' => 'O sexo deve ser Masculino ou Feminino.',
             'items.*.participant_data.shirt_size.in' => 'O tamanho da camisa deve ser PP, P, M, G, GG ou XG.',
             'items.*.participant_data.phone.required' => 'O telefone do participante é obrigatório.',
             'items.*.participant_data.phone.max' => 'O telefone do participante não pode ter mais de 20 caracteres.',
@@ -229,6 +232,13 @@ class StoreOrderRequest extends FormRequest
                     $validator->errors()->add(
                         "items.{$index}.participant_data.shirt_size",
                         'Este tipo de ingresso não permite seleção de tamanho de camiseta.'
+                    );
+                }
+
+                if (! $shirtSize && $ticketType->allows_shirt_size) {
+                    $validator->errors()->add(
+                        "items.{$index}.participant_data.shirt_size",
+                        'O tamanho da camisa é obrigatório para este tipo de ingresso.'
                     );
                 }
             }
