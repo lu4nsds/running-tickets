@@ -216,7 +216,7 @@
             <div class="info-grid">
                 <div class="info-row">
                     <div class="info-label">Data:</div>
-                    <div class="info-value">{{ $event->date_start->format('d/m/Y') }} às {{ $event->date_start->format('H:i') }}</div>
+                    <div class="info-value">{{ $event->date_start->setLocalTimezone()->format('d/m/Y') }} às {{ $event->date_start->setLocalTimezone()->format('H:i') }}</div>
                 </div>
                 <div class="info-row">
                     <div class="info-label">Local:</div>
@@ -257,7 +257,7 @@
         <!-- Footer -->
         <div class="footer">
             <p>Running Tickets - Sistema de Ingressos</p>
-            <p>Ingresso gerado em {{ now()->format('d/m/Y H:i:s') }}</p>
+            <p>Ingresso gerado em {{ now()->setLocalTimezone()->format('d/m/Y H:i:s') }}</p>
         </div>
     </div>
 </body>

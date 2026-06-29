@@ -29,7 +29,7 @@
             <div class="info-box">
                 <h3>📋 Detalhes do Evento</h3>
                 <p><strong>Evento:</strong> {{ $orderItem->order->event->title }}</p>
-                <p><strong>Data:</strong> {{ $orderItem->order->event->date_start->format('d/m/Y H:i') }}</p>
+                <p><strong>Data:</strong> {{ $orderItem->order->event->date_start->setLocalTimezone()->format('d/m/Y H:i') }}</p>
                 <p><strong>Local:</strong> {{ $orderItem->order->event->venue }}, {{ $orderItem->order->event->city }}</p>
             </div>
             

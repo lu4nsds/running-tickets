@@ -30,7 +30,7 @@
                 <h3>Detalhes do Pedido</h3>
                 <p><strong>Número:</strong> {{ $order->reference }}</p>
                 <p><strong>Evento:</strong> {{ $order->event->title }}</p>
-                <p><strong>Data:</strong> {{ $order->event->date_start->format('d/m/Y H:i') }}</p>
+                <p><strong>Data:</strong> {{ $order->event->date_start->setLocalTimezone()->format('d/m/Y H:i') }}</p>
             </div>
 
             <p>Seus ingressos continuam reservados — você pode tentar pagar novamente clicando no botão abaixo:</p>
@@ -42,7 +42,7 @@
             @if($reservedUntil)
                 <div class="reservation">
                     <strong>Atenção:</strong> seus ingressos estão reservados até
-                    <strong>{{ $reservedUntil->format('d/m/Y H:i') }}</strong>.
+                    <strong>{{ $reservedUntil->setLocalTimezone()->format('d/m/Y H:i') }}</strong>.
                     Após esse horário a reserva é liberada para outros compradores.
                 </div>
             @endif

@@ -73,6 +73,19 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Display Timezone
+    |--------------------------------------------------------------------------
+    |
+    | Timezone used when presenting dates to end users (emails, PDFs). The
+    | application stores all timestamps in UTC; this value only controls how
+    | they are rendered. Defaults to Brazil (GMT-3).
+    |
+    */
+
+    'display_timezone' => 'America/Sao_Paulo',
+
+    /*
+    |--------------------------------------------------------------------------
     | Application Locale Configuration
     |--------------------------------------------------------------------------
     |

@@ -29,7 +29,7 @@
                 <h3>📋 Detalhes do Pedido</h3>
                 <p><strong>Número:</strong> {{ $order->reference }}</p>
                 <p><strong>Evento:</strong> {{ $order->event->title }}</p>
-                <p><strong>Data:</strong> {{ $order->event->date_start->format('d/m/Y H:i') }}</p>
+                <p><strong>Data:</strong> {{ $order->event->date_start->setLocalTimezone()->format('d/m/Y H:i') }}</p>
                 <p><strong>Local:</strong> {{ $order->event->venue }}, {{ $order->event->city }}</p>
                 <p><strong>Total Pago:</strong> {{ $order->total_formatted }}</p>
             </div>
