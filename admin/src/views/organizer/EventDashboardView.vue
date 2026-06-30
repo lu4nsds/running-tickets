@@ -83,9 +83,9 @@
                         <div class="group relative ml-1">
                             <span class="material-symbols-outlined text-text-muted text-sm cursor-help">info</span>
                             <div class="absolute bottom-full left-0 mb-2 hidden group-hover:block z-10">
-                                <div class="bg-slate-900 text-white text-xs rounded-lg px-3 py-2 w-52 shadow-xl border border-slate-700">
+                                <div class="bg-slate-900 text-white text-xs rounded-lg px-3 py-2 w-56 shadow-xl border border-slate-700">
                                     <p class="font-bold mb-1">Receita Líquida</p>
-                                    <p class="text-slate-300">Após taxas do Mercado Pago ({{ formatCurrency(dashboardData.summary.total_fees * 100 || 0) }} em taxas)</p>
+                                    <p class="text-slate-300">Valor a receber após a comissão da plataforma ({{ formatCurrency(dashboardData.summary.total_fees * 100 || 0) }}).</p>
                                 </div>
                                 <div class="w-2 h-2 bg-slate-900 border-b border-r border-slate-700 absolute top-0 left-2 translate-y-1/2 rotate-45"></div>
                             </div>
@@ -93,23 +93,15 @@
                     </div>
                 </MetricCard>
 
-                <!-- Total Orders -->
+                <!-- Paid Orders -->
                 <MetricCard
-                    title="Total de Pedidos"
+                    title="Pedidos Pagos"
                     :value="
-                        formatNumber(dashboardData.summary?.total_orders || 0)
+                        formatNumber(dashboardData.summary?.paid_orders || 0)
                     "
                     icon="shopping_cart"
                 >
                     <div class="flex items-center gap-4 text-sm mt-2">
-                        <span class="text-primary">
-                            {{
-                                formatNumber(
-                                    dashboardData.summary?.paid_orders || 0,
-                                )
-                            }}
-                            pagos
-                        </span>
                         <span class="text-text-muted">
                             {{
                                 formatNumber(
@@ -117,6 +109,14 @@
                                 )
                             }}
                             pendentes
+                        </span>
+                        <span class="text-text-muted">
+                            {{
+                                formatNumber(
+                                    dashboardData.summary?.refunded_orders || 0,
+                                )
+                            }}
+                            reembolsados
                         </span>
                     </div>
                 </MetricCard>
@@ -150,7 +150,21 @@
                             ? 'up'
                             : 'down'
                     "
-                />
+                >
+                    <div class="flex items-center gap-1 mt-2 text-sm">
+                        <span class="text-text-muted">Pagos vs. tentativas</span>
+                        <div class="group relative ml-1">
+                            <span class="material-symbols-outlined text-text-muted text-sm cursor-help">info</span>
+                            <div class="absolute bottom-full left-0 mb-2 hidden group-hover:block z-10">
+                                <div class="bg-slate-900 text-white text-xs rounded-lg px-3 py-2 w-60 shadow-xl border border-slate-700">
+                                    <p class="font-bold mb-1">Taxa de Conversão</p>
+                                    <p class="text-slate-300">Pedidos pagos ÷ tentativas reais (pagos + pendentes + cancelados + falhos). Reembolsos e pedidos em processamento não entram no cálculo.</p>
+                                </div>
+                                <div class="w-2 h-2 bg-slate-900 border-b border-r border-slate-700 absolute top-0 left-2 translate-y-1/2 rotate-45"></div>
+                            </div>
+                        </div>
+                    </div>
+                </MetricCard>
             </div>
 
             <!-- Charts -->
@@ -444,12 +458,10 @@ const daysUntilEvent = computed(() => {
 // Demographics Chart (Donut)
 const demographicsChartSeries = computed(() => {
     const demographics = dashboardData.value?.demographics;
-    if (!demographics) return [0, 0, 0];
-    return [
-        demographics.male || 0,
-        demographics.female || 0,
-        demographics.other || 0,
-    ];
+    if (!demographics) return [0, 0];
+    const series = [demographics.male || 0, demographics.female || 0];
+    if (demographics.other > 0) series.push(demographics.other);
+    return series;
 });
 
 const demographicsChartOptions = computed(() => {
@@ -458,6 +470,13 @@ const demographicsChartOptions = computed(() => {
         (demographics?.male || 0) +
         (demographics?.female || 0) +
         (demographics?.other || 0);
+
+    const labels = ["Masculino", "Feminino"];
+    const colors = ["#00E676", "#3B82F6"];
+    if (demographics?.other > 0) {
+        labels.push("Outro");
+        colors.push("#94A3B8");
+    }
 
     return {
         chart: {
@@ -480,8 +499,8 @@ const demographicsChartOptions = computed(() => {
         theme: {
             mode: "dark",
         },
-        labels: ["Masculino", "Feminino", "Outro"],
-        colors: ["#00E676", "#3B82F6", "#94A3B8"],
+        labels,
+        colors,
         plotOptions: {
             pie: {
                 startAngle: 0,
@@ -581,7 +600,7 @@ const demographicsChartOptions = computed(() => {
                 formatter: (val) => {
                     const percent =
                         total > 0 ? ((val / total) * 100).toFixed(1) : 0;
-                    return `${val} tickets (${percent}%)`;
+                    return `${val} participantes (${percent}%)`;
                 },
                 title: {
                     formatter: (seriesName) => seriesName,
