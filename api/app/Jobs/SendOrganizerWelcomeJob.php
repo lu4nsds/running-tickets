@@ -3,8 +3,8 @@
 namespace App\Jobs;
 
 use App\Mail\OrganizerWelcomeMail;
+use App\Models\AdminUser;
 use App\Models\Organizer;
-use App\Models\User;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\Log;
@@ -16,10 +16,11 @@ class SendOrganizerWelcomeJob implements ShouldQueue
     use Queueable;
 
     public int $tries = 3;
+
     public int $timeout = 30;
 
     public function __construct(
-        public User $user,
+        public AdminUser $user,
         public Organizer $organizer,
         public string $token,
     ) {}
@@ -33,9 +34,9 @@ class SendOrganizerWelcomeJob implements ShouldQueue
     public function failed(Throwable $e): void
     {
         Log::error('SendOrganizerWelcomeJob failed', [
-            'user_id'  => $this->user->id,
-            'email'    => $this->user->email,
-            'error'    => $e->getMessage(),
+            'user_id' => $this->user->id,
+            'email' => $this->user->email,
+            'error' => $e->getMessage(),
         ]);
     }
 }

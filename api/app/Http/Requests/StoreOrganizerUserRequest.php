@@ -3,7 +3,7 @@
 namespace App\Http\Requests;
 
 use App\Enums\OrganizerRole;
-use App\Models\User;
+use App\Models\AdminUser;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -16,12 +16,12 @@ class StoreOrganizerUserRequest extends FormRequest
 
     public function rules(): array
     {
-        $userExists = User::where('email', $this->email)->exists();
+        $userExists = AdminUser::where('email', $this->email)->exists();
 
         return [
             'email' => ['required', 'email', 'max:255'],
-            'role'  => ['required', Rule::in(OrganizerRole::values())],
-            'name'  => [Rule::requiredIf(!$userExists), 'nullable', 'string', 'max:255'],
+            'role' => ['required', Rule::in(OrganizerRole::values())],
+            'name' => [Rule::requiredIf(! $userExists), 'nullable', 'string', 'max:255'],
         ];
     }
 
@@ -29,11 +29,11 @@ class StoreOrganizerUserRequest extends FormRequest
     {
         return [
             'email.required' => 'O e-mail é obrigatório.',
-            'email.email'    => 'O e-mail deve ser um endereço válido.',
-            'role.required'  => 'O cargo é obrigatório.',
-            'role.in'        => 'O cargo deve ser admin ou staff.',
-            'name.required'  => 'O nome é obrigatório para novos usuários.',
-            'name.max'       => 'O nome não pode ter mais de 255 caracteres.',
+            'email.email' => 'O e-mail deve ser um endereço válido.',
+            'role.required' => 'O cargo é obrigatório.',
+            'role.in' => 'O cargo deve ser admin ou staff.',
+            'name.required' => 'O nome é obrigatório para novos usuários.',
+            'name.max' => 'O nome não pode ter mais de 255 caracteres.',
         ];
     }
 }

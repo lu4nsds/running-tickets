@@ -36,9 +36,9 @@ api.interceptors.response.use(
                 const authStore = useAuthStore();
                 if (authStore.token) {
                     authStore.logout();
-                    // /auth/me → guard já trata o redirect com to.fullPath correto
-                    // /auth/logout → best-effort, não deve gerar redirect loop
-                    const skipRedirect = ['/auth/me', '/auth/logout'].includes(error.config?.url);
+                    // /admin/auth/me → guard já trata o redirect com to.fullPath correto
+                    // /admin/auth/logout → best-effort, não deve gerar redirect loop
+                    const skipRedirect = ['/admin/auth/me', '/admin/auth/logout'].includes(error.config?.url);
                     if (!skipRedirect) {
                         const redirect = router.currentRoute.value.fullPath;
                         router.push({ path: '/login', query: { redirect, reason: 'expired' } });

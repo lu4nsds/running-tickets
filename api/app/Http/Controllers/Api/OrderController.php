@@ -37,23 +37,11 @@ class OrderController extends Controller
     {
         $user = $request->user();
 
-        $query = Order::with(['event', 'organizer', 'items.ticketType', 'items.category', 'items.ticket', 'latestCancellation']);
-
-        // Super admin vê todos os pedidos
-        if ($user->isSuperAdmin()) {
-            // Sem filtro - vê tudo
-        }
-        // Organizador vê pedidos dos seus eventos
-        elseif ($user->organizers()->exists()) {
-            $organizerIds = $user->organizers->pluck('id');
-            $query->whereIn('organizer_id', $organizerIds);
-        }
-        // Usuário comum vê apenas seus próprios pedidos
-        else {
-            $query->where('user_id', $user->id);
-        }
-
-        $orders = $query->orderBy('created_at', 'desc')->paginate(15);
+        // Portal: o comprador vê apenas os seus próprios pedidos
+        $orders = Order::with(['event', 'organizer', 'items.ticketType', 'items.category', 'items.ticket', 'latestCancellation'])
+            ->where('user_id', $user->id)
+            ->orderBy('created_at', 'desc')
+            ->paginate(15);
 
         return OrderResource::collection($orders)->response();
     }
@@ -75,17 +63,7 @@ class OrderController extends Controller
             ], 401);
         }
 
-        // Super admin pode ver todos os pedidos
-        if ($user->isSuperAdmin()) {
-            return OrderResource::make($order)->response();
-        }
-
-        // Organizador pode ver pedidos dos eventos do seu organizador
-        if ($user->canAccessOrganizer($order->organizer_id)) {
-            return OrderResource::make($order)->response();
-        }
-
-        // Usuário autenticado só vê seus próprios pedidos
+        // Portal: o comprador só vê os seus próprios pedidos
         if ($order->user_id === $user->id) {
             return OrderResource::make($order)->response();
         }
@@ -423,10 +401,8 @@ class OrderController extends Controller
     {
         $user = $request->user();
 
-        // Verifica autorização (mesma lógica do show)
-        if (! $user->isSuperAdmin()
-            && ! $user->canAccessOrganizer($order->organizer_id)
-            && $order->user_id !== $user->id) {
+        // Portal: o comprador só cancela os seus próprios pedidos
+        if ($order->user_id !== $user->id) {
             return response()->json([
                 'message' => 'Pedido não encontrado.',
             ], 404);

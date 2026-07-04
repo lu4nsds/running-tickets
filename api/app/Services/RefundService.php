@@ -4,10 +4,10 @@ namespace App\Services;
 
 use App\Enums\OrderCancellationStatus;
 use App\Enums\TicketStatus;
+use App\Models\AdminUser;
 use App\Models\Order;
 use App\Models\OrderCancellation;
 use App\Models\Ticket;
-use App\Models\User;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
@@ -25,7 +25,7 @@ class RefundService
      * exception propaga, a transação faz rollback e a solicitação NÃO é marcada
      * como aprovada.
      */
-    public function approve(OrderCancellation $request, User $reviewer): OrderCancellation
+    public function approve(OrderCancellation $request, AdminUser $reviewer): OrderCancellation
     {
         $order = $request->order;
 
@@ -62,7 +62,7 @@ class RefundService
      * Rejeita a solicitação sem tocar no gateway e reativa os ingressos que
      * haviam sido desativados enquanto a solicitação estava pendente.
      */
-    public function reject(OrderCancellation $request, User $reviewer, ?string $notes): OrderCancellation
+    public function reject(OrderCancellation $request, AdminUser $reviewer, ?string $notes): OrderCancellation
     {
         return DB::transaction(function () use ($request, $reviewer, $notes) {
             $request->update([

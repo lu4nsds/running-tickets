@@ -3,7 +3,7 @@
 namespace Database\Seeders;
 
 use App\Enums\UserRole;
-use App\Models\User;
+use App\Models\AdminUser;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -18,7 +18,7 @@ class AdminSeeder extends Seeder
         ];
 
         foreach ($admins as $admin) {
-            $user = User::firstOrCreate(
+            $user = AdminUser::firstOrCreate(
                 ['email' => $admin['email']],
                 [
                     'name' => $admin['name'],

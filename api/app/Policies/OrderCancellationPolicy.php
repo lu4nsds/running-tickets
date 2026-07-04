@@ -2,6 +2,7 @@
 
 namespace App\Policies;
 
+use App\Models\AdminUser;
 use App\Models\Order;
 use App\Models\User;
 
@@ -23,9 +24,9 @@ class OrderCancellationPolicy
     /**
      * Quem pode avaliar (aprovar/rejeitar) solicitações de cancelamento.
      *
-     * Apenas super admin.
+     * Apenas super admin (backoffice).
      */
-    public function review(User $user): bool
+    public function review(AdminUser $user): bool
     {
         return $user->isSuperAdmin();
     }

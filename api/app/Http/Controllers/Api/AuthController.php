@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Enums\UserRole;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\RegisterRequest;
 use App\Mail\VerifyEmailMail;
@@ -11,7 +10,6 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
-use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Laravel\Socialite\Facades\Socialite;
 
@@ -27,9 +25,6 @@ class AuthController extends Controller
             'email' => $request->email,
             'password' => Hash::make($request->password),
         ]);
-
-        // Atribuir role padrão 'user'
-        $user->assignRole(UserRole::USER->value);
 
         // Vincular pedidos feitos como convidado com o mesmo e-mail
         Order::where('buyer_email', $user->email)
@@ -55,34 +50,27 @@ class AuthController extends Controller
     public function login(Request $request)
     {
         $request->validate([
-            'email'    => 'required|email',
+            'email' => 'required|email',
             'password' => 'required',
-            'remember' => 'boolean',
-            'source'   => ['nullable', 'string', Rule::in(['admin', 'client'])],
         ]);
 
         $user = User::where('email', $request->email)->first();
 
-        if (!$user || !Hash::check($request->password, $user->password)) {
+        if (! $user || ! $user->password || ! Hash::check($request->password, $user->password)) {
             throw ValidationException::withMessages([
                 'email' => ['As credenciais fornecidas estão incorretas.'],
             ]);
         }
 
-        if ($request->source === 'client') {
-            $expiresAt = now()->addDays(30);
-        } elseif ($request->boolean('remember')) {
-            $expiresAt = now()->addDays(7);
-        } else {
-            $expiresAt = now()->addHours(8);
-        }
+        // Token de longa duração para o portal público
+        $expiresAt = now()->addDays(30);
 
         $token = $user->createToken('auth_token', ['*'], $expiresAt)->plainTextToken;
 
         return response()->json([
-            'user'         => $user->load('roles', 'organizers'),
+            'user' => $user,
             'access_token' => $token,
-            'token_type'   => 'Bearer',
+            'token_type' => 'Bearer',
         ]);
     }
 
@@ -103,7 +91,7 @@ class AuthController extends Controller
      */
     public function me(Request $request)
     {
-        return response()->json($request->user()->load('roles', 'organizers'));
+        return response()->json($request->user());
     }
 
     /**
@@ -123,13 +111,14 @@ class AuthController extends Controller
             $googleUser = Socialite::driver('google')->stateless()->user();
         } catch (\Exception $e) {
             \Log::error('Google OAuth callback error', ['message' => $e->getMessage()]);
-            return redirect(config('app.client_url') . '/auth/callback?error=oauth_failed');
+
+            return redirect(config('app.client_url').'/auth/callback?error=oauth_failed');
         }
 
         // Encontra por google_id, e-mail ou cria novo usuário
         $user = User::where('google_id', $googleUser->getId())->first();
 
-        if (!$user) {
+        if (! $user) {
             $user = User::where('email', $googleUser->getEmail())->first();
 
             if ($user) {
@@ -138,13 +127,11 @@ class AuthController extends Controller
             } else {
                 // Cria novo usuário sem senha
                 $user = User::create([
-                    'name'      => $googleUser->getName(),
-                    'email'     => $googleUser->getEmail(),
+                    'name' => $googleUser->getName(),
+                    'email' => $googleUser->getEmail(),
                     'google_id' => $googleUser->getId(),
-                    'password'  => null,
+                    'password' => null,
                 ]);
-
-                $user->assignRole(UserRole::USER->value);
 
                 // Vincula pedidos de guest com o mesmo e-mail
                 Order::where('buyer_email', $user->email)
@@ -156,6 +143,7 @@ class AuthController extends Controller
         $token = $user->createToken('auth_token')->plainTextToken;
 
         $frontendUrl = config('app.client_url');
+
         return redirect("{$frontendUrl}/auth/callback?token={$token}");
     }
 }

@@ -2,12 +2,12 @@
 
 namespace Tests\Feature\Orders;
 
+use App\Models\AdminUser;
 use App\Models\Event;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Organizer;
 use App\Models\TicketType;
-use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -15,12 +15,12 @@ class AdminOrderSearchTest extends TestCase
 {
     use RefreshDatabase;
 
-    private function makeSuperAdmin(): User
+    private function makeSuperAdmin(): AdminUser
     {
-        $user = User::factory()->create();
+        $user = AdminUser::factory()->create();
         \DB::table('roles')->insertOrIgnore(['name' => 'Super Admin', 'slug' => 'super_admin', 'created_at' => now(), 'updated_at' => now()]);
         $role = \DB::table('roles')->where('slug', 'super_admin')->first();
-        \DB::table('user_roles')->insertOrIgnore(['user_id' => $user->id, 'role_id' => $role->id]);
+        \DB::table('admin_user_roles')->insertOrIgnore(['admin_user_id' => $user->id, 'role_id' => $role->id]);
 
         return $user->fresh();
     }
@@ -50,7 +50,7 @@ class AdminOrderSearchTest extends TestCase
         $a = $this->makeOrder($event, $organizer, 'ORD-2026-AAA111', 'a@test.com', '11111111111');
         $this->makeOrder($event, $organizer, 'ORD-2026-BBB222', 'b@test.com', '22222222222');
 
-        $this->actingAs($admin, 'sanctum')
+        $this->actingAs($admin, 'admin')
             ->getJson("/api/admin/events/{$event->id}/orders?search=AAA111")
             ->assertStatus(200)
             ->assertJsonCount(1, 'data')
@@ -66,7 +66,7 @@ class AdminOrderSearchTest extends TestCase
         $this->makeOrder($event, $organizer, 'ORD-2026-AAA111', 'alice@test.com', '11111111111');
         $this->makeOrder($event, $organizer, 'ORD-2026-BBB222', 'bob@test.com', '22222222222');
 
-        $this->actingAs($admin, 'sanctum')
+        $this->actingAs($admin, 'admin')
             ->getJson("/api/admin/events/{$event->id}/orders?search=alice")
             ->assertStatus(200)
             ->assertJsonCount(1, 'data')
@@ -82,7 +82,7 @@ class AdminOrderSearchTest extends TestCase
         $this->makeOrder($event, $organizer, 'ORD-2026-AAA111', 'a@test.com', '12345678901');
         $this->makeOrder($event, $organizer, 'ORD-2026-BBB222', 'b@test.com', '99999999999');
 
-        $this->actingAs($admin, 'sanctum')
+        $this->actingAs($admin, 'admin')
             ->getJson('/api/admin/events/'.$event->id.'/orders?search=123.456.789-01')
             ->assertStatus(200)
             ->assertJsonCount(1, 'data')
@@ -100,7 +100,7 @@ class AdminOrderSearchTest extends TestCase
         $this->makeOrder($event, $organizer, 'ORD-2026-AB1CDE', 'a@test.com', '11111111111');
         $this->makeOrder($event, $organizer, 'ORD-2026-ZZ9YYY', 'b@test.com', '12121212121');
 
-        $this->actingAs($admin, 'sanctum')
+        $this->actingAs($admin, 'admin')
             ->getJson("/api/admin/events/{$event->id}/orders?search=AB1CDE")
             ->assertStatus(200)
             ->assertJsonCount(1, 'data')

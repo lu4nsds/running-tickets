@@ -3,9 +3,8 @@
 namespace Database\Seeders;
 
 use App\Enums\OrganizerRole;
-use App\Enums\UserRole;
+use App\Models\AdminUser;
 use App\Models\Organizer;
-use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 
@@ -14,14 +13,15 @@ class OrganizerUserSeeder extends Seeder
     public function run(): void
     {
         $organizer = Organizer::where('email', 'organizador@dev.local')->first();
-        
-        if (!$organizer) {
+
+        if (! $organizer) {
             $this->command->warn('⚠️  Organizador não encontrado. Execute o OrganizerSeeder primeiro.');
+
             return;
         }
 
         // Cria usuário João como admin do organizador
-        $joao = User::firstOrCreate(
+        $joao = AdminUser::firstOrCreate(
             ['email' => 'joao.org@teste.com'],
             [
                 'name' => 'João Organizador',
@@ -29,27 +29,18 @@ class OrganizerUserSeeder extends Seeder
             ]
         );
 
-        // Atribuir role 'user' (role padrão)
-        if (!$joao->roles()->exists()) {
-            $joao->assignRole(UserRole::USER->value);
-        }
-
         // Vincular ao organizador como admin (remove vínculos anteriores)
         $joao->organizers()->sync([]);
         $joao->organizers()->attach($organizer->id, ['role' => OrganizerRole::ADMIN->value]);
 
         // Cria usuário Maria como staff do organizador
-        $maria = User::firstOrCreate(
+        $maria = AdminUser::firstOrCreate(
             ['email' => 'maria.staff@teste.com'],
             [
                 'name' => 'Maria Staff',
                 'password' => Hash::make('senha123'),
             ]
         );
-
-        if (!$maria->roles()->exists()) {
-            $maria->assignRole(UserRole::USER->value);
-        }
 
         // Vincular ao organizador como staff (remove vínculos anteriores)
         $maria->organizers()->sync([]);

@@ -2,46 +2,34 @@
 
 namespace App\Models;
 
+use App\Enums\OrganizerRole;
 use App\Enums\UserRole;
-use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 
-class User extends Authenticatable implements MustVerifyEmail
+/**
+ * Usuário de backoffice (app admin): super admin ou admin/staff de organizador.
+ * Autenticado pelo guard `admin`. Não compra ingressos nem usa Google OAuth.
+ */
+class AdminUser extends Authenticatable
 {
-    /** @use HasFactory<\Database\Factories\UserFactory> */
+    /** @use HasFactory<\Database\Factories\AdminUserFactory> */
     use HasApiTokens, HasFactory, Notifiable;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var list<string>
-     */
     protected $fillable = [
         'name',
         'email',
         'password',
-        'google_id',
     ];
 
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var list<string>
-     */
     protected $hidden = [
         'password',
         'remember_token',
     ];
 
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
     protected function casts(): array
     {
         return [
@@ -51,20 +39,22 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /**
-     * Papéis globais do usuário
+     * Papéis globais do usuário de backoffice
      */
     public function roles(): BelongsToMany
     {
-        return $this->belongsToMany(Role::class, 'user_roles')
+        return $this->belongsToMany(Role::class, 'admin_user_roles')
             ->withTimestamps();
     }
 
     /**
-     * Pedidos do usuário
+     * Organizadores aos quais o usuário pertence (multi-tenant)
      */
-    public function orders()
+    public function organizers(): BelongsToMany
     {
-        return $this->hasMany(Order::class);
+        return $this->belongsToMany(Organizer::class, 'organizer_users', 'admin_user_id')
+            ->withPivot('role')
+            ->withTimestamps();
     }
 
     /**
@@ -105,12 +95,40 @@ class User extends Authenticatable implements MustVerifyEmail
 
     /**
      * Verifica se o usuário é super administrador
-     *
-     * Compradores do portal nunca são super admin (papéis de backoffice vivem
-     * em admin_users). Mantido para checagens seguras sob o guard client.
      */
     public function isSuperAdmin(): bool
     {
         return $this->hasRole(UserRole::SUPER_ADMIN->value);
+    }
+
+    /**
+     * Verifica se o usuário tem acesso a um organizador específico
+     */
+    public function canAccessOrganizer(int $organizerId): bool
+    {
+        return $this->isSuperAdmin()
+            || $this->organizers()->where('organizer_id', $organizerId)->exists();
+    }
+
+    /**
+     * Verifica se o usuário é admin de um organizador
+     */
+    public function isOrganizerAdmin(int $organizerId): bool
+    {
+        return $this->organizers()
+            ->where('organizer_id', $organizerId)
+            ->wherePivot('role', OrganizerRole::ADMIN->value)
+            ->exists();
+    }
+
+    /**
+     * Verifica se o usuário é staff de um organizador
+     */
+    public function isOrganizerStaff(int $organizerId): bool
+    {
+        return $this->organizers()
+            ->where('organizer_id', $organizerId)
+            ->wherePivot('role', OrganizerRole::STAFF->value)
+            ->exists();
     }
 }

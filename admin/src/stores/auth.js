@@ -85,7 +85,6 @@ export const useAuthStore = defineStore("auth", () => {
                 email,
                 password,
                 remember,
-                source: "admin",
             });
             const { access_token, user: userData } = response.data;
 

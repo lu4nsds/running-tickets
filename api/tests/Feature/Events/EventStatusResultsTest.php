@@ -3,11 +3,11 @@
 namespace Tests\Feature\Events;
 
 use App\Enums\EventStatus;
+use App\Models\AdminUser;
 use App\Models\Category;
 use App\Models\Event;
 use App\Models\Organizer;
 use App\Models\TicketType;
-use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -15,13 +15,13 @@ class EventStatusResultsTest extends TestCase
 {
     use RefreshDatabase;
 
-    private function makeSuperAdmin(): User
+    private function makeSuperAdmin(): AdminUser
     {
-        $user = User::factory()->create();
+        $user = AdminUser::factory()->create();
 
         \DB::table('roles')->insertOrIgnore(['name' => 'Super Admin', 'slug' => 'super_admin', 'created_at' => now(), 'updated_at' => now()]);
         $role = \DB::table('roles')->where('slug', 'super_admin')->first();
-        \DB::table('user_roles')->insertOrIgnore(['user_id' => $user->id, 'role_id' => $role->id]);
+        \DB::table('admin_user_roles')->insertOrIgnore(['admin_user_id' => $user->id, 'role_id' => $role->id]);
 
         return $user->fresh();
     }
@@ -92,7 +92,7 @@ class EventStatusResultsTest extends TestCase
         $admin = $this->makeSuperAdmin();
         $event = Event::factory()->create(['status' => EventStatus::ACTIVE->value]);
 
-        $this->actingAs($admin, 'sanctum')
+        $this->actingAs($admin, 'admin')
             ->putJson("/api/admin/events/{$event->id}", [
                 'status' => 'finished',
                 'results_url' => 'https://resultados.exemplo.com/prova',
@@ -107,7 +107,7 @@ class EventStatusResultsTest extends TestCase
         $admin = $this->makeSuperAdmin();
         $event = Event::factory()->create(['status' => EventStatus::ACTIVE->value]);
 
-        $this->actingAs($admin, 'sanctum')
+        $this->actingAs($admin, 'admin')
             ->putJson("/api/admin/events/{$event->id}", [
                 'results_url' => 'not-a-valid-url',
             ])
@@ -120,7 +120,7 @@ class EventStatusResultsTest extends TestCase
         $admin = $this->makeSuperAdmin();
         $organizer = Organizer::factory()->create();
 
-        $response = $this->actingAs($admin, 'sanctum')
+        $response = $this->actingAs($admin, 'admin')
             ->postJson('/api/admin/events', [
                 'organizer_id' => $organizer->id,
                 'title' => 'Corrida Nova',

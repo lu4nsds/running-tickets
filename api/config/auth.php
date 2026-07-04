@@ -40,6 +40,18 @@ return [
             'driver' => 'session',
             'provider' => 'users',
         ],
+
+        // Portal público (client) — tokens Sanctum sobre a tabela `users`
+        'client' => [
+            'driver' => 'sanctum',
+            'provider' => 'users',
+        ],
+
+        // Backoffice (admin) — tokens Sanctum sobre a tabela `admin_users`
+        'admin' => [
+            'driver' => 'sanctum',
+            'provider' => 'admin_users',
+        ],
     ],
 
     /*
@@ -65,10 +77,10 @@ return [
             'model' => env('AUTH_MODEL', App\Models\User::class),
         ],
 
-        // 'users' => [
-        //     'driver' => 'database',
-        //     'table' => 'users',
-        // ],
+        'admin_users' => [
+            'driver' => 'eloquent',
+            'model' => App\Models\AdminUser::class,
+        ],
     ],
 
     /*

@@ -4,12 +4,12 @@
  */
 export const API_ENDPOINTS = {
     AUTH: {
-        LOGIN:           "/auth/login",
-        LOGOUT:          "/auth/logout",
-        ME:              "/auth/me",
-        ACTIVATE:        "/password/activate",
-        FORGOT_PASSWORD: "/password/forgot",
-        RESET_PASSWORD:  "/password/reset",
+        LOGIN:           "/admin/auth/login",
+        LOGOUT:          "/admin/auth/logout",
+        ME:              "/admin/auth/me",
+        ACTIVATE:        "/admin/password/activate",
+        FORGOT_PASSWORD: "/admin/password/forgot",
+        RESET_PASSWORD:  "/admin/password/reset",
     },
     ORGANIZER: {
         DASHBOARD: "/organizer/dashboard",

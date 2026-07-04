@@ -6,8 +6,8 @@ use App\Enums\OrganizerRole;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreOrganizerUserRequest;
 use App\Jobs\SendOrganizerWelcomeJob;
+use App\Models\AdminUser;
 use App\Models\Organizer;
-use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -46,18 +46,18 @@ class OrganizerUserController extends Controller
     public function store(StoreOrganizerUserRequest $request, Organizer $organizer): JsonResponse
     {
         $isNewUser = false;
-        $user = User::where('email', $request->validated('email'))->first();
+        $user = AdminUser::where('email', $request->validated('email'))->first();
 
-        if (!$user) {
+        if (! $user) {
             $isNewUser = true;
-            $user = User::create([
-                'name'     => $request->validated('name'),
-                'email'    => $request->validated('email'),
+            $user = AdminUser::create([
+                'name' => $request->validated('name'),
+                'email' => $request->validated('email'),
                 'password' => Hash::make(Str::random(32)),
             ]);
         }
 
-        if ($organizer->users()->where('user_id', $user->id)->exists()) {
+        if ($organizer->users()->whereKey($user->id)->exists()) {
             return response()->json([
                 'message' => 'User already belongs to this organizer.',
             ], 422);
@@ -71,8 +71,8 @@ class OrganizerUserController extends Controller
             DB::table('password_reset_tokens')->where('email', $user->email)->delete();
             $token = Str::random(64);
             DB::table('password_reset_tokens')->insert([
-                'email'      => $user->email,
-                'token'      => Hash::make($token),
+                'email' => $user->email,
+                'token' => Hash::make($token),
                 'created_at' => now(),
             ]);
             SendOrganizerWelcomeJob::dispatch($user, $organizer, $token);
@@ -82,12 +82,12 @@ class OrganizerUserController extends Controller
             'message' => 'User added to organizer successfully.',
             'data' => [
                 'user' => [
-                    'id'    => $user->id,
-                    'name'  => $user->name,
+                    'id' => $user->id,
+                    'name' => $user->name,
                     'email' => $user->email,
                 ],
-                'role'      => $request->validated('role'),
-                'added_at'  => now(),
+                'role' => $request->validated('role'),
+                'added_at' => now(),
             ],
         ], 201);
     }
@@ -95,14 +95,14 @@ class OrganizerUserController extends Controller
     /**
      * Atualiza role do usuário no organizador
      */
-    public function update(Request $request, Organizer $organizer, User $user): JsonResponse
+    public function update(Request $request, Organizer $organizer, AdminUser $user): JsonResponse
     {
         $validated = $request->validate([
             'role' => ['required', Rule::in(OrganizerRole::values())],
         ]);
 
         // Verifica se usuário pertence ao organizador
-        if (!$organizer->users()->where('user_id', $user->id)->exists()) {
+        if (! $organizer->users()->whereKey($user->id)->exists()) {
             return response()->json([
                 'message' => 'User does not belong to this organizer.',
             ], 404);
@@ -129,10 +129,10 @@ class OrganizerUserController extends Controller
     /**
      * Remove usuário do organizador
      */
-    public function destroy(Organizer $organizer, User $user): JsonResponse
+    public function destroy(Organizer $organizer, AdminUser $user): JsonResponse
     {
         // Verifica se usuário pertence ao organizador
-        if (!$organizer->users()->where('user_id', $user->id)->exists()) {
+        if (! $organizer->users()->whereKey($user->id)->exists()) {
             return response()->json([
                 'message' => 'User does not belong to this organizer.',
             ], 404);

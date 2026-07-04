@@ -109,14 +109,8 @@ class TicketController extends Controller
     {
         $ticket = Ticket::with('orderItem.order.event')->where('code', $code)->firstOrFail();
 
-        $user = $request->user();
-
-        // Verifica permissão: dono do ticket, super admin ou organizador do evento
-        $isOwner = $ticket->orderItem->order->user_id === $user->id;
-        $isSuperAdmin = $user->hasRole('super_admin');
-        $isOrganizer = $user->canAccessOrganizer($ticket->orderItem->order->event->organizer_id);
-
-        if (! $isOwner && ! $isSuperAdmin && ! $isOrganizer) {
+        // Portal: apenas o dono do ticket faz o download do QR
+        if ($ticket->orderItem->order->user_id !== $request->user()->id) {
             abort(403, 'Você não tem permissão para acessar este ticket.');
         }
 

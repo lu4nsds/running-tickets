@@ -24,13 +24,15 @@ class Organizer extends Model
     ];
 
     /**
-     * Usuários que administram este organizador
+     * Usuários de backoffice que administram este organizador
      */
     public function users()
     {
         return $this->belongsToMany(
-            User::class,
-            'organizer_users'
+            AdminUser::class,
+            'organizer_users',
+            'organizer_id',
+            'admin_user_id'
         )->withPivot('role')->withTimestamps();
     }
 

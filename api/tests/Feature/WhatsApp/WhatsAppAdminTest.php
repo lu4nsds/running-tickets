@@ -2,7 +2,7 @@
 
 namespace Tests\Feature\WhatsApp;
 
-use App\Models\User;
+use App\Models\AdminUser;
 use App\Services\WhatsAppService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
@@ -29,27 +29,27 @@ class WhatsAppAdminTest extends TestCase
 
     public function test_connect_requires_super_admin(): void
     {
-        $user = User::factory()->create();
+        $user = AdminUser::factory()->create();
 
-        $this->actingAs($user, 'sanctum')
+        $this->actingAs($user, 'admin')
             ->postJson('/api/admin/whatsapp/connect')
             ->assertStatus(403);
     }
 
     public function test_status_requires_super_admin(): void
     {
-        $user = User::factory()->create();
+        $user = AdminUser::factory()->create();
 
-        $this->actingAs($user, 'sanctum')
+        $this->actingAs($user, 'admin')
             ->getJson('/api/admin/whatsapp/status')
             ->assertStatus(403);
     }
 
     public function test_disconnect_requires_super_admin(): void
     {
-        $user = User::factory()->create();
+        $user = AdminUser::factory()->create();
 
-        $this->actingAs($user, 'sanctum')
+        $this->actingAs($user, 'admin')
             ->deleteJson('/api/admin/whatsapp/session')
             ->assertStatus(403);
     }
@@ -60,7 +60,7 @@ class WhatsAppAdminTest extends TestCase
     {
         $admin = $this->makeSuperAdmin();
 
-        $this->actingAs($admin, 'sanctum')
+        $this->actingAs($admin, 'admin')
             ->postJson('/api/admin/whatsapp/connect')
             ->assertStatus(200)
             ->assertJsonPath('data.status', 'connecting')
@@ -71,7 +71,7 @@ class WhatsAppAdminTest extends TestCase
     {
         $admin = $this->makeSuperAdmin();
 
-        $this->actingAs($admin, 'sanctum')
+        $this->actingAs($admin, 'admin')
             ->getJson('/api/admin/whatsapp/status')
             ->assertStatus(200)
             ->assertJsonPath('data.status', 'open');
@@ -81,21 +81,21 @@ class WhatsAppAdminTest extends TestCase
     {
         $admin = $this->makeSuperAdmin();
 
-        $this->actingAs($admin, 'sanctum')
+        $this->actingAs($admin, 'admin')
             ->deleteJson('/api/admin/whatsapp/session')
             ->assertStatus(204);
     }
 
     // ── Helpers ──────────────────────────────────────────────────────────────
 
-    private function makeSuperAdmin(): User
+    private function makeSuperAdmin(): AdminUser
     {
-        $user = User::factory()->create();
+        $admin = AdminUser::factory()->create();
 
         \DB::table('roles')->insertOrIgnore(['name' => 'Super Admin', 'slug' => 'super_admin', 'created_at' => now(), 'updated_at' => now()]);
         $role = \DB::table('roles')->where('slug', 'super_admin')->first();
-        \DB::table('user_roles')->insertOrIgnore(['user_id' => $user->id, 'role_id' => $role->id]);
+        \DB::table('admin_user_roles')->insertOrIgnore(['admin_user_id' => $admin->id, 'role_id' => $role->id]);
 
-        return $user->fresh();
+        return $admin->fresh();
     }
 }

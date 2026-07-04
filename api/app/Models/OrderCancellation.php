@@ -45,11 +45,11 @@ class OrderCancellation extends Model
     }
 
     /**
-     * Super admin que avaliou a solicitação
+     * Super admin (backoffice) que avaliou a solicitação
      */
     public function reviewedBy(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'reviewed_by');
+        return $this->belongsTo(AdminUser::class, 'reviewed_by');
     }
 
     /**

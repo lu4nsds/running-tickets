@@ -48,7 +48,7 @@ class CancellationEligibilityTest extends TestCase
         $owner = User::factory()->create();
         $event = $this->paidOrder($owner, now()->subDays(2))->event_id;
 
-        $this->actingAs($owner, 'sanctum')
+        $this->actingAs($owner, 'client')
             ->getJson("/api/tickets?event_id={$event}")
             ->assertStatus(200)
             ->assertJsonPath('data.0.order.can_request_cancellation', true);
@@ -61,12 +61,12 @@ class CancellationEligibilityTest extends TestCase
 
         $this->assertFalse($order->canRequestCancellation());
 
-        $this->actingAs($owner, 'sanctum')
+        $this->actingAs($owner, 'client')
             ->getJson("/api/tickets?event_id={$order->event_id}")
             ->assertStatus(200)
             ->assertJsonPath('data.0.order.can_request_cancellation', false);
 
-        $this->actingAs($owner, 'sanctum')
+        $this->actingAs($owner, 'client')
             ->postJson('/api/orders/cancellations', [
                 'references' => [$order->reference],
                 'reason' => 'Passou do prazo.',
@@ -81,7 +81,7 @@ class CancellationEligibilityTest extends TestCase
 
         $this->assertFalse($order->canRequestCancellation());
 
-        $this->actingAs($owner, 'sanctum')
+        $this->actingAs($owner, 'client')
             ->postJson('/api/orders/cancellations', [
                 'references' => [$order->reference],
                 'reason' => 'Ingresso já utilizado.',

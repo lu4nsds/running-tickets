@@ -5,6 +5,7 @@ namespace Tests\Feature\Orders;
 use App\Enums\OrderCancellationStatus;
 use App\Enums\OrderStatus;
 use App\Enums\TicketStatus;
+use App\Models\AdminUser;
 use App\Models\Event;
 use App\Models\Order;
 use App\Models\OrderCancellation;
@@ -45,15 +46,15 @@ class OrderCancellationTest extends TestCase
         return $order->fresh();
     }
 
-    private function makeSuperAdmin(): User
+    private function makeSuperAdmin(): AdminUser
     {
-        $user = User::factory()->create();
+        $admin = AdminUser::factory()->create();
 
         \DB::table('roles')->insertOrIgnore(['name' => 'Super Admin', 'slug' => 'super_admin', 'created_at' => now(), 'updated_at' => now()]);
         $role = \DB::table('roles')->where('slug', 'super_admin')->first();
-        \DB::table('user_roles')->insertOrIgnore(['user_id' => $user->id, 'role_id' => $role->id]);
+        \DB::table('admin_user_roles')->insertOrIgnore(['admin_user_id' => $admin->id, 'role_id' => $role->id]);
 
-        return $user->fresh();
+        return $admin->fresh();
     }
 
     // ── storeBatch (comprador) ───────────────────────────────────────────────
@@ -63,7 +64,7 @@ class OrderCancellationTest extends TestCase
         $owner = User::factory()->create();
         $order = $this->makePaidOrder($owner);
 
-        $this->actingAs($owner, 'sanctum')
+        $this->actingAs($owner, 'client')
             ->postJson('/api/orders/cancellations', [
                 'references' => [$order->reference],
                 'reason' => 'Não poderei comparecer ao evento.',
@@ -84,7 +85,7 @@ class OrderCancellationTest extends TestCase
         $orderA = $this->makePaidOrder($owner);
         $orderB = $this->makePaidOrder($owner);
 
-        $this->actingAs($owner, 'sanctum')
+        $this->actingAs($owner, 'client')
             ->postJson('/api/orders/cancellations', [
                 'references' => [$orderA->reference, $orderB->reference],
                 'reason' => 'Não poderei comparecer ao evento.',
@@ -109,7 +110,7 @@ class OrderCancellationTest extends TestCase
         $owner = User::factory()->create();
         $order = $this->makePaidOrder($owner);
 
-        $this->actingAs($owner, 'sanctum')
+        $this->actingAs($owner, 'client')
             ->postJson('/api/orders/cancellations', [
                 'references' => [$order->reference],
             ])
@@ -121,7 +122,7 @@ class OrderCancellationTest extends TestCase
     {
         $owner = User::factory()->create();
 
-        $this->actingAs($owner, 'sanctum')
+        $this->actingAs($owner, 'client')
             ->postJson('/api/orders/cancellations', [
                 'reason' => 'Mudei de ideia.',
             ])
@@ -139,7 +140,7 @@ class OrderCancellationTest extends TestCase
             ->state(['user_id' => $owner->id])
             ->create();
 
-        $this->actingAs($owner, 'sanctum')
+        $this->actingAs($owner, 'client')
             ->postJson('/api/orders/cancellations', [
                 'references' => [$order->reference],
                 'reason' => 'Mudei de ideia.',
@@ -156,7 +157,7 @@ class OrderCancellationTest extends TestCase
             'requested_by' => $owner->id,
         ]);
 
-        $this->actingAs($owner, 'sanctum')
+        $this->actingAs($owner, 'client')
             ->postJson('/api/orders/cancellations', [
                 'references' => [$order->reference],
                 'reason' => 'Segunda tentativa.',
@@ -170,7 +171,7 @@ class OrderCancellationTest extends TestCase
         $stranger = User::factory()->create();
         $order = $this->makePaidOrder($owner);
 
-        $this->actingAs($stranger, 'sanctum')
+        $this->actingAs($stranger, 'client')
             ->postJson('/api/orders/cancellations', [
                 'references' => [$order->reference],
                 'reason' => 'Não é meu pedido.',
@@ -185,7 +186,7 @@ class OrderCancellationTest extends TestCase
         $ownOrder = $this->makePaidOrder($owner);
         $strangerOrder = $this->makePaidOrder($stranger);
 
-        $this->actingAs($owner, 'sanctum')
+        $this->actingAs($owner, 'client')
             ->postJson('/api/orders/cancellations', [
                 'references' => [$ownOrder->reference, $strangerOrder->reference],
                 'reason' => 'Tentativa de cancelar pedido de terceiro.',
@@ -204,7 +205,7 @@ class OrderCancellationTest extends TestCase
         $ticket = Ticket::whereIn('order_item_id', $order->items()->pluck('id'))->first();
         $this->assertSame(TicketStatus::ACTIVE, $ticket->status);
 
-        $this->actingAs($owner, 'sanctum')
+        $this->actingAs($owner, 'client')
             ->postJson('/api/orders/cancellations', [
                 'references' => [$order->reference],
                 'reason' => 'Não poderei comparecer.',
@@ -221,7 +222,7 @@ class OrderCancellationTest extends TestCase
         $order = $this->makePaidOrder($owner);
 
         // Comprador solicita: ingressos ficam inativos.
-        $this->actingAs($owner, 'sanctum')
+        $this->actingAs($owner, 'client')
             ->postJson('/api/orders/cancellations', [
                 'references' => [$order->reference],
                 'reason' => 'Não poderei comparecer.',
@@ -234,7 +235,7 @@ class OrderCancellationTest extends TestCase
         $cancellation = OrderCancellation::where('order_id', $order->id)->firstOrFail();
 
         // Admin rejeita: ingressos voltam a ficar ativos.
-        $this->actingAs($admin, 'sanctum')
+        $this->actingAs($admin, 'admin')
             ->postJson("/api/admin/cancellations/{$cancellation->id}/reject", [
                 'review_notes' => 'Fora do prazo.',
             ])
@@ -260,7 +261,7 @@ class OrderCancellationTest extends TestCase
             'requested_by' => $owner->id,
         ]);
 
-        $this->actingAs($admin, 'sanctum')
+        $this->actingAs($admin, 'admin')
             ->postJson("/api/admin/cancellations/{$request->id}/approve")
             ->assertStatus(200)
             ->assertJsonPath('cancellation.status', 'approved');
@@ -309,7 +310,7 @@ class OrderCancellationTest extends TestCase
             'requested_by' => $owner->id,
         ]);
 
-        $this->actingAs($admin, 'sanctum')
+        $this->actingAs($admin, 'admin')
             ->postJson("/api/admin/cancellations/{$request->id}/approve")
             ->assertStatus(200);
 
@@ -335,7 +336,7 @@ class OrderCancellationTest extends TestCase
             'requested_by' => $owner->id,
         ]);
 
-        $this->actingAs($admin, 'sanctum')
+        $this->actingAs($admin, 'admin')
             ->postJson("/api/admin/cancellations/{$request->id}/approve")
             ->assertStatus(422);
 
@@ -353,7 +354,7 @@ class OrderCancellationTest extends TestCase
             'requested_by' => $owner->id,
         ]);
 
-        $this->actingAs($admin, 'sanctum')
+        $this->actingAs($admin, 'admin')
             ->postJson("/api/admin/cancellations/{$request->id}/approve")
             ->assertStatus(422);
     }
@@ -373,7 +374,7 @@ class OrderCancellationTest extends TestCase
             'requested_by' => $owner->id,
         ]);
 
-        $this->actingAs($admin, 'sanctum')
+        $this->actingAs($admin, 'admin')
             ->postJson("/api/admin/cancellations/{$request->id}/reject", [
                 'review_notes' => 'Fora do prazo de cancelamento.',
             ])
@@ -390,7 +391,7 @@ class OrderCancellationTest extends TestCase
 
     // ── autorização ──────────────────────────────────────────────────────────────
 
-    public function test_non_admin_cannot_approve(): void
+    public function test_non_super_admin_backoffice_user_cannot_approve(): void
     {
         $owner = User::factory()->create();
         $order = $this->makePaidOrder($owner);
@@ -398,9 +399,26 @@ class OrderCancellationTest extends TestCase
             'requested_by' => $owner->id,
         ]);
 
-        $this->actingAs($owner, 'sanctum')
+        // Usuário de backoffice autenticado, mas sem papel super_admin → 403
+        $backofficeUser = AdminUser::factory()->create();
+
+        $this->actingAs($backofficeUser, 'admin')
             ->postJson("/api/admin/cancellations/{$request->id}/approve")
             ->assertStatus(403);
+    }
+
+    public function test_portal_user_cannot_reach_admin_cancellation_route(): void
+    {
+        $owner = User::factory()->create();
+        $order = $this->makePaidOrder($owner);
+        $request = OrderCancellation::factory()->for($order)->create([
+            'requested_by' => $owner->id,
+        ]);
+
+        // Token do portal (guard client) não autentica no guard admin → 401
+        $this->actingAs($owner, 'client')
+            ->postJson("/api/admin/cancellations/{$request->id}/approve")
+            ->assertStatus(401);
     }
 
     public function test_super_admin_can_list_event_cancellations(): void
@@ -412,7 +430,7 @@ class OrderCancellationTest extends TestCase
             'requested_by' => $owner->id,
         ]);
 
-        $this->actingAs($admin, 'sanctum')
+        $this->actingAs($admin, 'admin')
             ->getJson("/api/admin/events/{$order->event_id}/cancellations")
             ->assertStatus(200)
             ->assertJsonCount(1, 'data');
