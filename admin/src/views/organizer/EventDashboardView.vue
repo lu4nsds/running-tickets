@@ -62,109 +62,149 @@
 
             <!-- Metrics Cards -->
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <!-- Total Revenue -->
-                <MetricCard
-                    title="Receita Total"
-                    :value="
-                        formatCurrency(
-                            dashboardData.summary?.total_revenue * 100,
-                        )
-                    "
-                    icon="payments"
+                <!-- Receita -->
+                <div
+                    class="bg-card-bg border border-surface-elevated rounded-xl p-6"
                 >
-                    <div
-                        v-if="dashboardData.summary?.total_net_revenue > 0"
-                        class="flex items-center gap-1 mt-2 text-sm"
-                    >
-                        <span class="text-text-muted">Líquido:</span>
-                        <span class="text-green-400 font-semibold">
-                            {{ formatCurrency(dashboardData.summary.total_net_revenue * 100) }}
-                        </span>
-                        <div class="group relative ml-1">
-                            <span class="material-symbols-outlined text-text-muted text-sm cursor-help">info</span>
-                            <div class="absolute bottom-full left-0 mb-2 hidden group-hover:block z-10">
-                                <div class="bg-slate-900 text-white text-xs rounded-lg px-3 py-2 w-56 shadow-xl border border-slate-700">
-                                    <p class="font-bold mb-1">Receita Líquida</p>
-                                    <p class="text-slate-300">Valor a receber após a comissão da plataforma ({{ formatCurrency(dashboardData.summary.total_fees * 100 || 0) }}).</p>
+                    <div class="flex items-start justify-between">
+                        <div>
+                            <p
+                                class="text-text-muted text-xs uppercase tracking-wider mb-2"
+                            >
+                                Receita
+                            </p>
+                            <p class="text-3xl font-bold text-white">
+                                {{ formatCurrency(dashboardData.summary?.total_revenue * 100) }}
+                            </p>
+                            <div class="text-xs mt-1 flex items-center gap-1">
+                                <span class="text-text-muted">Líquido:</span>
+                                <span class="font-semibold text-white/80">{{ formatCurrency(dashboardData.summary?.total_net_revenue * 100) }}</span>
+                                <div class="group relative">
+                                    <span class="material-symbols-outlined text-slate-500 text-sm cursor-help">info</span>
+                                    <div class="absolute bottom-full left-0 mb-2 hidden group-hover:block z-10">
+                                        <div class="bg-slate-900 text-white text-xs rounded-lg px-3 py-2 w-56 shadow-xl border border-slate-700">
+                                            <p class="font-bold mb-1">Valor Líquido Estimado</p>
+                                            <p class="text-slate-300">Valor após dedução das taxas do Mercado Pago, calculado com base nos pedidos já pagos.</p>
+                                        </div>
+                                        <div class="w-2 h-2 bg-slate-900 border-b border-r border-slate-700 absolute top-0 left-2 translate-y-1/2 rotate-45"></div>
+                                    </div>
                                 </div>
-                                <div class="w-2 h-2 bg-slate-900 border-b border-r border-slate-700 absolute top-0 left-2 translate-y-1/2 rotate-45"></div>
                             </div>
+                            <p class="text-text-muted text-xs mt-1">
+                                Ticket Médio:
+                                {{ formatCurrency(avgTicketValue) }}
+                            </p>
+                        </div>
+                        <div
+                            class="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0"
+                        >
+                            <span class="material-symbols-outlined text-primary"
+                                >payments</span
+                            >
                         </div>
                     </div>
-                </MetricCard>
+                </div>
 
-                <!-- Paid Orders -->
-                <MetricCard
-                    title="Pedidos Pagos"
-                    :value="
-                        formatNumber(dashboardData.summary?.paid_orders || 0)
-                    "
-                    icon="shopping_cart"
+                <!-- Pedidos Pagos -->
+                <div
+                    class="bg-card-bg border border-surface-elevated rounded-xl p-6"
                 >
-                    <div class="flex items-center gap-4 text-sm mt-2">
-                        <span class="text-text-muted">
-                            {{
-                                formatNumber(
-                                    dashboardData.summary?.pending_orders || 0,
-                                )
-                            }}
-                            pendentes
-                        </span>
-                        <span class="text-text-muted">
-                            {{
-                                formatNumber(
-                                    dashboardData.summary?.refunded_orders || 0,
-                                )
-                            }}
-                            reembolsados
-                        </span>
-                    </div>
-                </MetricCard>
-
-                <!-- Avg Ticket Value -->
-                <MetricCard
-                    title="Valor Médio"
-                    :value="formatCurrency(avgTicketValue)"
-                    icon="local_atm"
-                />
-
-                <!-- Conversion Rate -->
-                <MetricCard
-                    title="Taxa de Conversão"
-                    :value="
-                        formatPercentage(
-                            dashboardData.conversion_funnel?.conversion_rate ||
-                                0,
-                        )
-                    "
-                    icon="trending_up"
-                    :trend="
-                        formatPercentage(
-                            dashboardData.conversion_funnel?.conversion_rate ||
-                                0,
-                            0,
-                        )
-                    "
-                    :trend-direction="
-                        dashboardData.conversion_funnel?.conversion_rate >= 50
-                            ? 'up'
-                            : 'down'
-                    "
-                >
-                    <div class="flex items-center gap-1 mt-2 text-sm">
-                        <span class="text-text-muted">Pagos vs. tentativas</span>
-                        <div class="group relative ml-1">
-                            <span class="material-symbols-outlined text-text-muted text-sm cursor-help">info</span>
-                            <div class="absolute bottom-full left-0 mb-2 hidden group-hover:block z-10">
-                                <div class="bg-slate-900 text-white text-xs rounded-lg px-3 py-2 w-60 shadow-xl border border-slate-700">
-                                    <p class="font-bold mb-1">Taxa de Conversão</p>
-                                    <p class="text-slate-300">Pedidos pagos ÷ tentativas reais (pagos + pendentes + cancelados + falhos). Reembolsos e pedidos em processamento não entram no cálculo.</p>
-                                </div>
-                                <div class="w-2 h-2 bg-slate-900 border-b border-r border-slate-700 absolute top-0 left-2 translate-y-1/2 rotate-45"></div>
-                            </div>
+                    <div class="flex items-start justify-between">
+                        <div>
+                            <p
+                                class="text-text-muted text-xs uppercase tracking-wider mb-2"
+                            >
+                                Pedidos Pagos
+                            </p>
+                            <p class="text-3xl font-bold text-white">
+                                {{ formatNumber(dashboardData.summary?.paid_orders || 0) }}
+                            </p>
+                            <p class="text-text-muted text-xs mt-1">
+                                {{ formatNumber(dashboardData.summary?.pending_orders || 0) }}
+                                pendentes ·
+                                {{ formatNumber(dashboardData.summary?.refunded_orders || 0) }}
+                                reembolsados
+                            </p>
+                        </div>
+                        <div
+                            class="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0"
+                        >
+                            <span class="material-symbols-outlined text-primary"
+                                >shopping_cart</span
+                            >
                         </div>
                     </div>
-                </MetricCard>
+                </div>
+
+                <!-- Vagas Restantes -->
+                <div
+                    class="bg-card-bg border border-surface-elevated rounded-xl p-6"
+                >
+                    <div class="flex items-start justify-between">
+                        <div>
+                            <p
+                                class="text-text-muted text-xs uppercase tracking-wider mb-2"
+                            >
+                                Vagas Restantes
+                            </p>
+                            <p class="text-3xl font-bold text-white">
+                                {{ remainingSlots === null ? "∞" : formatNumber(remainingSlots) }}
+                            </p>
+                            <p
+                                v-if="remainingSlots !== null"
+                                class="text-text-muted text-xs mt-1"
+                            >
+                                {{ occupancyRate }}% de ocupação
+                            </p>
+                            <p v-else class="text-text-muted text-xs mt-1">Ilimitado</p>
+                        </div>
+                        <div
+                            class="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0"
+                        >
+                            <span class="material-symbols-outlined text-primary"
+                                >confirmation_number</span
+                            >
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Taxa de Conversão -->
+                <div
+                    class="bg-card-bg border border-surface-elevated rounded-xl p-6"
+                >
+                    <div class="flex items-start justify-between">
+                        <div>
+                            <p
+                                class="text-text-muted text-xs uppercase tracking-wider mb-2"
+                            >
+                                Taxa de Conversão
+                            </p>
+                            <p class="text-3xl font-bold text-white">
+                                {{ formatPercentage(dashboardData.conversion_funnel?.conversion_rate || 0) }}
+                            </p>
+                            <div class="text-xs mt-1 flex items-center gap-1">
+                                <span class="text-text-muted">Pagos vs. tentativas</span>
+                                <div class="group relative">
+                                    <span class="material-symbols-outlined text-slate-500 text-sm cursor-help">info</span>
+                                    <div class="absolute bottom-full left-0 mb-2 hidden group-hover:block z-10">
+                                        <div class="bg-slate-900 text-white text-xs rounded-lg px-3 py-2 w-60 shadow-xl border border-slate-700">
+                                            <p class="font-bold mb-1">Taxa de Conversão</p>
+                                            <p class="text-slate-300">Pedidos pagos ÷ (pagos + cancelados + reembolsados). Pendentes, falhos e pedidos em processamento não entram no cálculo.</p>
+                                        </div>
+                                        <div class="w-2 h-2 bg-slate-900 border-b border-r border-slate-700 absolute top-0 left-2 translate-y-1/2 rotate-45"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div
+                            class="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0"
+                        >
+                            <span class="material-symbols-outlined text-primary"
+                                >trending_up</span
+                            >
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <!-- Charts -->
@@ -427,7 +467,6 @@ import { useLoading } from "@/composables/useLoading";
 import { useCurrency } from "@/composables/useCurrency";
 import ErrorState from "@/components/ui/ErrorState.vue";
 import SkeletonCard from "@/components/ui/SkeletonCard.vue";
-import MetricCard from "@/components/dashboard/MetricCard.vue";
 import VueApexCharts from "vue3-apexcharts";
 
 const route = useRoute();
@@ -442,6 +481,38 @@ const avgTicketValue = computed(() => {
     const summary = dashboardData.value?.summary;
     if (!summary?.total_orders || !summary?.total_revenue) return 0;
     return (summary.total_revenue / summary.total_orders) * 100;
+});
+
+// Capacidade = soma das quotas dos lotes (mesma convenção do dashboard admin).
+// Se algum lote tiver quota nula (ilimitado), o evento é tratado como ilimitado.
+const capacityStats = computed(() => {
+    const types = dashboardData.value?.ticket_types || [];
+    let capacity = 0;
+    let sold = 0;
+    let unlimited = false;
+
+    for (const type of types) {
+        sold += Number(type.sold || 0);
+        if (type.total_quantity === null || type.total_quantity === undefined) {
+            unlimited = true;
+        } else {
+            capacity += Number(type.total_quantity);
+        }
+    }
+
+    return { capacity, sold, unlimited };
+});
+
+const remainingSlots = computed(() => {
+    const { capacity, sold, unlimited } = capacityStats.value;
+    if (unlimited) return null;
+    return Math.max(capacity - sold, 0);
+});
+
+const occupancyRate = computed(() => {
+    const { capacity, sold, unlimited } = capacityStats.value;
+    if (unlimited || capacity === 0) return 0;
+    return Math.round((sold / capacity) * 100);
 });
 
 const daysUntilEvent = computed(() => {

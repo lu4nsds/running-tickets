@@ -193,12 +193,11 @@ class DashboardController extends Controller
             $pendingNetEstimated = round($summary->pending_revenue * (1 - $platformFeeRate), 2);
 
             // Funil de conversão — denominador são as "tentativas reais"
-            // (pagos + pendentes + cancelados + falhos). Reembolsados e pedidos
+            // (pagos + cancelados + reembolsados). Pendentes, falhos e pedidos
             // em processamento não entram na conta.
             $realAttempts = $summary->paid_orders
-                + $summary->pending_orders
                 + $summary->cancelled_orders
-                + $summary->failed_orders;
+                + $summary->refunded_orders;
 
             $conversionFunnel = [
                 'total_orders' => $summary->total_orders,
@@ -210,7 +209,7 @@ class DashboardController extends Controller
                     ? round(($summary->paid_orders / $realAttempts) * 100, 2)
                     : 0,
                 'abandonment_rate' => $realAttempts > 0
-                    ? round((($summary->cancelled_orders + $summary->pending_orders + $summary->failed_orders) / $realAttempts) * 100, 2)
+                    ? round((($summary->cancelled_orders + $summary->refunded_orders) / $realAttempts) * 100, 2)
                     : 0,
             ];
 

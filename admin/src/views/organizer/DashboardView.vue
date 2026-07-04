@@ -140,49 +140,45 @@
                     </div>
                 </div>
 
-                <!-- Revenue -->
+                <!-- Receita -->
                 <div
                     class="bg-card-bg border border-surface-elevated rounded-xl p-6"
                 >
-                    <div class="flex items-start justify-between mb-4">
-                        <div>
-                            <p class="text-text-muted text-sm mb-1">
-                                Receita Total
-                            </p>
-                            <p class="text-3xl font-bold text-white">
-                                {{
-                                    formatCurrency(
-                                        dashboardData.summary?.total_revenue ||
-                                            0,
-                                    )
-                                }}
-                            </p>
-                        </div>
-                        <span
-                            class="material-symbols-outlined text-primary text-2xl"
+                    <div class="flex items-center gap-3 mb-3">
+                        <div
+                            class="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center"
                         >
-                            trending_up
-                        </span>
+                            <span class="material-symbols-outlined text-primary"
+                                >payments</span
+                            >
+                        </div>
+                        <p
+                            class="text-text-muted text-xs uppercase tracking-wider"
+                        >
+                            Receita
+                        </p>
                     </div>
-                    <div
-                        v-if="dashboardData.summary?.total_net_revenue > 0"
-                        class="flex items-center gap-1 text-sm text-text-muted border-t border-surface-elevated pt-3"
-                    >
-                        <span>Líquido:</span>
-                        <span class="text-green-400 font-semibold">
-                            {{ formatCurrency(dashboardData.summary.total_net_revenue) }}
-                        </span>
-                        <div class="group relative ml-auto">
-                            <span class="material-symbols-outlined text-text-muted text-sm cursor-help">info</span>
-                            <div class="absolute bottom-full right-0 mb-2 hidden group-hover:block z-10">
-                                <div class="bg-slate-900 text-white text-xs rounded-lg px-3 py-2 w-52 shadow-xl border border-slate-700">
-                                    <p class="font-bold mb-1">Receita Líquida</p>
-                                    <p class="text-slate-300">Valor após dedução das taxas do Mercado Pago ({{ formatCurrency(dashboardData.summary.total_fees || 0) }} em taxas)</p>
+                    <p class="text-3xl font-bold text-white">
+                        {{ formatCurrency(dashboardData.summary?.total_revenue || 0) }}
+                    </p>
+                    <p class="text-xs mt-1 flex items-center gap-1">
+                        <span class="text-text-muted">Líquido:</span>
+                        <span class="font-semibold text-white/80">{{ formatCurrency(dashboardData.summary?.total_net_revenue || 0) }}</span>
+                        <div class="group relative">
+                            <span class="material-symbols-outlined text-slate-500 text-sm cursor-help">info</span>
+                            <div class="absolute bottom-full left-0 mb-2 hidden group-hover:block z-10">
+                                <div class="bg-slate-900 text-white text-xs rounded-lg px-3 py-2 w-56 shadow-xl border border-slate-700">
+                                    <p class="font-bold mb-1">Valor Líquido Estimado</p>
+                                    <p class="text-slate-300">Valor após dedução das taxas do Mercado Pago, calculado com base nos pedidos já pagos.</p>
                                 </div>
-                                <div class="w-2 h-2 bg-slate-900 border-b border-r border-slate-700 absolute top-0 right-2 translate-y-1/2 rotate-45"></div>
+                                <div class="w-2 h-2 bg-slate-900 border-b border-r border-slate-700 absolute top-0 left-2 translate-y-1/2 rotate-45"></div>
                             </div>
                         </div>
-                    </div>
+                    </p>
+                    <p class="text-text-muted text-xs mt-1">
+                        Ticket Médio:
+                        {{ formatCurrency(averageTicketValue) }}
+                    </p>
                 </div>
             </div>
 
