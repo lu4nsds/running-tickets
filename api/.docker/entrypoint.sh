@@ -18,7 +18,7 @@ php artisan view:cache --quiet &> /dev/null
 echo "[entrypoint] Criando link simbólico de storage (se necessário)..."
 php artisan storage:link --quiet &> /dev/null
 
-if [ "$RAILWAY_SERVICE_NAME" = "runningtickets-api" ]; then
+if [ "$RAILWAY_SERVICE_NAME" = "runningtickets-scheduler" ]; then
     echo "[entrypoint] Executando migrations..."
     php artisan migrate --force --no-interaction
 fi
