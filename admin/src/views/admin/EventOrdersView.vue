@@ -54,18 +54,32 @@
         <template v-else>
         <!-- Tab: Pedidos -->
         <div v-show="activeTab === 'orders'">
-            <!-- Busca -->
-            <div class="relative mb-4 max-w-md">
-                <span
-                    class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-text-muted text-[20px]"
-                    >search</span
+            <!-- Busca e filtro por status -->
+            <div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center">
+                <div class="relative w-full sm:max-w-md">
+                    <span
+                        class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-text-muted text-[20px]"
+                        >search</span
+                    >
+                    <input
+                        v-model="searchQuery"
+                        type="text"
+                        placeholder="Buscar por referência, e-mail ou CPF..."
+                        class="w-full bg-card-bg border border-surface-elevated rounded-lg pl-10 pr-3 py-2.5 text-sm text-white placeholder-text-muted focus:outline-none focus:border-primary"
+                    />
+                </div>
+                <select
+                    v-model="statusFilter"
+                    class="bg-card-bg border border-surface-elevated rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:border-primary transition-colors appearance-none cursor-pointer sm:min-w-[180px]"
                 >
-                <input
-                    v-model="searchQuery"
-                    type="text"
-                    placeholder="Buscar por referência, e-mail ou CPF..."
-                    class="w-full bg-card-bg border border-surface-elevated rounded-lg pl-10 pr-3 py-2.5 text-sm text-white placeholder-text-muted focus:outline-none focus:border-primary"
-                />
+                    <option
+                        v-for="option in ORDER_STATUS_OPTIONS"
+                        :key="option.value"
+                        :value="option.value"
+                    >
+                        {{ option.label }}
+                    </option>
+                </select>
             </div>
 
             <!-- Empty state -->
@@ -84,6 +98,7 @@
                             <th class="text-left text-text-muted text-xs font-medium uppercase tracking-wider px-6 py-4">Referência</th>
                             <th class="text-left text-text-muted text-xs font-medium uppercase tracking-wider px-6 py-4">Comprador</th>
                             <th class="text-left text-text-muted text-xs font-medium uppercase tracking-wider px-6 py-4">Ingressos</th>
+                            <th class="text-left text-text-muted text-xs font-medium uppercase tracking-wider px-6 py-4">Pago com</th>
                             <th class="text-left text-text-muted text-xs font-medium uppercase tracking-wider px-6 py-4">Total</th>
                             <th class="text-left text-text-muted text-xs font-medium uppercase tracking-wider px-6 py-4">Status</th>
                             <th class="text-left text-text-muted text-xs font-medium uppercase tracking-wider px-6 py-4">Data da compra</th>
@@ -108,6 +123,9 @@
                                 </td>
                                 <td class="px-6 py-4">
                                     <div class="h-4 w-8 bg-surface-elevated rounded animate-pulse"></div>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <div class="h-4 w-24 bg-surface-elevated rounded animate-pulse"></div>
                                 </td>
                                 <td class="px-6 py-4">
                                     <div class="h-4 w-20 bg-surface-elevated rounded animate-pulse"></div>
@@ -137,6 +155,9 @@
                                 </td>
                                 <td class="px-6 py-4 text-text-secondary text-sm">
                                     {{ order.items?.length || 0 }}
+                                </td>
+                                <td class="px-6 py-4 text-text-secondary text-sm">
+                                    {{ order.payment_method_label || "—" }}
                                 </td>
                                 <td class="px-6 py-4 text-white text-sm">
                                     {{ order.total_formatted }}
@@ -406,6 +427,7 @@ import Modal from "@/components/ui/Modal.vue";
 import OrderDetailsModal from "@/components/orders/OrderDetailsModal.vue";
 import ErrorState from "@/components/ui/ErrorState.vue";
 import BasePagination from "@/components/ui/BasePagination.vue";
+import { ORDER_STATUS_OPTIONS } from "@/constants/orderStatus";
 
 const route = useRoute();
 const store = useOrdersStore();
@@ -446,13 +468,19 @@ let searchTimer = null;
 watch(searchQuery, () => {
     clearTimeout(searchTimer);
     searchTimer = setTimeout(() => {
-        store.fetchEventOrders(eventId, 1, searchQuery.value.trim());
+        store.fetchEventOrders(eventId, 1, searchQuery.value.trim(), statusFilter.value);
     }, 400);
+});
+
+// Filtro por status (padrão: todos). "" = opção "Todos" (sem filtro no backend).
+const statusFilter = ref("");
+watch(statusFilter, () => {
+    store.fetchEventOrders(eventId, 1, searchQuery.value.trim(), statusFilter.value);
 });
 
 function changeOrdersPage(page) {
     if (page < 1 || page > store.ordersPagination.lastPage) return;
-    store.fetchEventOrders(eventId, page, searchQuery.value.trim());
+    store.fetchEventOrders(eventId, page, searchQuery.value.trim(), statusFilter.value);
 }
 
 // Busca de cancelamentos (referência / e-mail / CPF) com debounce
@@ -477,7 +505,7 @@ const pendingCancellationsCount = computed(
 
 async function loadActiveTab() {
     if (activeTab.value === "orders") {
-        await store.fetchEventOrders(eventId, 1, searchQuery.value.trim());
+        await store.fetchEventOrders(eventId, 1, searchQuery.value.trim(), statusFilter.value);
     } else {
         await store.fetchCancellations(
             eventId,
@@ -566,7 +594,7 @@ function formatDate(iso) {
 onMounted(async () => {
     // Carrega ambas as abas para popular contadores e dados.
     await Promise.all([
-        store.fetchEventOrders(eventId),
+        store.fetchEventOrders(eventId, 1, searchQuery.value.trim(), statusFilter.value),
         store.fetchCancellations(eventId),
     ]);
     const result = await eventsStore.fetchEvent(eventId);

@@ -17,6 +17,12 @@
                 </div>
                 <div>
                     <p class="text-text-muted text-xs uppercase tracking-wider">
+                        Pago com
+                    </p>
+                    <p class="text-white">{{ order.payment_method_label || "—" }}</p>
+                </div>
+                <div>
+                    <p class="text-text-muted text-xs uppercase tracking-wider">
                         Total
                     </p>
                     <p class="text-white">{{ order.total_formatted }}</p>

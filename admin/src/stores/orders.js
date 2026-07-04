@@ -22,12 +22,13 @@ export const useOrdersStore = defineStore("orders", () => {
         };
     }
 
-    async function fetchEventOrders(eventId, page = 1, search = "") {
+    async function fetchEventOrders(eventId, page = 1, search = "", status = "") {
         isLoading.value = true;
         error.value = null;
         try {
             const params = { page, per_page: PER_PAGE };
             if (search) params.search = search;
+            if (status) params.status = status;
             const data = await adminOrdersApi.getEventOrders(eventId, params);
             orders.value = data.data;
             ordersPagination.value = mapPagination(data.meta);

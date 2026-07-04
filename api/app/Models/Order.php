@@ -174,6 +174,25 @@ class Order extends Model
         return $this->status->isPayable() && $this->hasActiveReservation();
     }
 
+    /**
+     * Rótulo amigável de "pago com" derivado da resposta do gateway.
+     * Ex.: "Cartão de crédito", "PIX", "Boleto". Null quando desconhecido.
+     */
+    public function paymentMethodLabel(): ?string
+    {
+        $body = $this->payment_response_body ?? [];
+        $type = $body['payment_type'] ?? null;
+        $method = $body['payment_method'] ?? ($this->metadata['payment_method'] ?? null);
+
+        return match (true) {
+            $type === 'credit_card', $method === 'credit_card' => 'Cartão de crédito',
+            $type === 'debit_card', $method === 'debit_card' => 'Cartão de débito',
+            $type === 'bank_transfer', $method === 'pix' => 'PIX',
+            $type === 'ticket', in_array($method, ['bolbradesco', 'boleto'], true) => 'Boleto',
+            default => null,
+        };
+    }
+
     public function getPendingPixData(): ?array
     {
         $body = $this->payment_response_body ?? [];

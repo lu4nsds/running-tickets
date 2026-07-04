@@ -34,6 +34,7 @@ class OrderResource extends JsonResource
             'buyer_phone' => $this->buyer_phone,
             'payment_gateway' => $this->payment_gateway,
             'payment_id' => $this->payment_id,
+            'payment_method_label' => $this->paymentMethodLabel(),
             'items' => OrderItemResource::collection($this->whenLoaded('items')),
             'cancellation' => $this->whenLoaded(
                 'latestCancellation',
