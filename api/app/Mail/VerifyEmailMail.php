@@ -50,7 +50,7 @@ class VerifyEmailMail extends Mailable
     private function getVerificationUrl(): string
     {
         $frontendUrl = config('app.client_url', 'http://localhost:5173');
-        
+
         // Criar signed URL com 60 minutos de validade
         $signedUrl = URL::temporarySignedRoute(
             'verification.verify',
@@ -60,13 +60,13 @@ class VerifyEmailMail extends Mailable
                 'hash' => sha1($this->user->email),
             ]
         );
-        
+
         // Extrair apenas os parâmetros da URL assinada
         $parsedUrl = parse_url($signedUrl);
         parse_str($parsedUrl['query'] ?? '', $queryParams);
-        
+
         // Construir URL do frontend com os parâmetros
-        return $frontendUrl . '/email/verificar/' . $this->user->id . '/' . sha1($this->user->email) . '?' . http_build_query([
+        return $frontendUrl.'/email/verificar/'.$this->user->id.'/'.sha1($this->user->email).'?'.http_build_query([
             'expires' => $queryParams['expires'] ?? '',
             'signature' => $queryParams['signature'] ?? '',
         ]);

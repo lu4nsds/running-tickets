@@ -13,16 +13,16 @@ return new class extends Migration
     {
         Schema::create('roles', function (Blueprint $table) {
             $table->id();
-            
+
             // Nome do papel (ex: "Super Administrador")
             $table->string('name');
-            
+
             // Slug único para identificação (ex: "super_admin")
             $table->string('slug')->unique();
-            
+
             // Descrição opcional do papel
             $table->text('description')->nullable();
-            
+
             $table->timestamps();
         });
     }

@@ -36,16 +36,16 @@ class CancelExpiredOrdersCommand extends Command
         // Pedidos em PENDING ou FAILED com reserva expirada — PROCESSING fica
         // fora porque o job ainda está trabalhando neles.
         $query = Order::whereIn('status', [
-                OrderStatus::PENDING->value,
-                OrderStatus::FAILED->value,
-            ])
+            OrderStatus::PENDING->value,
+            OrderStatus::FAILED->value,
+        ])
             ->where(function ($q) use ($minutes) {
                 $q->whereNotNull('reserved_until')->where('reserved_until', '<', now());
 
                 if ($minutes !== null && $minutes > 0) {
                     $q->orWhere(function ($q2) use ($minutes) {
                         $q2->whereNull('reserved_until')
-                           ->where('created_at', '<', Carbon::now()->subMinutes($minutes));
+                            ->where('created_at', '<', Carbon::now()->subMinutes($minutes));
                     });
                 }
             });
@@ -54,6 +54,7 @@ class CancelExpiredOrdersCommand extends Command
 
         if ($expiredOrders->isEmpty()) {
             $this->info('Nenhum pedido expirado encontrado.');
+
             return Command::SUCCESS;
         }
 
@@ -77,7 +78,7 @@ class CancelExpiredOrdersCommand extends Command
                 $this->line("  - Pedido {$order->reference} cancelado (criado em {$order->created_at->format('d/m/Y H:i:s')})");
 
                 Log::info('Pedido expirado cancelado', [
-                    'order_id'  => $order->id,
+                    'order_id' => $order->id,
                     'reference' => $order->reference,
                     'created_at' => $order->created_at,
                 ]);
@@ -85,9 +86,9 @@ class CancelExpiredOrdersCommand extends Command
                 $this->error("  - Erro ao cancelar pedido {$order->reference}: {$e->getMessage()}");
 
                 Log::error('Erro ao cancelar pedido expirado', [
-                    'order_id'  => $order->id,
+                    'order_id' => $order->id,
                     'reference' => $order->reference,
-                    'error'     => $e->getMessage(),
+                    'error' => $e->getMessage(),
                 ]);
             }
         }

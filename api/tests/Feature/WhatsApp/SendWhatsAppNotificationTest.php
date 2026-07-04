@@ -35,6 +35,7 @@ class SendWhatsAppNotificationTest extends TestCase
             $mock->shouldReceive('send')
                 ->andReturnUsing(function (string $phone, string $message) use (&$sentTo) {
                     $sentTo[] = $phone;
+
                     return true;
                 });
         });
@@ -65,6 +66,7 @@ class SendWhatsAppNotificationTest extends TestCase
             $mock->shouldReceive('send')
                 ->andReturnUsing(function (string $phone) use (&$sentTo) {
                     $sentTo[] = $phone;
+
                     return true;
                 });
         });
@@ -96,31 +98,31 @@ class SendWhatsAppNotificationTest extends TestCase
     private function makeOrderWithTickets(string $buyerPhone, array $participants): Order
     {
         $organizer = \App\Models\Organizer::factory()->create();
-        $event     = \App\Models\Event::factory()->for($organizer)->create([
-            'title'      => 'Corrida de Teste',
+        $event = \App\Models\Event::factory()->for($organizer)->create([
+            'title' => 'Corrida de Teste',
             'date_start' => now()->addDays(30),
-            'city'       => 'São Paulo',
-            'state'      => 'SP',
-            'venue'      => 'Parque Ibirapuera',
+            'city' => 'São Paulo',
+            'state' => 'SP',
+            'venue' => 'Parque Ibirapuera',
         ]);
 
         $order = Order::factory()->create([
             'organizer_id' => $organizer->id,
-            'event_id'     => $event->id,
-            'buyer_phone'  => $buyerPhone,
-            'buyer_email'  => 'comprador@test.com',
-            'status'       => OrderStatus::PAID,
+            'event_id' => $event->id,
+            'buyer_phone' => $buyerPhone,
+            'buyer_email' => 'comprador@test.com',
+            'status' => OrderStatus::PAID,
         ]);
 
         foreach ($participants as $participant) {
             $item = OrderItem::factory()->create([
-                'order_id'         => $order->id,
+                'order_id' => $order->id,
                 'participant_data' => ['name' => $participant['name'], 'phone' => $participant['phone'], 'email' => 'p@test.com', 'cpf' => '12345678901'],
             ]);
 
             Ticket::factory()->create([
                 'order_item_id' => $item->id,
-                'status'        => TicketStatus::ACTIVE,
+                'status' => TicketStatus::ACTIVE,
             ]);
         }
 

@@ -15,9 +15,9 @@ class EnsureSuperAdmin
      */
     public function handle(Request $request, Closure $next): Response
     {
-        if (!$request->user() || !$request->user()->isSuperAdmin()) {
+        if (! $request->user() || ! $request->user()->isSuperAdmin()) {
             return response()->json([
-                'message' => 'Acesso negado. Apenas super administradores podem acessar este recurso.'
+                'message' => 'Acesso negado. Apenas super administradores podem acessar este recurso.',
             ], 403);
         }
 

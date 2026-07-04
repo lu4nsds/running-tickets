@@ -2,8 +2,8 @@
 
 namespace App\Mail;
 
-use App\Models\User;
 use Illuminate\Bus\Queueable;
+use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
@@ -17,7 +17,7 @@ class PasswordResetMail extends Mailable
      * Create a new message instance.
      */
     public function __construct(
-        public User $user,
+        public Authenticatable $user,
         public string $token,
         public string $source = 'client',
     ) {}
@@ -54,7 +54,7 @@ class PasswordResetMail extends Mailable
             ? config('app.admin_url', 'http://localhost:5174')
             : config('app.client_url', 'http://localhost:5173');
 
-        return $base . '/redefinir-senha?token=' . $this->token . '&email=' . urlencode($this->user->email);
+        return $base.'/redefinir-senha?token='.$this->token.'&email='.urlencode($this->user->email);
     }
 
     /**

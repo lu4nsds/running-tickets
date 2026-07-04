@@ -2,8 +2,8 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
 use App\Models\Organizer;
+use Illuminate\Database\Seeder;
 
 class OrganizerSeeder extends Seeder
 {
@@ -123,6 +123,6 @@ class OrganizerSeeder extends Seeder
             );
         }
 
-        $this->command->info('✅ ' . count($organizers) . ' organizadores criados!');
+        $this->command->info('✅ '.count($organizers).' organizadores criados!');
     }
 }

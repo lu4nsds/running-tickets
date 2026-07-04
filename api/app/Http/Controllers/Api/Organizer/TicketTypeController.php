@@ -30,7 +30,7 @@ class TicketTypeController extends Controller
         // Verificar se o ticket type pertence ao evento
         if ($ticketType->event_id !== $event->id) {
             return response()->json([
-                'message' => 'Este tipo de ingresso não pertence a este evento.'
+                'message' => 'Este tipo de ingresso não pertence a este evento.',
             ], 404);
         }
 

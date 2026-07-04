@@ -4,7 +4,6 @@ namespace App\Http\Resources;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
-use App\Http\Resources\EventResource;
 
 class OrganizerResource extends JsonResource
 {
@@ -30,16 +29,16 @@ class OrganizerResource extends JsonResource
             'status' => $this->status,
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
-            
+
             // Relacionamentos opcionais
             'users' => $this->whenLoaded('users'),
             'events' => $this->whenLoaded('events', function () {
                 return EventResource::collection($this->events);
             }),
             'events_count' => $this->when(isset($this->events_count), $this->events_count),
-            
+
             // Stats calculados
-            'total_sales'     => $this->when(isset($this->total_sales), $this->total_sales),
+            'total_sales' => $this->when(isset($this->total_sales), $this->total_sales),
             'total_net_sales' => $this->when(isset($this->total_net_sales), $this->total_net_sales),
         ];
     }

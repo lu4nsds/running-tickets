@@ -9,7 +9,7 @@ class StorageController extends Controller
 {
     public function serve(string $path)
     {
-        if (!Storage::exists($path)) {
+        if (! Storage::exists($path)) {
             abort(404);
         }
 

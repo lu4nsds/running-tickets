@@ -47,7 +47,7 @@ class CategoryController extends Controller
         // Verificar se a categoria pertence ao evento
         if ($category->event_id !== $event->id) {
             return response()->json([
-                'message' => 'Esta categoria não pertence a este evento.'
+                'message' => 'Esta categoria não pertence a este evento.',
             ], 404);
         }
 
@@ -62,7 +62,7 @@ class CategoryController extends Controller
         // Verificar se a categoria pertence ao evento
         if ($category->event_id !== $event->id) {
             return response()->json([
-                'message' => 'Esta categoria não pertence a este evento.'
+                'message' => 'Esta categoria não pertence a este evento.',
             ], 404);
         }
 
@@ -80,24 +80,24 @@ class CategoryController extends Controller
         // Verificar se a categoria pertence ao evento
         if ($category->event_id !== $event->id) {
             return response()->json([
-                'message' => 'Esta categoria não pertence a este evento.'
+                'message' => 'Esta categoria não pertence a este evento.',
             ], 404);
         }
 
         // Verificar se existem inscrições vinculadas
         $orderItemsCount = $category->orderItems()->count();
-        
+
         if ($orderItemsCount > 0) {
             return response()->json([
                 'message' => "Não é possível excluir esta categoria pois existem {$orderItemsCount} inscrições vinculadas.",
-                'order_items_count' => $orderItemsCount
+                'order_items_count' => $orderItemsCount,
             ], 422);
         }
 
         $category->delete();
 
         return response()->json([
-            'message' => 'Categoria excluída com sucesso.'
+            'message' => 'Categoria excluída com sucesso.',
         ], 200);
     }
 }

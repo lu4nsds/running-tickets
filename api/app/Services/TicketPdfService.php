@@ -11,7 +11,6 @@ class TicketPdfService
     /**
      * Gera um PDF do ticket com as informações do participante e QR code
      *
-     * @param OrderItem $orderItem
      * @return string Caminho do arquivo PDF gerado
      */
     public function generateTicketPdf(OrderItem $orderItem): string
@@ -21,7 +20,7 @@ class TicketPdfService
             'order.event',
             'ticket',
             'ticketType',
-            'category'
+            'category',
         ]);
 
         // Gera o QR code em base64 para embutir no PDF
@@ -47,8 +46,8 @@ class TicketPdfService
         $pdf->setOption('isRemoteEnabled', false);
 
         // Define o nome do arquivo
-        $fileName = 'ticket-' . $orderItem->ticket->code . '.pdf';
-        $filePath = 'tickets/' . $fileName;
+        $fileName = 'ticket-'.$orderItem->ticket->code.'.pdf';
+        $filePath = 'tickets/'.$fileName;
 
         // Salva o PDF no storage
         Storage::put($filePath, $pdf->output());
@@ -58,9 +57,6 @@ class TicketPdfService
 
     /**
      * Gera o QR code em formato base64 para embutir no PDF
-     *
-     * @param string $code
-     * @return string
      */
     private function generateQrCodeBase64(string $code): string
     {
@@ -72,14 +68,11 @@ class TicketPdfService
             ->generate($code);
 
         // Retorna o SVG diretamente (dompdf suporta SVG inline)
-        return 'data:image/svg+xml;base64,' . base64_encode($qrCodeSvg);
+        return 'data:image/svg+xml;base64,'.base64_encode($qrCodeSvg);
     }
 
     /**
      * Remove PDFs temporários gerados
-     *
-     * @param array $filePaths
-     * @return void
      */
     public function cleanupTempPdfs(array $filePaths): void
     {

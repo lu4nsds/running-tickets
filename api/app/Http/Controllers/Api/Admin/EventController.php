@@ -18,15 +18,12 @@ class EventController extends Controller
     {
         $events = Event::query()
             ->with(['organizer'])
-            ->when($request->search, fn($q, $search) =>
-                $q->where('title', 'like', "%{$search}%")
-                  ->orWhere('city', 'like', "%{$search}%")
+            ->when($request->search, fn ($q, $search) => $q->where('title', 'like', "%{$search}%")
+                ->orWhere('city', 'like', "%{$search}%")
             )
-            ->when($request->organizer_id, fn($q, $organizerId) =>
-                $q->where('organizer_id', $organizerId)
+            ->when($request->organizer_id, fn ($q, $organizerId) => $q->where('organizer_id', $organizerId)
             )
-            ->when($request->status, fn($q, $status) =>
-                $q->where('status', $status)
+            ->when($request->status, fn ($q, $status) => $q->where('status', $status)
             )
             ->orderBy('date_start', 'desc')
             ->paginate($request->per_page ?? 20);
@@ -81,8 +78,8 @@ class EventController extends Controller
             ->selectRaw('SUM(total_cents) as total, SUM(COALESCE(net_amount_cents, total_cents)) as net')
             ->first();
 
-        $event->total_revenue     = $paidOrders->total ?? 0;
-        $event->total_net_revenue = $paidOrders->net   ?? 0;
+        $event->total_revenue = $paidOrders->total ?? 0;
+        $event->total_net_revenue = $paidOrders->net ?? 0;
 
         $event->ticket_stats = $event->getTicketStatistics();
 
@@ -95,13 +92,13 @@ class EventController extends Controller
         unset($data['banner']);
 
         if ($request->hasFile('banner')) {
-            if ($event->banner_url && !str_starts_with($event->banner_url, 'http')) {
+            if ($event->banner_url && ! str_starts_with($event->banner_url, 'http')) {
                 Storage::delete($event->banner_url);
             }
             $data['banner_url'] = $request->file('banner')->store('events/banners');
         }
 
-        if (isset($data['title']) && !isset($data['slug'])) {
+        if (isset($data['title']) && ! isset($data['slug'])) {
             $data['slug'] = Str::slug($data['title']);
         }
 

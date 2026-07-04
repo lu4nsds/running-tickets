@@ -86,6 +86,7 @@ class WhatsAppService extends AbstractIntegrationService
 
                 if ($content === null) {
                     Log::warning('[WhatsApp] PDF not found for document send', ['path' => $documentPath]);
+
                     return false;
                 }
 

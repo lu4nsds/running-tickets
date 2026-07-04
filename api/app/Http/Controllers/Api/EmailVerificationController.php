@@ -37,33 +37,33 @@ class EmailVerificationController extends Controller
     public function verify(Request $request, $id, $hash)
     {
         // Validar assinatura da URL
-        if (!$request->hasValidSignature()) {
+        if (! $request->hasValidSignature()) {
             return response()->json([
                 'message' => 'Link de verificação inválido ou expirado.',
                 'errors' => [
-                    'email' => ['Link de verificação inválido ou expirado.']
-                ]
+                    'email' => ['Link de verificação inválido ou expirado.'],
+                ],
             ], 422);
         }
 
         $user = User::find($id);
 
-        if (!$user) {
+        if (! $user) {
             return response()->json([
                 'message' => 'Usuário não encontrado.',
                 'errors' => [
-                    'user' => ['Usuário não encontrado.']
-                ]
+                    'user' => ['Usuário não encontrado.'],
+                ],
             ], 404);
         }
 
         // Validar hash do email
-        if (!hash_equals((string) $hash, sha1($user->email))) {
+        if (! hash_equals((string) $hash, sha1($user->email))) {
             return response()->json([
                 'message' => 'Link de verificação inválido.',
                 'errors' => [
-                    'email' => ['Link de verificação inválido.']
-                ]
+                    'email' => ['Link de verificação inválido.'],
+                ],
             ], 422);
         }
 

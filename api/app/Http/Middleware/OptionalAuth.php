@@ -12,7 +12,7 @@ class OptionalAuth
 {
     /**
      * Handle an incoming request.
-     * 
+     *
      * Attempts to authenticate the user if a token is present,
      * but does not require authentication.
      */
@@ -22,7 +22,7 @@ class OptionalAuth
         if ($token = $request->bearerToken()) {
             try {
                 $accessToken = PersonalAccessToken::findToken($token);
-                
+
                 if ($accessToken) {
                     $user = $accessToken->tokenable;
                     Auth::setUser($user);

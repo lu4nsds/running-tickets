@@ -3,9 +3,9 @@
 namespace Database\Seeders;
 
 use App\Enums\EventStatus;
-use Illuminate\Database\Seeder;
 use App\Models\Event;
 use App\Models\Organizer;
+use Illuminate\Database\Seeder;
 use Illuminate\Support\Str;
 
 class EventSeeder extends Seeder
@@ -16,41 +16,42 @@ class EventSeeder extends Seeder
 
         if ($organizers->isEmpty()) {
             $this->command->error('❌ Nenhum organizador encontrado! Execute OrganizerSeeder primeiro.');
+
             return;
         }
 
         $eventTemplates = [
             [
-                'suffix'           => '5k',
-                'title_template'   => 'Corrida {city} 5K',
-                'description'      => 'Corrida de 5km pela cidade',
-                'distance'         => '5km',
-                'duration_hours'   => 3,
-                'max_participants'  => 500,
+                'suffix' => '5k',
+                'title_template' => 'Corrida {city} 5K',
+                'description' => 'Corrida de 5km pela cidade',
+                'distance' => '5km',
+                'duration_hours' => 3,
+                'max_participants' => 500,
             ],
             [
-                'suffix'           => '10k',
-                'title_template'   => 'Corrida das Dunas {city} 10K',
-                'description'      => 'Corrida de 10km',
-                'distance'         => '10km',
-                'duration_hours'   => 4,
-                'max_participants'  => 700,
+                'suffix' => '10k',
+                'title_template' => 'Corrida das Dunas {city} 10K',
+                'description' => 'Corrida de 10km',
+                'distance' => '10km',
+                'duration_hours' => 4,
+                'max_participants' => 700,
             ],
             [
-                'suffix'           => 'meia-maratona',
-                'title_template'   => 'Meia Maratona {city}',
-                'description'      => 'Meia maratona de 21km',
-                'distance'         => '21km',
-                'duration_hours'   => 5,
-                'max_participants'  => 1000,
+                'suffix' => 'meia-maratona',
+                'title_template' => 'Meia Maratona {city}',
+                'description' => 'Meia maratona de 21km',
+                'distance' => '21km',
+                'duration_hours' => 5,
+                'max_participants' => 1000,
             ],
             [
-                'suffix'           => 'trail',
-                'title_template'   => 'Trail Run {city}',
-                'description'      => 'Trail running',
-                'distance'         => '15km',
-                'duration_hours'   => 5,
-                'max_participants'  => 300,
+                'suffix' => 'trail',
+                'title_template' => 'Trail Run {city}',
+                'description' => 'Trail running',
+                'distance' => '15km',
+                'duration_hours' => 5,
+                'max_participants' => 300,
             ],
         ];
 
@@ -68,30 +69,30 @@ class EventSeeder extends Seeder
             $numEvents = rand(3, 4);
 
             for ($i = 0; $i < $numEvents; $i++) {
-                $template     = $eventTemplates[array_rand($eventTemplates)];
-                $city         = $cities[array_rand($cities)];
-                $venue        = $city['venues'][array_rand($city['venues'])];
+                $template = $eventTemplates[array_rand($eventTemplates)];
+                $city = $cities[array_rand($cities)];
+                $venue = $city['venues'][array_rand($city['venues'])];
                 $daysInFuture = rand(15, 120);
 
-                $slug  = Str::slug($template['title_template'] . ' ' . $city['name'] . ' ' . $daysInFuture);
+                $slug = Str::slug($template['title_template'].' '.$city['name'].' '.$daysInFuture);
                 $title = str_replace('{city}', $city['name'], $template['title_template']);
 
                 Event::firstOrCreate(
                     ['slug' => $slug],
                     [
-                        'organizer_id'    => $organizer->id,
-                        'title'           => $title,
-                        'description'     => $template['description'],
-                        'state'           => $city['state'],
-                        'city'            => $city['name'],
-                        'venue'           => $venue,
-                        'date_start'      => now()->addDays($daysInFuture),
-                        'date_end'        => now()->addDays($daysInFuture)->addHours($template['duration_hours']),
+                        'organizer_id' => $organizer->id,
+                        'title' => $title,
+                        'description' => $template['description'],
+                        'state' => $city['state'],
+                        'city' => $city['name'],
+                        'venue' => $venue,
+                        'date_start' => now()->addDays($daysInFuture),
+                        'date_end' => now()->addDays($daysInFuture)->addHours($template['duration_hours']),
                         'max_participants' => $template['max_participants'],
-                        'status'          => EventStatus::ACTIVE->value,
-                        'meta'            => [
+                        'status' => EventStatus::ACTIVE->value,
+                        'meta' => [
                             'distance' => $template['distance'],
-                            'kit'      => 'camisa + medalha',
+                            'kit' => 'camisa + medalha',
                         ],
                     ]
                 );

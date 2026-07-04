@@ -23,11 +23,11 @@ class UpdateOrganizerRequest extends FormRequest
     public function rules(): array
     {
         $organizerId = $this->route('organizer')->id;
-        
+
         return [
             'name' => 'sometimes|required|string|max:255',
-            'document' => 'sometimes|required|string|max:20|unique:organizers,document,' . $organizerId,
-            'email' => 'sometimes|required|email|max:255|unique:organizers,email,' . $organizerId,
+            'document' => 'sometimes|required|string|max:20|unique:organizers,document,'.$organizerId,
+            'email' => 'sometimes|required|email|max:255|unique:organizers,email,'.$organizerId,
             'phone' => 'sometimes|required|string|max:20',
             'address' => 'sometimes|required|string|max:255',
             'address_complement' => 'nullable|string|max:100',

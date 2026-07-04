@@ -21,7 +21,7 @@ class OrderResource extends JsonResource
             'organizer' => OrganizerResource::make($this->whenLoaded('organizer')),
             'user_id' => $this->user_id,
             'total_cents' => $this->total_cents,
-            'total_formatted' => 'R$ ' . number_format($this->total_cents / 100, 2, ',', '.'),
+            'total_formatted' => 'R$ '.number_format($this->total_cents / 100, 2, ',', '.'),
             'fee_cents' => $this->fee_cents,
             'net_amount_cents' => $this->net_amount_cents,
             'currency' => $this->currency,

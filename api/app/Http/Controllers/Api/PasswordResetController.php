@@ -21,7 +21,7 @@ class PasswordResetController extends Controller
     public function sendResetLink(Request $request)
     {
         $request->validate([
-            'email'  => ['required', 'email'],
+            'email' => ['required', 'email'],
             'source' => ['nullable', 'string', Rule::in(['client', 'admin'])],
         ]);
 
@@ -30,12 +30,12 @@ class PasswordResetController extends Controller
         // Verificar se usuário existe
         $user = User::where('email', $email)->first();
 
-        if (!$user) {
+        if (! $user) {
             return response()->json([
                 'message' => 'Não encontramos um usuário com este endereço de email.',
                 'errors' => [
-                    'email' => ['Não encontramos um usuário com este endereço de email.']
-                ]
+                    'email' => ['Não encontramos um usuário com este endereço de email.'],
+                ],
             ], 404);
         }
 
@@ -49,8 +49,8 @@ class PasswordResetController extends Controller
             return response()->json([
                 'message' => 'Muitas tentativas. Por favor, tente novamente em uma hora.',
                 'errors' => [
-                    'email' => ['Muitas tentativas. Por favor, tente novamente em uma hora.']
-                ]
+                    'email' => ['Muitas tentativas. Por favor, tente novamente em uma hora.'],
+                ],
             ], 429);
         }
 
@@ -89,7 +89,7 @@ class PasswordResetController extends Controller
                 Password::min(8)
                     ->letters()
                     ->mixedCase()
-                    ->numbers()
+                    ->numbers(),
             ],
         ], [
             'password.confirmed' => 'A confirmação da senha não confere.',
@@ -98,12 +98,12 @@ class PasswordResetController extends Controller
         // Verificar se usuário existe
         $user = User::where('email', $request->email)->first();
 
-        if (!$user) {
+        if (! $user) {
             return response()->json([
                 'message' => 'Não encontramos um usuário com este endereço de email.',
                 'errors' => [
-                    'email' => ['Não encontramos um usuário com este endereço de email.']
-                ]
+                    'email' => ['Não encontramos um usuário com este endereço de email.'],
+                ],
             ], 404);
         }
 
@@ -113,33 +113,34 @@ class PasswordResetController extends Controller
             ->first();
 
         // Validar se token existe
-        if (!$passwordReset) {
+        if (! $passwordReset) {
             return response()->json([
                 'message' => 'Token de redefinição de senha inválido ou expirado.',
                 'errors' => [
-                    'token' => ['Token de redefinição de senha inválido ou expirado.']
-                ]
+                    'token' => ['Token de redefinição de senha inválido ou expirado.'],
+                ],
             ], 422);
         }
 
         // Validar se token está correto
-        if (!Hash::check($request->token, $passwordReset->token)) {
+        if (! Hash::check($request->token, $passwordReset->token)) {
             return response()->json([
                 'message' => 'Token de redefinição de senha inválido.',
                 'errors' => [
-                    'token' => ['Token de redefinição de senha inválido.']
-                ]
+                    'token' => ['Token de redefinição de senha inválido.'],
+                ],
             ], 422);
         }
 
         // Validar se token não expirou (60 minutos)
         if (now()->diffInMinutes($passwordReset->created_at) > 60) {
             DB::table('password_reset_tokens')->where('email', $request->email)->delete();
+
             return response()->json([
                 'message' => 'Token de redefinição de senha expirado.',
                 'errors' => [
-                    'token' => ['Token de redefinição de senha expirado. Por favor, solicite um novo link.']
-                ]
+                    'token' => ['Token de redefinição de senha expirado. Por favor, solicite um novo link.'],
+                ],
             ], 410);
         }
 
@@ -164,8 +165,8 @@ class PasswordResetController extends Controller
     public function activate(Request $request)
     {
         $request->validate([
-            'token'    => ['required', 'string'],
-            'email'    => ['required', 'email'],
+            'token' => ['required', 'string'],
+            'email' => ['required', 'email'],
             'password' => [
                 'required',
                 'string',
@@ -173,7 +174,7 @@ class PasswordResetController extends Controller
                 Password::min(8)
                     ->letters()
                     ->mixedCase()
-                    ->numbers()
+                    ->numbers(),
             ],
         ], [
             'password.confirmed' => 'A confirmação da senha não confere.',
@@ -181,10 +182,10 @@ class PasswordResetController extends Controller
 
         $user = User::where('email', $request->email)->first();
 
-        if (!$user) {
+        if (! $user) {
             return response()->json([
                 'message' => 'Link de ativação inválido.',
-                'errors'  => ['token' => ['Link de ativação inválido.']],
+                'errors' => ['token' => ['Link de ativação inválido.']],
             ], 422);
         }
 
@@ -192,19 +193,20 @@ class PasswordResetController extends Controller
             ->where('email', $request->email)
             ->first();
 
-        if (!$passwordReset || !Hash::check($request->token, $passwordReset->token)) {
+        if (! $passwordReset || ! Hash::check($request->token, $passwordReset->token)) {
             return response()->json([
                 'message' => 'Link de ativação inválido ou expirado.',
-                'errors'  => ['token' => ['Link de ativação inválido ou expirado.']],
+                'errors' => ['token' => ['Link de ativação inválido ou expirado.']],
             ], 422);
         }
 
         // Expiração de 48 horas (2880 minutos) para links de ativação
         if (now()->diffInMinutes($passwordReset->created_at) > 2880) {
             DB::table('password_reset_tokens')->where('email', $request->email)->delete();
+
             return response()->json([
                 'message' => 'Link de ativação expirado.',
-                'errors'  => ['token' => ['Link de ativação expirado. Solicite ao administrador que adicione você novamente.']],
+                'errors' => ['token' => ['Link de ativação expirado. Solicite ao administrador que adicione você novamente.']],
             ], 410);
         }
 

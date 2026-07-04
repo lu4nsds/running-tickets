@@ -3,9 +3,9 @@
 namespace Database\Seeders;
 
 use App\Enums\Currency;
-use Illuminate\Database\Seeder;
-use App\Models\TicketType;
 use App\Models\Event;
+use App\Models\TicketType;
+use Illuminate\Database\Seeder;
 
 class TicketTypeSeeder extends Seeder
 {
@@ -16,7 +16,7 @@ class TicketTypeSeeder extends Seeder
         foreach ($events as $event) {
             // Determinar preços baseado no tipo de evento
             $basePrice = 6000; // R$ 60,00 padrão
-            
+
             if (str_contains($event->title, 'Maratona')) {
                 $basePrice = 12000; // R$ 120,00
             } elseif (str_contains($event->title, '10K')) {

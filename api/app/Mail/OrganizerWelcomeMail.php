@@ -3,8 +3,8 @@
 namespace App\Mail;
 
 use App\Models\Organizer;
-use App\Models\User;
 use Illuminate\Bus\Queueable;
+use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
@@ -15,7 +15,7 @@ class OrganizerWelcomeMail extends Mailable
     use Queueable, SerializesModels;
 
     public function __construct(
-        public User $user,
+        public Authenticatable $user,
         public Organizer $organizer,
         public string $token
     ) {}
@@ -40,7 +40,8 @@ class OrganizerWelcomeMail extends Mailable
     private function getActivationUrl(): string
     {
         $adminUrl = config('app.admin_url', 'http://localhost:5174');
-        return $adminUrl . '/ativar-conta?token=' . $this->token . '&email=' . urlencode($this->user->email);
+
+        return $adminUrl.'/ativar-conta?token='.$this->token.'&email='.urlencode($this->user->email);
     }
 
     public function attachments(): array

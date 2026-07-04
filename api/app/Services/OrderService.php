@@ -34,7 +34,7 @@ class OrderService
         foreach ($countsByTicketType as $ticketTypeId => $requested) {
             $ticketType = $ticketTypes[$ticketTypeId] ?? null;
 
-            if (!$ticketType) {
+            if (! $ticketType) {
                 throw new \RuntimeException("Tipo de ingresso ID {$ticketTypeId} não encontrado.");
             }
 

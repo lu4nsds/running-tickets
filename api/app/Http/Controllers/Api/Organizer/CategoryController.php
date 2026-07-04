@@ -30,7 +30,7 @@ class CategoryController extends Controller
         // Verificar se a categoria pertence ao evento
         if ($category->event_id !== $event->id) {
             return response()->json([
-                'message' => 'Esta categoria não pertence a este evento.'
+                'message' => 'Esta categoria não pertence a este evento.',
             ], 404);
         }
 

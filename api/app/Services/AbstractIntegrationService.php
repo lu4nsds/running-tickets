@@ -8,8 +8,10 @@ use Illuminate\Support\Facades\Http;
 abstract class AbstractIntegrationService
 {
     protected string $baseUrl = '';
-    protected array $headers  = [];
-    protected int $timeout    = 15;
+
+    protected array $headers = [];
+
+    protected int $timeout = 15;
 
     protected function request(): PendingRequest
     {

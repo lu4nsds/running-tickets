@@ -4,11 +4,9 @@ namespace App\Observers;
 
 use App\Enums\OrderStatus;
 use App\Jobs\GenerateOrderTicketsJob;
-use App\Mail\OrderPaidMail;
 use App\Models\Order;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 
 class OrderObserver
 {
@@ -35,9 +33,9 @@ class OrderObserver
             $order->load('event.organizer');
             Cache::forget("dashboard_organizer_{$order->event->organizer_id}");
             Cache::forget("dashboard_event_{$order->event_id}");
-            Cache::forget("dashboard_admin_platform");
+            Cache::forget('dashboard_admin_platform');
             Cache::forget("dashboard_admin_organizer_{$order->event->organizer_id}");
-            
+
             // Dispatch do job para gerar os tickets
             GenerateOrderTicketsJob::dispatch($order);
 

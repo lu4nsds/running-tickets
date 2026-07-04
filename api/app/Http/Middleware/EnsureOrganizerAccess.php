@@ -17,9 +17,9 @@ class EnsureOrganizerAccess
     {
         $user = $request->user();
 
-        if (!$user) {
+        if (! $user) {
             return response()->json([
-                'message' => 'Não autenticado.'
+                'message' => 'Não autenticado.',
             ], 401);
         }
 
@@ -30,17 +30,17 @@ class EnsureOrganizerAccess
 
         // Verificar se tem organizer_id na rota
         $organizer = $request->route('organizer') ?? $request->input('organizer_id');
-        
+
         if ($organizer) {
             // Se $organizer for um Model (Route Model Binding), extrair o ID
             // Se for um ID, usar direto
-            $organizerId = $organizer instanceof \App\Models\Organizer 
-                ? $organizer->id 
+            $organizerId = $organizer instanceof \App\Models\Organizer
+                ? $organizer->id
                 : $organizer;
-            
-            if (!$user->canAccessOrganizer($organizerId)) {
+
+            if (! $user->canAccessOrganizer($organizerId)) {
                 return response()->json([
-                    'message' => 'Você não tem permissão para acessar este organizador.'
+                    'message' => 'Você não tem permissão para acessar este organizador.',
                 ], 403);
             }
         } else {
@@ -49,25 +49,25 @@ class EnsureOrganizerAccess
 
         // Verificar se tem event_id e se o event pertence a um organizer do user
         $event = $request->route('event');
-        
+
         if ($event) {
             // Se $event for um Model (Route Model Binding), já temos o objeto
             // Se for um ID, precisamos buscar
-            if (!$event instanceof \App\Models\Event) {
+            if (! $event instanceof \App\Models\Event) {
                 $event = \App\Models\Event::find($event);
             }
-            
-            if ($event && !$user->canAccessOrganizer($event->organizer_id)) {
+
+            if ($event && ! $user->canAccessOrganizer($event->organizer_id)) {
                 return response()->json([
-                    'message' => 'Você não tem permissão para acessar este evento.'
+                    'message' => 'Você não tem permissão para acessar este evento.',
                 ], 403);
             }
         }
 
         // Se não tem organizer_id nem event_id na rota, verificar se tem pelo menos 1 organizer
-        if (!$organizerId && !$event && $user->organizers()->count() === 0) {
+        if (! $organizerId && ! $event && $user->organizers()->count() === 0) {
             return response()->json([
-                'message' => 'Você não está vinculado a nenhum organizador.'
+                'message' => 'Você não está vinculado a nenhum organizador.',
             ], 403);
         }
 

@@ -94,6 +94,7 @@ class RepaymentFlowTest extends TestCase
 
         Mail::assertSent(PaymentFailedMail::class, function ($mail) use ($order) {
             $rendered = $mail->render();
+
             return str_contains($rendered, "/pagamento/{$order->reference}");
         });
     }

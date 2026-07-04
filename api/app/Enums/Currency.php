@@ -22,7 +22,7 @@ enum Currency: string
      */
     public function label(): string
     {
-        return match($this) {
+        return match ($this) {
             self::BRL => 'Real Brasileiro',
         };
     }
@@ -32,7 +32,7 @@ enum Currency: string
      */
     public function symbol(): string
     {
-        return match($this) {
+        return match ($this) {
             self::BRL => 'R$',
         };
     }

@@ -10,7 +10,6 @@ use Illuminate\Mail\Mailables\Attachment;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
-use Illuminate\Support\Facades\Storage;
 
 class ParticipantTicketMail extends Mailable
 {
@@ -31,7 +30,7 @@ class ParticipantTicketMail extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Seu Ingresso - ' . $this->orderItem->order->event->title,
+            subject: 'Seu Ingresso - '.$this->orderItem->order->event->title,
         );
     }
 
@@ -57,14 +56,14 @@ class ParticipantTicketMail extends Mailable
         if ($this->orderItem->ticket) {
             try {
                 $this->generatedPdf = $pdfService->generateTicketPdf($this->orderItem);
-                
+
                 $attachments[] = Attachment::fromStorage($this->generatedPdf)
-                    ->as('ingresso-' . $this->orderItem->participant_data['name'] . '.pdf')
+                    ->as('ingresso-'.$this->orderItem->participant_data['name'].'.pdf')
                     ->withMime('application/pdf');
             } catch (\Exception $e) {
                 \Log::error('Erro ao gerar PDF do ticket', [
                     'order_item_id' => $this->orderItem->id,
-                    'error' => $e->getMessage()
+                    'error' => $e->getMessage(),
                 ]);
             }
         }

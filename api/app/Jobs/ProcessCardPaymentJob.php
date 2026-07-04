@@ -20,11 +20,13 @@ class ProcessCardPaymentJob implements ShouldQueue
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     public int $tries = 2;
+
     public int $timeout = 30;
+
     public int $backoff = 3;
 
     /**
-     * @param array $paymentData ['token','payment_method_id','installments','payer','payment_method']
+     * @param  array  $paymentData  ['token','payment_method_id','installments','payer','payment_method']
      */
     public function __construct(
         public Order $order,
@@ -40,11 +42,12 @@ class ProcessCardPaymentJob implements ShouldQueue
     ): void {
         $this->order->refresh();
 
-        if (!in_array($this->order->status, [OrderStatus::PROCESSING, OrderStatus::PENDING], true)) {
+        if (! in_array($this->order->status, [OrderStatus::PROCESSING, OrderStatus::PENDING], true)) {
             Log::info('ProcessCardPaymentJob: pedido fora de PROCESSING/PENDING, ignorando', [
                 'order_id' => $this->order->id,
                 'status' => $this->order->status->value,
             ]);
+
             return;
         }
 

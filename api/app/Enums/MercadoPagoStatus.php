@@ -26,7 +26,7 @@ enum MercadoPagoStatus: string
      */
     public function label(): string
     {
-        return match($this) {
+        return match ($this) {
             self::APPROVED => 'Aprovado',
             self::REFUNDED => 'Reembolsado',
             self::CHARGED_BACK => 'Chargeback',
@@ -39,7 +39,7 @@ enum MercadoPagoStatus: string
      */
     public function toOrderStatus(): OrderStatus
     {
-        return match($this) {
+        return match ($this) {
             self::APPROVED => OrderStatus::PAID,
             self::REFUNDED, self::CHARGED_BACK => OrderStatus::REFUNDED,
             self::CANCELLED => OrderStatus::CANCELLED,

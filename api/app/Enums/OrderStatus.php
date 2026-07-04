@@ -13,7 +13,7 @@ enum OrderStatus: string
 
     public function label(): string
     {
-        return match($this) {
+        return match ($this) {
             self::PENDING => 'Pendente',
             self::PROCESSING => 'Processando',
             self::PAID => 'Pago',
@@ -25,7 +25,7 @@ enum OrderStatus: string
 
     public function color(): string
     {
-        return match($this) {
+        return match ($this) {
             self::PENDING => 'warning',
             self::PROCESSING => 'info',
             self::PAID => 'success',

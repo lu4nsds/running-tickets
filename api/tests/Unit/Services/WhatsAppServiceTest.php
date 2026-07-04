@@ -50,7 +50,7 @@ class WhatsAppServiceTest extends TestCase
         Http::fake(); // deve não ser chamado
 
         $service = $this->makeService();
-        $result  = $service->send('11999999999', 'Olá!');
+        $result = $service->send('11999999999', 'Olá!');
 
         $this->assertFalse($result);
         Http::assertNothingSent();
@@ -69,7 +69,7 @@ class WhatsAppServiceTest extends TestCase
         ]);
 
         $service = $this->makeService();
-        $result  = $service->send('11999999999', 'Olá!');
+        $result = $service->send('11999999999', 'Olá!');
 
         $this->assertTrue($result);
 
@@ -92,7 +92,7 @@ class WhatsAppServiceTest extends TestCase
         ]);
 
         $service = $this->makeService();
-        $result  = $service->send('11999999999', 'Olá!');
+        $result = $service->send('11999999999', 'Olá!');
 
         $this->assertFalse($result);
     }
@@ -124,12 +124,12 @@ class WhatsAppServiceTest extends TestCase
         Http::fake([
             'http://gateway-test:3000/tenants/test-tenant/session/connect' => Http::response([
                 'status' => 'connecting',
-                'qr'     => 'raw-qr-string',
+                'qr' => 'raw-qr-string',
             ], 200),
         ]);
 
         $service = $this->makeService();
-        $result  = $service->connect();
+        $result = $service->connect();
 
         $this->assertSame('connecting', $result['status']);
         $this->assertSame('raw-qr-string', $result['qr']);
@@ -145,13 +145,13 @@ class WhatsAppServiceTest extends TestCase
         ]);
 
         $service = $this->makeService();
-        $result  = $service->status();
+        $result = $service->status();
 
         $this->assertSame('error', $result['status']);
     }
 
     private function makeService(): WhatsAppService
     {
-        return new WhatsAppService();
+        return new WhatsAppService;
     }
 }

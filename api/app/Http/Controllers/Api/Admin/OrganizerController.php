@@ -18,13 +18,11 @@ class OrganizerController extends Controller
     public function index(Request $request)
     {
         $organizers = Organizer::query()
-            ->when($request->search, fn($q, $search) => 
-                $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('email', 'like', "%{$search}%")
-                  ->orWhere('document', 'like', "%{$search}%")
+            ->when($request->search, fn ($q, $search) => $q->where('name', 'like', "%{$search}%")
+                ->orWhere('email', 'like', "%{$search}%")
+                ->orWhere('document', 'like', "%{$search}%")
             )
-            ->when($request->status, fn($q, $status) => 
-                $q->where('status', $status)
+            ->when($request->status, fn ($q, $status) => $q->where('status', $status)
             )
             ->withCount('events')
             ->orderBy('created_at', 'desc')
@@ -50,7 +48,7 @@ class OrganizerController extends Controller
     {
         $organizer->load(['users', 'events'])
             ->loadCount('events');
-        
+
         // Calcular total de vendas (apenas pedidos pagos)
         $paidOrders = $organizer->orders()
             ->where('status', OrderStatus::PAID)
@@ -59,7 +57,7 @@ class OrganizerController extends Controller
 
         $organizer->total_sales = $paidOrders->total ?? 0;
         $organizer->total_net_sales = $paidOrders->net ?? 0;
-        
+
         return new OrganizerResource($organizer);
     }
 
@@ -81,7 +79,7 @@ class OrganizerController extends Controller
         $organizer->delete();
 
         return response()->json([
-            'message' => 'Organizador deletado com sucesso.'
+            'message' => 'Organizador deletado com sucesso.',
         ]);
     }
 }

@@ -20,7 +20,7 @@ class PaymentFailedMail extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Pagamento não aprovado - ' . $this->order->event->title,
+            subject: 'Pagamento não aprovado - '.$this->order->event->title,
         );
     }
 
@@ -35,7 +35,7 @@ class PaymentFailedMail extends Mailable
                 'order' => $this->order,
                 'failureMessage' => $body['failure_message_pt'] ?? 'Não foi possível processar seu pagamento.',
                 'failureReason' => $body['failure_reason'] ?? null,
-                'paymentUrl' => $appUrl . '/pagamento/' . $this->order->reference,
+                'paymentUrl' => $appUrl.'/pagamento/'.$this->order->reference,
                 'reservedUntil' => $this->order->reserved_until,
             ],
         );

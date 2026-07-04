@@ -32,7 +32,7 @@ class RegisterRequest extends FormRequest
                 Password::min(8)
                     ->letters()
                     ->mixedCase()
-                    ->numbers()
+                    ->numbers(),
             ],
         ];
     }
