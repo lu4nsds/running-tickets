@@ -33,20 +33,6 @@
                     ></div>
                 </div>
             </div>
-
-            <!-- Skeleton Content -->
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                <div
-                    v-for="n in 3"
-                    :key="n"
-                    class="bg-card-bg border border-surface-elevated rounded-xl p-6 animate-pulse"
-                >
-                    <div
-                        class="h-4 w-24 bg-surface-elevated rounded mb-4"
-                    ></div>
-                    <div class="h-8 w-20 bg-surface-elevated rounded"></div>
-                </div>
-            </div>
         </div>
 
         <!-- Error State -->
@@ -93,6 +79,15 @@
                 <!-- Actions -->
                 <div class="flex items-center gap-3">
                     <button
+                        @click="goToDashboard"
+                        class="px-4 py-2 bg-primary text-background-dark font-semibold rounded-lg hover:brightness-110 transition-all flex items-center gap-2"
+                    >
+                        <span class="material-symbols-outlined text-[20px]">
+                            dashboard
+                        </span>
+                        <span>Ver Dashboard</span>
+                    </button>
+                    <button
                         @click="downloadReport"
                         :disabled="isExporting"
                         class="flex items-center gap-2 px-4 py-2.5 border border-surface-elevated text-text-muted rounded-lg font-medium hover:border-primary hover:text-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
@@ -121,116 +116,6 @@
                         >
                         Deletar
                     </button>
-                </div>
-            </div>
-
-            <!-- Stats Grid -->
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                <!-- Total Inscritos -->
-                <div
-                    class="bg-card-bg border border-surface-elevated rounded-xl p-6"
-                >
-                    <div class="flex items-center gap-3 mb-3">
-                        <div
-                            class="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center"
-                        >
-                            <span class="material-symbols-outlined text-primary"
-                                >group</span
-                            >
-                        </div>
-                        <p
-                            class="text-text-muted text-xs uppercase tracking-wider"
-                        >
-                            Total Inscritos
-                        </p>
-                    </div>
-                    <p class="text-3xl font-bold text-white">
-                        {{
-                            stats.totalParticipants?.toLocaleString("pt-BR") ||
-                            0
-                        }}
-                    </p>
-                    <p class="text-text-muted text-xs mt-1">
-                        {{ getParticipantsPercentage() }}
-                    </p>
-                </div>
-
-                <!-- Receita-->
-                <div
-                    class="bg-card-bg border border-surface-elevated rounded-xl p-6"
-                >
-                    <div class="flex items-center gap-3 mb-3">
-                        <div
-                            class="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center"
-                        >
-                            <span class="material-symbols-outlined text-primary"
-                                >payments</span
-                            >
-                        </div>
-                        <p
-                            class="text-text-muted text-xs uppercase tracking-wider"
-                        >
-                            Receita
-                        </p>
-                    </div>
-                    <p class="text-3xl font-bold text-white">
-                        {{ formatCurrency(stats.totalRevenue || 0) }}
-                    </p>
-                    <p class="text-xs mt-1 flex items-center gap-1">
-                        <span class="text-text-muted">Líquido:</span>
-                        <span class="font-semibold text-white/80">{{ formatCurrency(stats.totalNetRevenue || 0) }}</span>
-                        <div class="group relative">
-                            <span class="material-symbols-outlined text-slate-500 text-sm cursor-help">info</span>
-                            <div class="absolute bottom-full left-0 mb-2 hidden group-hover:block z-10">
-                                <div class="bg-slate-900 text-white text-xs rounded-lg px-3 py-2 w-56 shadow-xl border border-slate-700">
-                                    <p class="font-bold mb-1">Valor Líquido Estimado</p>
-                                    <p class="text-slate-300">Valor após dedução das taxas do Mercado Pago, calculado com base nos pedidos já pagos deste evento.</p>
-                                </div>
-                                <div class="w-2 h-2 bg-slate-900 border-b border-r border-slate-700 absolute top-0 left-2 translate-y-1/2 rotate-45"></div>
-                            </div>
-                        </div>
-                    </p>
-                    <p class="text-text-muted text-xs mt-1">
-                        Ticket Médio:
-                        {{ formatCurrency(stats.avgTicketPrice || 0) }}
-                    </p>
-                </div>
-
-                <!-- Vagas Restantes -->
-                <div
-                    class="bg-card-bg border border-surface-elevated rounded-xl p-6"
-                >
-                    <div class="flex items-center gap-3 mb-3">
-                        <div
-                            class="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center"
-                        >
-                            <span class="material-symbols-outlined text-primary"
-                                >confirmation_number</span
-                            >
-                        </div>
-                        <p
-                            class="text-text-muted text-xs uppercase tracking-wider"
-                        >
-                            Vagas Restantes
-                        </p>
-                    </div>
-                    <p class="text-3xl font-bold text-white">
-                        {{
-                            event.max_participants
-                                ? (
-                                      event.max_participants -
-                                      (stats.totalParticipants || 0)
-                                  ).toLocaleString("pt-BR")
-                                : "∞"
-                        }}
-                    </p>
-                    <p
-                        v-if="event.max_participants"
-                        class="text-text-muted text-xs mt-1"
-                    >
-                        {{ getVacanciesPercentage() }} preenchido
-                    </p>
-                    <p v-else class="text-text-muted text-xs mt-1">Ilimitado</p>
                 </div>
             </div>
 
@@ -972,11 +857,6 @@ const isExporting = ref(false);
 const isLoading = ref(true);
 const error = ref(null);
 const event = ref(null);
-const stats = ref({
-    totalParticipants: 0,
-    totalRevenue: 0,
-    avgTicketPrice: 0,
-});
 const showDeleteModal = ref(false);
 const isDeleting = ref(false);
 
@@ -1028,8 +908,6 @@ const fetchEvent = async () => {
         const result = await store.fetchEvent(route.params.id);
         if (result.success) {
             event.value = result.data;
-            // Calcular stats básicas (substituir por dados reais da API)
-            calculateStats();
         } else {
             error.value = result.error;
         }
@@ -1038,35 +916,6 @@ const fetchEvent = async () => {
     } finally {
         isLoading.value = false;
     }
-};
-
-const calculateStats = () => {
-    // TODO: Pegar dados reais da API
-    const participants = event.value.participants_count || 0;
-    const revenue = event.value.total_revenue || 0;
-
-    const netRevenue = event.value.total_net_revenue || 0;
-
-    stats.value = {
-        totalParticipants: participants,
-        totalRevenue: revenue / 100,
-        totalNetRevenue: netRevenue / 100,
-        avgTicketPrice: participants > 0 ? revenue / 100 / participants : 0,
-    };
-};
-
-const getParticipantsPercentage = () => {
-    if (!event.value?.max_participants) return "Sem limite de vagas";
-    const percentage =
-        (stats.value.totalParticipants / event.value.max_participants) * 100;
-    return `${percentage.toFixed(0)}% das vagas preenchidas`;
-};
-
-const getVacanciesPercentage = () => {
-    if (!event.value?.max_participants) return "";
-    const percentage =
-        (stats.value.totalParticipants / event.value.max_participants) * 100;
-    return `${percentage.toFixed(0)}%`;
 };
 
 const confirmDelete = () => {
@@ -1091,6 +940,10 @@ const deleteEvent = async () => {
 
 const editEvent = () => {
     router.push(`/admin/events/${event.value.id}/edit`);
+};
+
+const goToDashboard = () => {
+    router.push(`/admin/events/${event.value.id}/dashboard`);
 };
 
 const downloadReport = async () => {

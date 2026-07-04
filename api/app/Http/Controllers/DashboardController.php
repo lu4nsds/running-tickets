@@ -160,10 +160,15 @@ class DashboardController extends Controller
     {
         // Verificar se o organizador tem acesso ao evento
         $event = Event::findOrFail($eventId);
-        $organizerId = $request->user()->organizers()->first()->id;
+        $user = $request->user();
 
-        if ($event->organizer_id !== $organizerId) {
-            return response()->json(['message' => 'Unauthorized'], 403);
+        // Super admin acessa o dashboard de qualquer evento; organizadores só os próprios.
+        if (! $user->isSuperAdmin()) {
+            $organizerId = $user->organizers()->first()?->id;
+
+            if ($event->organizer_id !== $organizerId) {
+                return response()->json(['message' => 'Unauthorized'], 403);
+            }
         }
 
         $cacheKey = "dashboard_event_{$eventId}";

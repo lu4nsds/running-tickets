@@ -434,10 +434,10 @@
                                             >
                                                 <span
                                                     class="material-symbols-outlined text-[18px]"
-                                                    >visibility</span
+                                                    >edit</span
                                                 >
                                                 <span class="text-sm"
-                                                    >Ver detalhes</span
+                                                    >Alterar</span
                                                 >
                                             </button>
                                             <button
@@ -453,6 +453,21 @@
                                                 >
                                                 <span class="text-sm"
                                                     >Pedidos</span
+                                                >
+                                            </button>
+                                            <button
+                                                @click="
+                                                    viewDashboard(event);
+                                                    activeActionMenu = null;
+                                                "
+                                                class="flex items-center gap-3 px-4 py-2 text-text-secondary hover:bg-surface-elevated hover:text-white transition-colors w-full text-left"
+                                            >
+                                                <span
+                                                    class="material-symbols-outlined text-[18px]"
+                                                    >monitoring</span
+                                                >
+                                                <span class="text-sm"
+                                                    >Dashboard</span
                                                 >
                                             </button>
                                         </div>
@@ -687,6 +702,10 @@ const viewEvent = (event) => {
 
 const viewOrders = (event) => {
     router.push(`/admin/events/${event.id}/orders`);
+};
+
+const viewDashboard = (event) => {
+    router.push(`/admin/events/${event.id}/dashboard`);
 };
 
 // Dropdown de ações por linha

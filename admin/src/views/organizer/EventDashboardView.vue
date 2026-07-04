@@ -309,6 +309,11 @@
                                 <th
                                     class="py-3 px-4 text-text-muted font-medium text-sm"
                                 >
+                                    Receita Projetada
+                                </th>
+                                <th
+                                    class="py-3 px-4 text-text-muted font-medium text-sm"
+                                >
                                     Líquido
                                 </th>
                             </tr>
@@ -369,6 +374,20 @@
                                 </td>
                                 <td class="py-4 px-4">
                                     <p
+                                        v-if="ticket.total_quantity"
+                                        class="text-white font-semibold"
+                                    >
+                                        {{
+                                            formatCurrency(
+                                                ticket.price_cents *
+                                                    ticket.total_quantity,
+                                            )
+                                        }}
+                                    </p>
+                                    <p v-else class="text-text-muted">—</p>
+                                </td>
+                                <td class="py-4 px-4">
+                                    <p
                                         v-if="ticket.net_revenue > 0"
                                         class="text-green-400 font-semibold"
                                     >
@@ -382,78 +401,6 @@
                 </div>
             </div>
 
-            <!-- Sales Projection -->
-            <div
-                v-if="
-                    dashboardData.projection &&
-                    dashboardData.projection.length > 0
-                "
-                class="bg-card-bg border border-surface-elevated rounded-xl p-6"
-            >
-                <h3
-                    class="text-lg font-semibold text-white mb-4 flex items-center gap-2"
-                >
-                    <span class="material-symbols-outlined text-primary"
-                        >insights</span
-                    >
-                    Projeção de Vendas
-                </h3>
-
-                <div
-                    class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
-                >
-                    <div
-                        v-for="proj in dashboardData.projection"
-                        :key="proj.ticket_type"
-                        class="bg-surface/30 border border-surface-elevated rounded-lg p-4"
-                    >
-                        <p class="text-text-muted text-sm mb-2">
-                            {{ proj.ticket_type }}
-                        </p>
-                        <div class="space-y-2">
-                            <div class="flex justify-between">
-                                <span class="text-text-secondary text-sm"
-                                    >Vendidos:</span
-                                >
-                                <span class="text-white font-medium">
-                                    {{ formatNumber(proj.current_sold) }}
-                                </span>
-                            </div>
-                            <div class="flex justify-between">
-                                <span class="text-primary text-sm"
-                                    >Projetado:</span
-                                >
-                                <span class="text-primary font-semibold">
-                                    {{ formatNumber(proj.projected_sold) }}
-                                </span>
-                            </div>
-                            <div
-                                class="flex justify-between pt-2 border-t border-surface-elevated"
-                            >
-                                <span class="text-text-secondary text-sm"
-                                    >Receita Proj.:</span
-                                >
-                                <span class="text-white font-semibold">
-                                    {{
-                                        formatCurrency(
-                                            proj.projected_revenue * 100,
-                                        )
-                                    }}
-                                </span>
-                            </div>
-                            <div
-                                v-if="proj.projected_net_revenue > 0"
-                                class="flex justify-between"
-                            >
-                                <span class="text-text-muted text-sm">Líquido Proj.:</span>
-                                <span class="text-green-400 font-semibold text-sm">
-                                    {{ formatCurrency(proj.projected_net_revenue * 100) }}
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
         </div>
     </div>
 </template>
@@ -892,7 +839,8 @@ const fetchDashboard = async () => {
 };
 
 const viewDetails = () => {
-    router.push(`/organizer/events/${route.params.id}`);
+    const base = route.path.startsWith("/admin") ? "/admin" : "/organizer";
+    router.push(`${base}/events/${route.params.id}`);
 };
 
 onMounted(() => {
