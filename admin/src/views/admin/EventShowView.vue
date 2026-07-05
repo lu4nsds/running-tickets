@@ -80,7 +80,7 @@
                 <div class="flex items-center gap-3">
                     <button
                         @click="goToDashboard"
-                        class="px-4 py-2 bg-primary text-background-dark font-semibold rounded-lg hover:brightness-110 transition-all flex items-center gap-2"
+                        class="flex items-center gap-2 px-4 py-2.5 border border-surface-elevated text-text-muted rounded-lg font-medium hover:border-primary hover:text-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         <span class="material-symbols-outlined text-[20px]">
                             dashboard

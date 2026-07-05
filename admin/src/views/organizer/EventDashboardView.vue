@@ -26,18 +26,6 @@
             <!-- Header -->
             <div class="flex items-center justify-between flex-wrap gap-4">
                 <div class="flex items-center gap-4">
-                    <button
-                        @click="$router.back()"
-                        class="flex items-center gap-2 text-text-muted hover:text-white transition-colors"
-                    >
-                        <span class="material-symbols-outlined"
-                            >arrow_back</span
-                        >
-                        <span>Voltar</span>
-                    </button>
-
-                    <div class="h-8 w-px bg-surface-elevated"></div>
-
                     <div>
                         <h1 class="text-2xl font-bold text-white">
                             {{ dashboardData.event?.name }}
@@ -51,10 +39,10 @@
 
                 <button
                     @click="viewDetails"
-                    class="px-4 py-2 bg-surface hover:bg-surface-elevated border border-surface-elevated rounded-lg text-white font-medium transition-colors flex items-center gap-2"
+                    class="flex items-center gap-2 px-4 py-2.5 border border-surface-elevated text-text-muted rounded-lg font-medium hover:border-primary hover:text-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                    <span class="material-symbols-outlined text-[18px]"
-                        >info</span
+                    <span class="material-symbols-outlined text-[20px]"
+                        >table_eye</span
                     >
                     <span>Ver Detalhes</span>
                 </button>
@@ -71,7 +59,7 @@
                             <p
                                 class="text-text-muted text-xs uppercase tracking-wider mb-2"
                             >
-                                Receita
+                                Receita Total
                             </p>
                             <p class="text-3xl font-bold text-white">
                                 {{ formatCurrency(dashboardData.summary?.total_revenue * 100) }}
@@ -121,7 +109,7 @@
                             </p>
                             <p class="text-text-muted text-xs mt-1">
                                 {{ formatNumber(dashboardData.summary?.pending_orders || 0) }}
-                                pendentes ·
+                                pendentes /
                                 {{ formatNumber(dashboardData.summary?.refunded_orders || 0) }}
                                 reembolsados
                             </p>

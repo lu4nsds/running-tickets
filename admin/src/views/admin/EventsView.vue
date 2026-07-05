@@ -434,10 +434,10 @@
                                             >
                                                 <span
                                                     class="material-symbols-outlined text-[18px]"
-                                                    >edit</span
+                                                    >table_eye</span
                                                 >
                                                 <span class="text-sm"
-                                                    >Alterar</span
+                                                    >Detalhes</span
                                                 >
                                             </button>
                                             <button
@@ -464,7 +464,7 @@
                                             >
                                                 <span
                                                     class="material-symbols-outlined text-[18px]"
-                                                    >monitoring</span
+                                                    >dashboard</span
                                                 >
                                                 <span class="text-sm"
                                                     >Dashboard</span
