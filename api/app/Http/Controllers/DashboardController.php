@@ -173,7 +173,7 @@ class DashboardController extends Controller
 
         $cacheKey = "dashboard_event_{$eventId}";
 
-        return Cache::remember($cacheKey, 300, function () use ($event) {
+        $data = Cache::remember($cacheKey, 300, function () use ($event) {
             // Resumo do evento com agregações otimizadas
             $summary = Order::where('event_id', $event->id)
                 ->selectRaw("
@@ -184,17 +184,22 @@ class DashboardController extends Controller
                     SUM(CASE WHEN status = 'refunded' THEN 1 ELSE 0 END) as refunded_orders,
                     SUM(CASE WHEN status = 'failed' THEN 1 ELSE 0 END) as failed_orders,
                     SUM(CASE WHEN status = 'paid' THEN total_cents ELSE 0 END) / 100 as total_revenue,
-                    SUM(CASE WHEN status = 'pending' THEN total_cents ELSE 0 END) / 100 as pending_revenue
+                    SUM(CASE WHEN status = 'pending' THEN total_cents ELSE 0 END) / 100 as pending_revenue,
+                    SUM(CASE WHEN status = 'paid' THEN COALESCE(fee_cents, 0) ELSE 0 END) / 100 as gateway_fees
                 ")
                 ->first();
 
-            // Comissão da plataforma (ex.: 10%). As taxas do gateway (Mercado
-            // Pago) ficam por conta da plataforma e não são descontadas do
-            // organizador — o líquido dele é simplesmente o bruto menos a comissão.
+            // A comissão da plataforma é um percentual fixo (ex.: 10%) sobre o
+            // bruto. Do lado do organizador, o líquido é o repasse: bruto menos
+            // essa comissão (as taxas do gateway não são descontadas dele). Do
+            // lado da plataforma, o líquido real é a comissão menos as taxas do
+            // Mercado Pago — é o que de fato sobra para nós.
             $platformFeeRate = (float) config('platform.fee_rate', 0.10);
 
-            $totalNetRevenue = round($summary->total_revenue * (1 - $platformFeeRate), 2);
-            $totalFees = round($summary->total_revenue * $platformFeeRate, 2);
+            $organizerPayout = round($summary->total_revenue * (1 - $platformFeeRate), 2);
+            $platformCommission = round($summary->total_revenue * $platformFeeRate, 2);
+            $gatewayFees = round($summary->gateway_fees, 2);
+            $platformNet = round($platformCommission - $gatewayFees, 2);
             $pendingNetEstimated = round($summary->pending_revenue * (1 - $platformFeeRate), 2);
 
             // Funil de conversão — denominador são as "tentativas reais"
@@ -357,8 +362,10 @@ class DashboardController extends Controller
                 ],
                 'summary' => [
                     'total_revenue' => $summary->total_revenue,
-                    'total_net_revenue' => $totalNetRevenue,
-                    'total_fees' => $totalFees,
+                    'organizer_payout' => $organizerPayout,
+                    'platform_commission' => $platformCommission,
+                    'gateway_fees' => $gatewayFees,
+                    'platform_net' => $platformNet,
                     'pending_revenue' => $summary->pending_revenue,
                     'pending_net_revenue_estimated' => $pendingNetEstimated,
                     'total_orders' => $summary->total_orders,
@@ -374,5 +381,18 @@ class DashboardController extends Controller
                 'projection' => $projection,
             ];
         });
+
+        // O detalhamento financeiro da plataforma (comissão, taxas do gateway e
+        // líquido real) é exclusivo do super admin; o organizador enxerga apenas
+        // o próprio repasse (organizer_payout).
+        if (! $user->isSuperAdmin()) {
+            unset(
+                $data['summary']['platform_commission'],
+                $data['summary']['gateway_fees'],
+                $data['summary']['platform_net'],
+            );
+        }
+
+        return $data;
     }
 }

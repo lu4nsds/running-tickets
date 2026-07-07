@@ -607,15 +607,15 @@
                     </p>
                 </div>
                 <div v-else class="flex flex-col flex-1">
-                    <div class="flex flex-col justify-between flex-1 h-[280px]">
+                    <div class="space-y-3 flex-1">
                         <div
                             v-for="(org, index) in paginatedOrganizers"
                             :key="org.id"
                             :class="[
-                                'flex items-center justify-between p-3 rounded-lg border transition-all',
+                                'flex items-center justify-between p-3 rounded-lg border transition-all min-h-[72px]',
                                 organizersPage === 0 && index === 0
                                     ? 'bg-primary/5 border-primary/20'
-                                    : 'border-transparent hover:border-border-dark',
+                                    : 'border-border-dark hover:border-primary/30',
                             ]"
                         >
                             <div class="flex items-center gap-3">
@@ -773,53 +773,37 @@
                     </p>
                 </div>
                 <div v-else class="flex flex-col flex-1">
-                    <div class="flex flex-col justify-between flex-1 h-[280px]">
-                        <template
-                            v-for="(payout, index) in paginatedPendingPayouts"
+                    <div class="space-y-3 flex-1">
+                        <div
+                            v-for="payout in paginatedPendingPayouts"
                             :key="payout.organizer_id"
+                            class="flex items-center justify-between p-3 rounded-lg border border-border-dark hover:border-primary/30 transition-all min-h-[72px]"
                         >
-                            <div class="flex items-center justify-between">
-                                <div>
-                                    <p
-                                        class="text-xs text-slate-500 uppercase font-bold tracking-wider"
-                                    >
-                                        Organizador
-                                    </p>
-                                    <p
-                                        class="text-sm font-bold text-white mt-1"
-                                    >
-                                        {{ payout.organizer_name }}
-                                    </p>
-                                    <p class="text-xs text-slate-500 mt-0.5">
-                                        Próximo evento:
-                                        {{ payout.days_until }} dias
-                                    </p>
-                                </div>
-                                <div class="text-right">
-                                    <p
-                                        class="text-xs font-bold text-orange-400"
-                                    >
-                                        {{
-                                            formatCurrency(
-                                                payout.estimated_net_amount ?? payout.amount_to_transfer,
-                                            )
-                                        }}
-                                    </p>
-                                    <p
-                                        v-if="payout.avg_fee_rate > 0"
-                                        class="text-[10px] text-slate-500 mt-0.5"
-                                    >
-                                        taxa {{ payout.avg_fee_rate }}%
-                                    </p>
-                                </div>
+                            <div>
+                                <p class="text-sm font-bold text-white">
+                                    {{ payout.organizer_name }}
+                                </p>
+                                <p class="text-xs text-slate-500 mt-0.5">
+                                    Próximo evento:
+                                    {{ payout.days_until }} dias
+                                </p>
                             </div>
-                            <div
-                                v-if="
-                                    index < paginatedPendingPayouts.length - 1
-                                "
-                                class="h-px bg-border-dark"
-                            ></div>
-                        </template>
+                            <div class="text-right">
+                                <p class="text-xs font-bold text-orange-400">
+                                    {{
+                                        formatCurrency(
+                                            payout.estimated_net_amount ?? payout.amount_to_transfer,
+                                        )
+                                    }}
+                                </p>
+                                <p
+                                    v-if="payout.avg_fee_rate > 0"
+                                    class="text-[10px] text-slate-500 mt-0.5"
+                                >
+                                    taxa {{ payout.avg_fee_rate }}%
+                                </p>
+                            </div>
+                        </div>
                     </div>
                     <!-- Pagination Controls - Always at bottom -->
                     <div
@@ -930,11 +914,11 @@
                     <p class="text-slate-500 text-sm">Nenhum evento próximo</p>
                 </div>
                 <div v-else class="flex flex-col flex-1">
-                    <div class="space-y-3 flex-1 h-[280px]">
+                    <div class="space-y-3 flex-1">
                         <div
                             v-for="event in paginatedUpcomingEvents"
                             :key="event.id"
-                            class="flex items-center gap-3 p-3 rounded-lg border border-border-dark hover:border-primary/30 transition-all"
+                            class="flex items-center gap-3 p-3 rounded-lg border border-border-dark hover:border-primary/30 transition-all min-h-[72px]"
                         >
                             <div class="flex-shrink-0 text-center">
                                 <div

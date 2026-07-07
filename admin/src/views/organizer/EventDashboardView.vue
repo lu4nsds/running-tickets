@@ -64,20 +64,43 @@
                             <p class="text-3xl font-bold text-white">
                                 {{ formatCurrency(dashboardData.summary?.total_revenue * 100) }}
                             </p>
-                            <div class="text-xs mt-1 flex items-center gap-1">
+                            <!-- Organizador: vê apenas o próprio líquido (repasse) -->
+                            <div v-if="!auth.isSuperAdmin" class="text-xs mt-1 flex items-center gap-1">
                                 <span class="text-text-muted">Líquido:</span>
-                                <span class="font-semibold text-white/80">{{ formatCurrency(dashboardData.summary?.total_net_revenue * 100) }}</span>
+                                <span class="font-semibold text-white/80">{{ formatCurrency(dashboardData.summary?.organizer_payout * 100) }}</span>
                                 <div class="group relative">
                                     <span class="material-symbols-outlined text-slate-500 text-sm cursor-help">info</span>
                                     <div class="absolute bottom-full left-0 mb-2 hidden group-hover:block z-10">
                                         <div class="bg-slate-900 text-white text-xs rounded-lg px-3 py-2 w-56 shadow-xl border border-slate-700">
                                             <p class="font-bold mb-1">Valor Líquido Estimado</p>
-                                            <p class="text-slate-300">Valor após dedução das taxas do Mercado Pago, calculado com base nos pedidos já pagos.</p>
+                                            <p class="text-slate-300">Receita dos pedidos pagos menos a comissão da plataforma.</p>
                                         </div>
                                         <div class="w-2 h-2 bg-slate-900 border-b border-r border-slate-700 absolute top-0 left-2 translate-y-1/2 rotate-45"></div>
                                     </div>
                                 </div>
                             </div>
+
+                            <!-- Super admin: repasse ao organizador + líquido real da plataforma -->
+                            <template v-else>
+                                <div class="text-xs mt-1 flex items-center gap-1">
+                                    <span class="text-text-muted">Repasse ao organizador:</span>
+                                    <span class="font-semibold text-white/80">{{ formatCurrency(dashboardData.summary?.organizer_payout * 100) }}</span>
+                                </div>
+                                <div class="text-xs mt-1 flex items-center gap-1">
+                                    <span class="text-text-muted">Líquido (plataforma):</span>
+                                    <span class="font-semibold text-white/80">{{ formatCurrency(dashboardData.summary?.platform_net * 100) }}</span>
+                                    <div class="group relative">
+                                        <span class="material-symbols-outlined text-slate-500 text-sm cursor-help">info</span>
+                                        <div class="absolute bottom-full left-0 mb-2 hidden group-hover:block z-10">
+                                            <div class="bg-slate-900 text-white text-xs rounded-lg px-3 py-2 w-64 shadow-xl border border-slate-700">
+                                                <p class="font-bold mb-1">Líquido da plataforma</p>
+                                                <p class="text-slate-300">Comissão da plataforma ({{ formatCurrency(dashboardData.summary?.platform_commission * 100) }}) menos as taxas do Mercado Pago ({{ formatCurrency(dashboardData.summary?.gateway_fees * 100) }}).</p>
+                                            </div>
+                                            <div class="w-2 h-2 bg-slate-900 border-b border-r border-slate-700 absolute top-0 left-2 translate-y-1/2 rotate-45"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </template>
                             <p class="text-text-muted text-xs mt-1">
                                 Ticket Médio:
                                 {{ formatCurrency(avgTicketValue) }}
@@ -398,6 +421,7 @@ import { ref, computed, onMounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import api from "@/api/axios";
 import { API_ENDPOINTS } from "@/constants/apiEndpoints";
+import { useAuthStore } from "@/stores/auth";
 import { useLoading } from "@/composables/useLoading";
 import { useCurrency } from "@/composables/useCurrency";
 import ErrorState from "@/components/ui/ErrorState.vue";
@@ -406,6 +430,7 @@ import VueApexCharts from "vue3-apexcharts";
 
 const route = useRoute();
 const router = useRouter();
+const auth = useAuthStore();
 const { isLoading, error, withLoading } = useLoading(true);
 const { formatCurrency, formatNumber, formatPercentage } = useCurrency();
 
@@ -414,8 +439,8 @@ const dashboardData = ref(null);
 // Computed
 const avgTicketValue = computed(() => {
     const summary = dashboardData.value?.summary;
-    if (!summary?.total_orders || !summary?.total_revenue) return 0;
-    return (summary.total_revenue / summary.total_orders) * 100;
+    if (!summary?.paid_orders || !summary?.total_revenue) return 0;
+    return (summary.total_revenue / summary.paid_orders) * 100;
 });
 
 // Capacidade = soma das quotas dos lotes (mesma convenção do dashboard admin).
