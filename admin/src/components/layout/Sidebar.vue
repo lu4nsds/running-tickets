@@ -9,11 +9,7 @@
                 <div
                     class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center shadow-[0_0_15px_rgba(0,230,119,0.5)]"
                 >
-                    <span
-                        class="material-symbols-outlined text-background-dark font-bold"
-                    >
-                        bolt
-                    </span>
+                    <BrandMark class="w-5 text-background-dark" />
                 </div>
                 <span
                     class="text-xl font-extrabold tracking-tight uppercase italic"
@@ -78,6 +74,7 @@
 import { computed } from "vue";
 import { useRouter, useRoute } from "vue-router";
 import { useAuthStore } from "@/stores/auth";
+import BrandMark from "@/components/base/BrandMark.vue";
 
 const props = defineProps({
     isOpen: {

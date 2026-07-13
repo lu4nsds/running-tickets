@@ -16,13 +16,7 @@
             <div
                 class="relative w-24 h-24 rounded-full bg-surface-dark border-2 border-primary flex items-center justify-center shadow-[0_0_32px_rgba(16,185,129,0.35)]"
             >
-                <svg
-                    class="w-10 h-10 text-primary"
-                    viewBox="0 0 24 24"
-                    fill="currentColor"
-                >
-                    <path d="M7 2v11h3v9l7-12h-4l4-8z" />
-                </svg>
+                <BrandMark class="w-10 text-primary" />
             </div>
         </div>
 
@@ -41,6 +35,7 @@
 import { onMounted } from "vue";
 import { useRouter } from "vue-router";
 import { useAuthStore } from "../stores/auth";
+import BrandMark from "@/components/base/BrandMark.vue";
 
 const router = useRouter();
 const authStore = useAuthStore();

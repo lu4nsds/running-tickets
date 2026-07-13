@@ -51,9 +51,7 @@
                     <div
                         class="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary"
                     >
-                        <span class="material-symbols-outlined text-4xl"
-                            >bolt</span
-                        >
+                        <BrandMark class="w-8" />
                     </div>
                     <span class="text-2xl font-black tracking-tight text-white">
                         RUNNING <span class="text-primary">TICKETS</span>
@@ -204,6 +202,7 @@ import { useRouter, useRoute } from "vue-router";
 import { useAuthStore } from "../stores/auth";
 import PasswordInput from "@/components/PasswordInput.vue";
 import { usePasswordStrength } from "@/composables/usePasswordStrength";
+import BrandMark from "@/components/base/BrandMark.vue";
 
 const router = useRouter();
 const route = useRoute();

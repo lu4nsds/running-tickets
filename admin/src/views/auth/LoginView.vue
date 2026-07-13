@@ -16,11 +16,7 @@
                 <div
                     class="w-16 h-16 bg-primary rounded-xl flex items-center justify-center mb-6 shadow-primary"
                 >
-                    <span
-                        class="material-symbols-outlined text-background-dark text-4xl font-bold"
-                    >
-                        payments
-                    </span>
+                    <BrandMark class="w-9 text-background-dark" />
                 </div>
                 <h1 class="text-3xl font-bold tracking-tight text-white mb-2">
                     Running Tickets
@@ -268,6 +264,7 @@ import { useRouter, useRoute } from "vue-router";
 import { useAuthStore } from "@/stores/auth";
 import Modal from "@/components/ui/Modal.vue";
 import LoadingSpinner from "@/components/ui/LoadingSpinner.vue";
+import BrandMark from "@/components/base/BrandMark.vue";
 import api from "@/api/axios";
 import { API_ENDPOINTS } from "@/constants/apiEndpoints";
 

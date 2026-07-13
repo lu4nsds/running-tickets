@@ -16,6 +16,7 @@
 <body>
     <div class="container">
         <div class="header">
+            <img src="{{ asset('brand/symbol-256-white.png') }}" alt="Running Tickets" width="56" height="56" style="display:block;margin:0 auto 12px;width:56px;height:56px;">
             <h1>🎉 Pagamento Confirmado!</h1>
         </div>
         

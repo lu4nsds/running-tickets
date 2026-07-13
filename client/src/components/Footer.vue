@@ -5,7 +5,7 @@
         <!-- Brand Column -->
         <div class="space-y-4">
           <div class="flex items-center gap-2 text-white">
-            <span class="material-symbols-outlined text-primary text-2xl">bolt</span>
+            <BrandMark class="w-6 text-primary" />
             <span class="text-lg font-black tracking-tight">
               RUNNING <span class="text-primary">TICKETS</span>
             </span>
@@ -100,6 +100,7 @@
 
 <script setup>
 import { computed } from 'vue'
+import BrandMark from './base/BrandMark.vue'
 
 const currentYear = computed(() => new Date().getFullYear())
 </script>

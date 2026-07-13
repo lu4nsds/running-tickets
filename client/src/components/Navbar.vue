@@ -13,7 +13,7 @@
                 <div
                     class="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary transition-colors group-hover:bg-primary group-hover:text-background-dark"
                 >
-                    <span class="material-symbols-outlined text-3xl">bolt</span>
+                    <BrandMark class="w-6" />
                 </div>
                 <span
                     class="hidden text-xl font-black tracking-tight text-white md:block"
@@ -173,6 +173,7 @@ import { watchDebounced } from "@vueuse/core";
 import { useAuthStore } from "../stores/auth";
 import { useEventsStore } from "../stores/events";
 import SearchOverlay from "./SearchOverlay.vue";
+import BrandMark from "./base/BrandMark.vue";
 
 const props = defineProps({
     hideSearch: {

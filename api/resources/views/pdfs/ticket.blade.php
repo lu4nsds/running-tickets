@@ -164,6 +164,7 @@
     <div class="ticket">
         <!-- Header -->
         <div class="header">
+            <img src="{{ public_path('brand/symbol-256-navy.png') }}" alt="Running Tickets" width="48" height="48" style="margin-bottom: 10px;">
             <div class="ticket-label">🎫 Ingresso</div>
             <div class="event-title">{{ $event->title }}</div>
         </div>
