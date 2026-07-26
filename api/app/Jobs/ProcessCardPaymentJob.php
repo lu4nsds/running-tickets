@@ -6,6 +6,7 @@ use App\Enums\OrderStatus;
 use App\Models\Order;
 use App\Services\MercadoPagoService;
 use App\Services\OrderService;
+use App\Services\Payment\MercadoPagoCredentialResolver;
 use App\Services\PaymentResultService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -39,6 +40,7 @@ class ProcessCardPaymentJob implements ShouldQueue
         MercadoPagoService $mp,
         PaymentResultService $result,
         OrderService $orderService,
+        MercadoPagoCredentialResolver $resolver,
     ): void {
         $this->order->refresh();
 
@@ -57,9 +59,17 @@ class ProcessCardPaymentJob implements ShouldQueue
         $payer = $this->paymentData['payer'];
         $buyerPhone = isset($payer['phone']) ? preg_replace('/[^0-9+]/', '', $payer['phone']) : null;
 
+        // Resolve a credencial (plataforma × organizador) e congela o snapshot
+        // da modalidade usada neste pagamento antes de chamar o gateway.
+        $context = $resolver->resolveForOrder(
+            $this->order->loadMissing('event.organizer.paymentAccount')
+        );
+
         $this->order->update([
             'buyer_email' => $payer['email'] ?? $this->order->buyer_email,
             'buyer_phone' => $buyerPhone ?? $this->order->buyer_phone,
+            'settlement_mode' => $context->settlementMode,
+            'application_fee_cents' => $context->applicationFeeCents,
         ]);
 
         $mpResponse = $mp->createCardPayment(
@@ -69,6 +79,8 @@ class ProcessCardPaymentJob implements ShouldQueue
             installments: $this->paymentData['installments'] ?? 1,
             payer: $payer,
             externalReference: $this->order->reference,
+            accessToken: $context->accessToken,
+            applicationFee: $context->applicationFeeAmount(),
         );
 
         $result->apply($this->order->fresh(), $mpResponse);

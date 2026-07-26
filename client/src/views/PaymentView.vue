@@ -1504,7 +1504,11 @@ onMounted(async () => {
             firstParticipant?.phone ||
             "";
 
-        const mpPublicKey = import.meta.env.VITE_MERCADOPAGO_PUBLIC_KEY;
+        // Public key da conta que recebe: em eventos com split, é a do
+        // organizador (a conta que tokeniza o cartão); senão, a da plataforma.
+        // Fallback para o env mantém compatibilidade com o modo centralizado.
+        const mpPublicKey =
+            status?.mp_public_key || import.meta.env.VITE_MERCADOPAGO_PUBLIC_KEY;
 
         if (!mpPublicKey) {
             error.value = "Chave pública do gateway de pagamento não configurada.";

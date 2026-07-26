@@ -189,12 +189,12 @@ class DashboardController extends Controller
                 ")
                 ->first();
 
-            // A comissão da plataforma é um percentual fixo (ex.: 10%) sobre o
-            // bruto. Do lado do organizador, o líquido é o repasse: bruto menos
-            // essa comissão (as taxas do gateway não são descontadas dele). Do
-            // lado da plataforma, o líquido real é a comissão menos as taxas do
-            // Mercado Pago — é o que de fato sobra para nós.
-            $platformFeeRate = (float) config('platform.fee_rate', 0.10);
+            // Comissão da plataforma sobre o bruto, usando a taxa configurada no
+            // evento (fallback global para eventos sem taxa própria). Do lado do
+            // organizador, o líquido é o repasse: bruto menos essa comissão (as
+            // taxas do gateway não são descontadas dele). Do lado da plataforma,
+            // o líquido real é a comissão menos as taxas do Mercado Pago.
+            $platformFeeRate = $event->effectiveFeeRate();
 
             $organizerPayout = round($summary->total_revenue * (1 - $platformFeeRate), 2);
             $platformCommission = round($summary->total_revenue * $platformFeeRate, 2);

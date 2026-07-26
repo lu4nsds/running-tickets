@@ -33,10 +33,22 @@ return new class extends Migration
             $table->string('banner_url')->nullable();
             $table->string('status')->default('inativo');
 
+            // Modalidade de recebimento do evento:
+            // platform → dinheiro cai na conta da plataforma (comportamento atual)
+            // split    → split nativo do Mercado Pago (organizador recebe direto)
+            $table->string('payout_mode', 20)->default('platform');
+
+            // Comissão da plataforma para este evento (fração, ex.: 0.1000 = 10%).
+            // Nullable de propósito: eventos antigos ficam null e caem no
+            // fallback global config('platform.fee_rate'), sem quebrar nada.
+            $table->decimal('platform_fee_rate', 5, 4)->nullable();
+
             // Dados flexíveis (regulamento, links, mapas, etc.)
             $table->json('meta')->nullable();
 
             $table->timestamps();
+
+            $table->index('payout_mode');
         });
     }
 

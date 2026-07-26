@@ -51,4 +51,22 @@ class Organizer extends Model
     {
         return $this->hasMany(Order::class);
     }
+
+    /**
+     * Conexão OAuth com o gateway de pagamento (Mercado Pago) usada no split.
+     * Um organizador tem no máximo uma conta por gateway.
+     */
+    public function paymentAccount()
+    {
+        return $this->hasOne(PaymentGatewayAccount::class)
+            ->where('gateway', \App\Enums\PaymentGateway::MERCADOPAGO->value);
+    }
+
+    /**
+     * O organizador tem uma conta de gateway conectada e utilizável?
+     */
+    public function hasConnectedPaymentAccount(): bool
+    {
+        return (bool) $this->paymentAccount?->isConnected();
+    }
 }

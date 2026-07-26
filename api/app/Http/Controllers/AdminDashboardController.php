@@ -187,6 +187,10 @@ class AdminDashboardController extends Controller
                 ->join('organizers', 'orders.organizer_id', '=', 'organizers.id')
                 ->leftJoin('events', 'orders.event_id', '=', 'events.id')
                 ->where('orders.status', 'paid')
+                // Pedidos em split já foram pagos direto ao organizador pelo MP,
+                // então não entram na projeção de repasse manual. Pedidos antigos
+                // (settlement_mode nulo) são tratados como centralizados.
+                ->whereRaw("COALESCE(orders.settlement_mode, 'platform') <> 'split'")
                 ->select(
                     'organizers.id as organizer_id',
                     'organizers.name as organizer_name',

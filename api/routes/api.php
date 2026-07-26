@@ -16,6 +16,7 @@ use App\Http\Controllers\Api\EventController;
 use App\Http\Controllers\Api\MercadoPagoWebhookController;
 use App\Http\Controllers\Api\OrderCancellationController;
 use App\Http\Controllers\Api\OrderController;
+use App\Http\Controllers\Api\OrganizerPaymentAccountController;
 use App\Http\Controllers\Api\Organizer\CategoryController as OrganizerCategoryController;
 use App\Http\Controllers\Api\Organizer\EventController as OrganizerEventController;
 use App\Http\Controllers\Api\Organizer\TicketTypeController as OrganizerTicketTypeController;
@@ -72,6 +73,11 @@ Route::get('/orders/{reference}/status', [OrderController::class, 'status']);
 // Webhook do Mercado Pago (público)
 Route::post('/webhooks/mercadopago', [MercadoPagoWebhookController::class, 'handle'])->name('webhooks.mercadopago');
 
+// Callback público do OAuth Marketplace do Mercado Pago — vem do navegador
+// redirecionado pelo MP (sem bearer token); identifica o organizador pelo state.
+Route::get('/organizer/payment-account/callback', [OrganizerPaymentAccountController::class, 'callback'])
+    ->name('mercadopago.oauth.callback');
+
 // ─── Portal público (client) — token Sanctum sobre `users` ────────────────
 Route::middleware('auth:client')->group(function () {
     // Auth
@@ -120,6 +126,9 @@ Route::middleware('auth:admin')->group(function () {
             Route::post('/users', [AdminOrganizerUserController::class, 'store']);
             Route::patch('/users/{user}', [AdminOrganizerUserController::class, 'update']);
             Route::delete('/users/{user}', [AdminOrganizerUserController::class, 'destroy']);
+
+            // Status da conexão MP do organizador (habilita Split no form de evento)
+            Route::get('/payment-account', [OrganizerPaymentAccountController::class, 'adminShow']);
         });
 
         // CRUD de Eventos
@@ -155,6 +164,11 @@ Route::middleware('auth:admin')->group(function () {
         // Dashboard do organizador
         Route::get('/dashboard', [DashboardController::class, 'index']);
         Route::get('/events/{event}/dashboard', [DashboardController::class, 'eventDashboard']);
+
+        // Conexão com o Mercado Pago (split) — só organizador Admin (Policy)
+        Route::get('/payment-account', [OrganizerPaymentAccountController::class, 'show']);
+        Route::post('/payment-account/connect', [OrganizerPaymentAccountController::class, 'connect']);
+        Route::delete('/payment-account', [OrganizerPaymentAccountController::class, 'disconnect']);
 
         // Visualizar eventos (read-only)
         Route::get('/events', [OrganizerEventController::class, 'index']);

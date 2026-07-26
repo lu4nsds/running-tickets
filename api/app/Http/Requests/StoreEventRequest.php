@@ -2,7 +2,11 @@
 
 namespace App\Http\Requests;
 
+use App\Enums\PayoutMode;
+use App\Models\Organizer;
+use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class StoreEventRequest extends FormRequest
 {
@@ -36,7 +40,33 @@ class StoreEventRequest extends FormRequest
             'banner' => 'nullable|image|mimes:jpeg,png,webp|max:2048',
             'banner_url' => 'nullable|url',
             'results_url' => 'nullable|url|max:2048',
+            // Modalidade de recebimento e taxa da plataforma (fração 0–1).
+            'payout_mode' => ['nullable', Rule::in(PayoutMode::values())],
+            'platform_fee_rate' => 'nullable|numeric|min:0|max:1',
             'meta' => 'nullable|array',
+        ];
+    }
+
+    /**
+     * Split só é permitido quando o organizador tem uma conta MP conectada.
+     */
+    public function after(): array
+    {
+        return [
+            function (Validator $validator) {
+                if ($this->input('payout_mode') !== PayoutMode::SPLIT->value) {
+                    return;
+                }
+
+                $organizer = Organizer::find($this->input('organizer_id'));
+
+                if (! $organizer || ! $organizer->hasConnectedPaymentAccount()) {
+                    $validator->errors()->add(
+                        'payout_mode',
+                        'O organizador precisa conectar a conta do Mercado Pago antes de habilitar o split.'
+                    );
+                }
+            },
         ];
     }
 

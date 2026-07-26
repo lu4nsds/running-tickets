@@ -9,9 +9,9 @@ use MercadoPago\Exceptions\MPApiException;
 
 class MercadoPagoService
 {
-    private function accessToken(): string
+    private function accessToken(?string $accessToken = null): string
     {
-        $token = config('mercadopago.access_token');
+        $token = $accessToken ?: config('mercadopago.access_token');
 
         if (empty($token)) {
             throw new \Exception('MERCADOPAGO_ACCESS_TOKEN não configurado no .env');
@@ -20,10 +20,13 @@ class MercadoPagoService
         return $token;
     }
 
-    private function requestOptions(): RequestOptions
+    /**
+     * @param  ?string  $accessToken  Token do organizador (split) ou null para usar o global (plataforma).
+     */
+    private function requestOptions(?string $accessToken = null): RequestOptions
     {
         $opts = new RequestOptions;
-        $opts->setAccessToken($this->accessToken());
+        $opts->setAccessToken($this->accessToken($accessToken));
 
         return $opts;
     }
@@ -37,7 +40,9 @@ class MercadoPagoService
         string $paymentMethodId,
         int $installments,
         array $payer,
-        string $externalReference
+        string $externalReference,
+        ?string $accessToken = null,
+        ?float $applicationFee = null
     ): array {
         try {
             $client = new PaymentClient;
@@ -56,11 +61,16 @@ class MercadoPagoService
                 'payer' => $payer,
             ];
 
+            // Split nativo: comissão retida pela plataforma (marketplace).
+            if ($applicationFee !== null) {
+                $payload['application_fee'] = $applicationFee;
+            }
+
             if (! $isLocal) {
                 $payload['notification_url'] = $appUrl.'/api/webhooks/mercadopago';
             }
 
-            $payment = $client->create($payload, $this->requestOptions());
+            $payment = $client->create($payload, $this->requestOptions($accessToken));
 
             return [
                 'id' => $payment->id,
@@ -107,7 +117,9 @@ class MercadoPagoService
     public function createPixPayment(
         int $amountCents,
         array $payer,
-        string $externalReference
+        string $externalReference,
+        ?string $accessToken = null,
+        ?float $applicationFee = null
     ): array {
         try {
             $client = new PaymentClient;
@@ -123,11 +135,16 @@ class MercadoPagoService
                 'payer' => $payer,
             ];
 
+            // Split nativo: comissão retida pela plataforma (marketplace).
+            if ($applicationFee !== null) {
+                $payload['application_fee'] = $applicationFee;
+            }
+
             if (! $isLocal) {
                 $payload['notification_url'] = $appUrl.'/api/webhooks/mercadopago';
             }
 
-            $payment = $client->create($payload, $this->requestOptions());
+            $payment = $client->create($payload, $this->requestOptions($accessToken));
 
             return [
                 'id' => $payment->id,
@@ -166,11 +183,11 @@ class MercadoPagoService
     /**
      * Busca informações de um pagamento pelo ID
      */
-    public function getPaymentById(string $paymentId): ?array
+    public function getPaymentById(string $paymentId, ?string $accessToken = null): ?array
     {
         try {
             $client = new PaymentClient;
-            $payment = $client->get($paymentId, $this->requestOptions());
+            $payment = $client->get($paymentId, $this->requestOptions($accessToken));
 
             return [
                 'id' => $payment->id,
@@ -218,11 +235,11 @@ class MercadoPagoService
      * Lança a exception em caso de falha para que o fluxo de aprovação não
      * marque a solicitação como aprovada quando o gateway recusar o estorno.
      */
-    public function refundPayment(string $paymentId): array
+    public function refundPayment(string $paymentId, ?string $accessToken = null): array
     {
         try {
             $client = new PaymentRefundClient;
-            $refund = $client->refundTotal((int) $paymentId, $this->requestOptions());
+            $refund = $client->refundTotal((int) $paymentId, $this->requestOptions($accessToken));
 
             return [
                 'id' => $refund->id,

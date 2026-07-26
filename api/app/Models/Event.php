@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\EventStatus;
+use App\Enums\PayoutMode;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -26,6 +27,8 @@ class Event extends Model
         'banner_url',
         'results_url',
         'status',
+        'payout_mode',
+        'platform_fee_rate',
         'meta',
     ];
 
@@ -34,6 +37,8 @@ class Event extends Model
         'date_start' => 'datetime',
         'date_end' => 'datetime',
         'status' => EventStatus::class,
+        'payout_mode' => PayoutMode::class,
+        'platform_fee_rate' => 'decimal:4',
     ];
 
     /**
@@ -70,6 +75,26 @@ class Event extends Model
     public function organizer()
     {
         return $this->belongsTo(Organizer::class);
+    }
+
+    /**
+     * Este evento usa o split nativo do Mercado Pago?
+     */
+    public function usesSplit(): bool
+    {
+        return $this->payout_mode === PayoutMode::SPLIT;
+    }
+
+    /**
+     * Comissão da plataforma aplicável a este evento, como fração (ex.: 0.10).
+     * Fonte única: usa a taxa do evento quando definida; senão o fallback global.
+     * Eventos antigos (platform_fee_rate = null) preservam o comportamento atual.
+     */
+    public function effectiveFeeRate(): float
+    {
+        return $this->platform_fee_rate !== null
+            ? (float) $this->platform_fee_rate
+            : (float) config('platform.fee_rate');
     }
 
     /**

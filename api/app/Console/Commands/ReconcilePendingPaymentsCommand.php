@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use App\Enums\OrderStatus;
 use App\Models\Order;
 use App\Services\MercadoPagoService;
+use App\Services\Payment\MercadoPagoCredentialResolver;
 use App\Services\PaymentResultService;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
@@ -29,8 +30,11 @@ class ReconcilePendingPaymentsCommand extends Command
     /**
      * Execute the console command.
      */
-    public function handle(MercadoPagoService $mercadoPago, PaymentResultService $paymentResult): int
-    {
+    public function handle(
+        MercadoPagoService $mercadoPago,
+        PaymentResultService $paymentResult,
+        MercadoPagoCredentialResolver $resolver,
+    ): int {
         $minutes = (int) $this->option('minutes');
 
         $this->info('Procurando pedidos de cartão presos em PROCESSING...');
@@ -38,7 +42,8 @@ class ReconcilePendingPaymentsCommand extends Command
         // Pedidos de cartão em PROCESSING com payment_id, atualizados dentro da
         // janela. apply() é idempotente, então não há risco em reprocessar um
         // pedido já finalizado por uma corrida com o webhook/job.
-        $orders = Order::where('status', OrderStatus::PROCESSING->value)
+        $orders = Order::with('event.organizer.paymentAccount')
+            ->where('status', OrderStatus::PROCESSING->value)
             ->whereNotNull('payment_id')
             ->where('updated_at', '>=', Carbon::now()->subMinutes($minutes))
             ->get();
@@ -55,7 +60,9 @@ class ReconcilePendingPaymentsCommand extends Command
 
         foreach ($orders as $order) {
             try {
-                $payment = $mercadoPago->getPaymentById($order->payment_id);
+                // Pedidos em split vivem na conta do organizador — usa o token certo.
+                $accessToken = $resolver->resolveForOrder($order)->accessToken;
+                $payment = $mercadoPago->getPaymentById($order->payment_id, $accessToken);
 
                 if (! $payment) {
                     $this->warn("  - Pagamento não encontrado no MP para {$order->reference} (payment_id {$order->payment_id}).");

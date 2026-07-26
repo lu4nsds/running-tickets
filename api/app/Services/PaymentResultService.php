@@ -145,7 +145,7 @@ class PaymentResultService
      *
      * @return array{0: ?int, 1: ?int} [feeCents, netCents]
      */
-    private function extractFees(array $mpResponse): array
+    private function extractFees(array $mpResponse, Order $order): array
     {
         $netReceived = $mpResponse['transaction_details']['net_received_amount'] ?? null;
 
@@ -153,7 +153,15 @@ class PaymentResultService
             return [null, null];
         }
 
-        $feeCents = (int) round((($mpResponse['transaction_amount'] ?? 0) - $netReceived) * 100);
+        // Valor retido pelo MP entre o bruto e o líquido recebido pela conta.
+        $grossFeeCents = (int) round((($mpResponse['transaction_amount'] ?? 0) - $netReceived) * 100);
+
+        // No split, o líquido recebido é o do ORGANIZADOR, então o retido inclui
+        // a comissão da plataforma (application_fee). fee_cents deve refletir só
+        // a taxa do gateway — descontamos o application_fee. No modo platform o
+        // application_fee é null (0), preservando o cálculo atual.
+        $appFeeCents = $order->application_fee_cents ?? 0;
+        $feeCents = max(0, $grossFeeCents - $appFeeCents);
         $netCents = (int) round($netReceived * 100);
 
         return [$feeCents, $netCents];
@@ -165,7 +173,7 @@ class PaymentResultService
      */
     private function backfillFees(Order $order, array $mpResponse): void
     {
-        [$feeCents, $netCents] = $this->extractFees($mpResponse);
+        [$feeCents, $netCents] = $this->extractFees($mpResponse, $order);
 
         if ($netCents === null) {
             return;
@@ -185,7 +193,7 @@ class PaymentResultService
 
     private function markApproved(Order $order, array $mpResponse): void
     {
-        [$feeCents, $netCents] = $this->extractFees($mpResponse);
+        [$feeCents, $netCents] = $this->extractFees($mpResponse, $order);
         $netReceived = $mpResponse['transaction_details']['net_received_amount'] ?? null;
 
         $body = [

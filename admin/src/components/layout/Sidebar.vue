@@ -132,6 +132,11 @@ const menuItems = computed(() => {
                 label: "Validar Tickets",
             },
             { path: "/organizer/events", icon: "event", label: "Eventos" },
+            {
+                path: "/organizer/payment-settings",
+                icon: "account_balance_wallet",
+                label: "Recebimento",
+            },
         ];
 
         return items;

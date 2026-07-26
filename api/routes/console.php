@@ -23,3 +23,8 @@ Schedule::command('payments:reconcile-pending --minutes=30')
 // Remover tokens Sanctum expirados do banco diariamente
 Schedule::command('sanctum:prune-expired --hours=8')
     ->dailyAt('03:00');
+
+// Renova os access tokens OAuth do Mercado Pago (split) perto de vencer.
+Schedule::command('mercadopago:refresh-tokens')
+    ->withoutOverlapping(10)
+    ->hourly();

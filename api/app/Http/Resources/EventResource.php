@@ -28,6 +28,8 @@ class EventResource extends JsonResource
             'banner_url' => $this->banner_full_url,
             'results_url' => $this->results_url,
             'status' => $this->status,
+            'payout_mode' => $this->payout_mode,
+            'platform_fee_rate' => $this->platform_fee_rate !== null ? (float) $this->platform_fee_rate : null,
             'meta' => $this->meta,
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,

@@ -15,6 +15,7 @@ use App\Models\OrderItem;
 use App\Models\TicketType;
 use App\Services\MercadoPagoService;
 use App\Services\OrderService;
+use App\Services\Payment\MercadoPagoCredentialResolver;
 use App\Services\PaymentResultService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -28,6 +29,7 @@ class OrderController extends Controller
         private MercadoPagoService $mercadoPagoService,
         private OrderService $orderService,
         private PaymentResultService $paymentResultService,
+        private MercadoPagoCredentialResolver $credentialResolver,
     ) {}
 
     /**
@@ -282,11 +284,35 @@ class OrderController extends Controller
             ], 200);
         }
 
+        // Resolve credencial (plataforma × organizador) e congela o snapshot
+        // da modalidade antes de gerar o PIX no gateway.
+        try {
+            $context = $this->credentialResolver->resolveForOrder(
+                $order->loadMissing('event.organizer.paymentAccount')
+            );
+        } catch (\RuntimeException $e) {
+            Log::error('Erro ao resolver credencial de pagamento (PIX)', [
+                'order_id' => $order->id,
+                'message' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'message' => 'Configuração de recebimento do evento indisponível. Tente novamente mais tarde.',
+            ], 422);
+        }
+
+        $order->update([
+            'settlement_mode' => $context->settlementMode,
+            'application_fee_cents' => $context->applicationFeeCents,
+        ]);
+
         try {
             $mpResponse = $this->mercadoPagoService->createPixPayment(
                 amountCents: $order->total_cents,
                 payer: $validated['payer'],
                 externalReference: $order->reference,
+                accessToken: $context->accessToken,
+                applicationFee: $context->applicationFeeAmount(),
             );
         } catch (MPApiException $e) {
             Log::error('Erro MP ao criar PIX', [
@@ -376,10 +402,16 @@ class OrderController extends Controller
 
         $body = $order->payment_response_body ?? [];
 
+        // Public key da conta que recebe: em split, a do organizador (a que
+        // tokeniza o cartão); senão, a da plataforma. Nunca lança.
+        $publicKey = $this->resolvePublicKey($order);
+
         return response()->json([
             'reference' => $order->reference,
             'status' => $order->status->value,
             'status_label' => $order->status->label(),
+            'payout_mode' => $order->event?->payout_mode?->value,
+            'mp_public_key' => $publicKey,
             'outcome' => $body['outcome'] ?? null,
             'failure_reason' => $body['failure_reason'] ?? null,
             'failure_message_pt' => $body['failure_message_pt'] ?? null,
@@ -392,6 +424,24 @@ class OrderController extends Controller
             ] : null,
             'order' => OrderResource::make($order),
         ]);
+    }
+
+    /**
+     * Public key do Mercado Pago da conta que recebe o pagamento deste pedido:
+     * em split é a do organizador (usada para tokenizar o cartão na conta certa);
+     * caso contrário, a da plataforma. Nunca lança — cai na global em caso de erro.
+     */
+    private function resolvePublicKey(Order $order): ?string
+    {
+        try {
+            $key = $this->credentialResolver
+                ->resolveForOrder($order->loadMissing('event.organizer.paymentAccount'))
+                ->publicKey;
+        } catch (\Throwable $e) {
+            $key = null;
+        }
+
+        return $key ?: config('mercadopago.public_key');
     }
 
     /**

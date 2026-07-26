@@ -25,6 +25,8 @@ class Order extends Model
         'buyer_phone',
         'payment_gateway',
         'payment_id',
+        'settlement_mode',
+        'application_fee_cents',
         'payment_response_body',
         'metadata',
         'reserved_until',
@@ -37,6 +39,7 @@ class Order extends Model
         'payment_response_body' => 'array',
         'fee_cents' => 'integer',
         'net_amount_cents' => 'integer',
+        'application_fee_cents' => 'integer',
         'reserved_until' => 'datetime',
         'paid_at' => 'datetime',
     ];

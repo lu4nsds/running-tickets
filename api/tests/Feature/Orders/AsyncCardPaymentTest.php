@@ -105,6 +105,7 @@ class AsyncCardPaymentTest extends TestCase
             app(MercadoPagoService::class),
             app(\App\Services\PaymentResultService::class),
             app(\App\Services\OrderService::class),
+            app(\App\Services\Payment\MercadoPagoCredentialResolver::class),
         );
 
         $order->refresh();
@@ -137,6 +138,7 @@ class AsyncCardPaymentTest extends TestCase
             app(MercadoPagoService::class),
             app(\App\Services\PaymentResultService::class),
             app(\App\Services\OrderService::class),
+            app(\App\Services\Payment\MercadoPagoCredentialResolver::class),
         );
 
         $order->refresh();

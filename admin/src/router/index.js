@@ -66,6 +66,12 @@ const router = createRouter({
                         import("@/views/organizer/EventDashboardView.vue"),
                 },
                 {
+                    path: "payment-settings",
+                    name: "organizer-payment-settings",
+                    component: () =>
+                        import("@/views/organizer/PaymentSettingsView.vue"),
+                },
+                {
                     path: "validate-tickets",
                     name: "organizer-validate-tickets-select",
                     component: () =>

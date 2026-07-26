@@ -6,6 +6,7 @@ use App\Enums\OrderStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Services\MercadoPagoService;
+use App\Services\Payment\MercadoPagoCredentialResolver;
 use App\Services\PaymentResultService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -16,6 +17,7 @@ class MercadoPagoWebhookController extends Controller
     public function __construct(
         private MercadoPagoService $mercadoPagoService,
         private PaymentResultService $paymentResultService,
+        private MercadoPagoCredentialResolver $credentialResolver,
     ) {}
 
     /**
@@ -27,6 +29,12 @@ class MercadoPagoWebhookController extends Controller
             Log::info('Webhook Mercado Pago recebido', [
                 'payload' => $request->all(),
             ]);
+
+            if (! $this->signatureIsValid($request)) {
+                Log::warning('Webhook Mercado Pago com assinatura inválida');
+
+                return response()->json(['error' => 'invalid signature'], 401);
+            }
 
             $type = $request->input('type');
 
@@ -58,7 +66,12 @@ class MercadoPagoWebhookController extends Controller
                     'reference' => $order->reference,
                 ]);
 
-                $payment = $this->mercadoPagoService->getPaymentById($paymentId);
+                // Pedidos em split vivem na conta do organizador — resolve o
+                // token pelo pedido. Modo platform usa o token global.
+                $payment = $this->mercadoPagoService->getPaymentById(
+                    $paymentId,
+                    $this->accessTokenForOrder($order),
+                );
 
                 if ($payment) {
                     $this->updateOrderStatus($order, $payment);
@@ -67,7 +80,8 @@ class MercadoPagoWebhookController extends Controller
                 }
             }
 
-            // Fallback: busca por external_reference
+            // Fallback: busca por external_reference (token global da plataforma;
+            // pedidos em split são resolvidos pelo fast path acima via payment_id).
             Log::info('Buscando pedido por external_reference (fallback)');
 
             $payment = $this->mercadoPagoService->getPaymentById($paymentId);
@@ -131,5 +145,70 @@ class MercadoPagoWebhookController extends Controller
         ]);
 
         $this->paymentResultService->apply($order, $payment);
+    }
+
+    /**
+     * Resolve o access token para consultar o pagamento de um pedido. Split →
+     * token do organizador; platform → token global. Nunca aborta o webhook:
+     * se a resolução falhar (ex.: organizador desconectado), cai no token global.
+     */
+    private function accessTokenForOrder(Order $order): ?string
+    {
+        try {
+            return $this->credentialResolver
+                ->resolveForOrder($order->loadMissing('event.organizer.paymentAccount'))
+                ->accessToken;
+        } catch (\Throwable $e) {
+            Log::warning('Não foi possível resolver token do organizador no webhook', [
+                'order_id' => $order->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return null;
+        }
+    }
+
+    /**
+     * Valida a assinatura x-signature do Mercado Pago quando um segredo está
+     * configurado. Sem segredo (padrão), a validação é pulada e o webhook segue
+     * confiando na rebusca do pagamento via API como mitigação.
+     *
+     * Template do MP: id:<data.id>;request-id:<x-request-id>;ts:<ts>;
+     */
+    private function signatureIsValid(Request $request): bool
+    {
+        $secret = (string) config('mercadopago.webhook_secret');
+
+        if ($secret === '') {
+            return true;
+        }
+
+        $signature = $request->header('x-signature');
+        $requestId = $request->header('x-request-id');
+        $dataId = $request->query('data.id') ?? $request->input('data.id');
+
+        if (! $signature || ! $dataId) {
+            return false;
+        }
+
+        $parts = [];
+        foreach (explode(',', $signature) as $piece) {
+            $kv = explode('=', trim($piece), 2);
+            if (count($kv) === 2) {
+                $parts[trim($kv[0])] = trim($kv[1]);
+            }
+        }
+
+        $ts = $parts['ts'] ?? null;
+        $v1 = $parts['v1'] ?? null;
+
+        if (! $ts || ! $v1) {
+            return false;
+        }
+
+        $manifest = sprintf('id:%s;request-id:%s;ts:%s;', strtolower((string) $dataId), $requestId, $ts);
+        $expected = hash_hmac('sha256', $manifest, $secret);
+
+        return hash_equals($expected, $v1);
     }
 }

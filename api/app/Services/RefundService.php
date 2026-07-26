@@ -8,6 +8,7 @@ use App\Models\AdminUser;
 use App\Models\Order;
 use App\Models\OrderCancellation;
 use App\Models\Ticket;
+use App\Services\Payment\MercadoPagoCredentialResolver;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
@@ -16,6 +17,7 @@ class RefundService
     public function __construct(
         private MercadoPagoService $mercadoPagoService,
         private PaymentResultService $paymentResultService,
+        private MercadoPagoCredentialResolver $credentialResolver,
     ) {}
 
     /**
@@ -30,8 +32,16 @@ class RefundService
         $order = $request->order;
 
         return DB::transaction(function () use ($request, $order, $reviewer) {
-            // 1. Estorno no Mercado Pago (lança em caso de falha)
-            $refund = $this->mercadoPagoService->refundPayment((string) $order->payment_id);
+            // 1. Estorno no Mercado Pago (lança em caso de falha). Pedidos em
+            //    split vivem na conta do organizador — usa o token correto.
+            $accessToken = $this->credentialResolver
+                ->resolveForOrder($order->loadMissing('event.organizer.paymentAccount'))
+                ->accessToken;
+
+            $refund = $this->mercadoPagoService->refundPayment(
+                (string) $order->payment_id,
+                $accessToken,
+            );
 
             // 2. Atualiza status e payment_response_body do pedido (REFUNDED)
             $this->paymentResultService->apply($order, [

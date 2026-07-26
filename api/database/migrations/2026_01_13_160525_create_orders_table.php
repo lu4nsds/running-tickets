@@ -48,6 +48,13 @@ return new class extends Migration
             $table->string('payment_gateway')->nullable();
             $table->string('payment_id')->nullable();
 
+            // Modalidade de liquidação usada NESTE pagamento (snapshot congelado
+            // no momento do pagamento): platform | split. Base para reconciliação
+            // e para excluir pedidos split dos "Repasses Pendentes".
+            $table->string('settlement_mode', 20)->nullable();
+            // Comissão retida pela plataforma no split (application_fee).
+            $table->unsignedInteger('application_fee_cents')->nullable();
+
             // Metadados adicionais
             $table->json('metadata')->nullable();
 

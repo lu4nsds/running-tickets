@@ -365,32 +365,91 @@
                         </p>
                     </div>
 
-                    <!-- Modo de Repasse (Informativo) -->
-                    <div>
-                        <div
-                            class="bg-primary/5 border border-primary/20 rounded-lg p-4"
+                    <!-- Recebimento (modo + taxa) -->
+                    <div class="lg:col-span-2">
+                        <label
+                            class="block text-xs font-medium text-text-muted uppercase tracking-wider mb-2"
                         >
-                            <div class="flex items-start gap-3">
-                                <span
-                                    class="material-symbols-outlined text-primary mt-0.5 text-[20px]"
-                                    >info</span
-                                >
-                                <div>
-                                    <p
-                                        class="text-white text-sm font-medium mb-1"
-                                    >
-                                        Modo de Pagamento
-                                    </p>
-                                    <p
-                                        class="text-text-muted text-xs leading-relaxed"
-                                    >
-                                        Todos os pagamentos são processados pela
-                                        plataforma. O repasse ao organizador
-                                        segue as condições contratuais.
-                                    </p>
-                                </div>
-                            </div>
+                            Modo de Recebimento
+                        </label>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <!-- Centralizado -->
+                            <button
+                                type="button"
+                                @click="form.payout_mode = 'platform'"
+                                class="text-left p-4 rounded-lg border transition-colors"
+                                :class="
+                                    form.payout_mode === 'platform'
+                                        ? 'border-primary bg-primary/5'
+                                        : 'border-surface-elevated hover:border-text-muted'
+                                "
+                            >
+                                <p class="text-white text-sm font-medium">
+                                    Centralizado
+                                </p>
+                                <p class="text-text-muted text-xs mt-1">
+                                    O dinheiro cai na plataforma; o repasse é feito
+                                    depois.
+                                </p>
+                            </button>
+
+                            <!-- Split -->
+                            <button
+                                type="button"
+                                :disabled="!organizerConnected"
+                                @click="form.payout_mode = 'split'"
+                                class="text-left p-4 rounded-lg border transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                :class="
+                                    form.payout_mode === 'split'
+                                        ? 'border-primary bg-primary/5'
+                                        : 'border-surface-elevated hover:border-text-muted'
+                                "
+                            >
+                                <p class="text-white text-sm font-medium">
+                                    Split (Mercado Pago)
+                                </p>
+                                <p class="text-text-muted text-xs mt-1">
+                                    O organizador recebe direto; a plataforma retém
+                                    a comissão.
+                                </p>
+                            </button>
                         </div>
+
+                        <p
+                            v-if="form.organizer_id && !organizerConnected"
+                            class="text-amber-400/80 text-xs mt-2 flex items-center gap-1"
+                        >
+                            <span class="material-symbols-outlined text-[16px]"
+                                >info</span
+                            >
+                            Organizador precisa conectar o Mercado Pago para
+                            habilitar o Split.
+                        </p>
+                        <p v-if="errors.payout_mode" class="text-red-500 text-sm mt-1">
+                            {{ errors.payout_mode }}
+                        </p>
+                    </div>
+
+                    <!-- Taxa da plataforma -->
+                    <div>
+                        <label
+                            for="platform_fee_percent"
+                            class="block text-xs font-medium text-text-muted uppercase tracking-wider mb-2"
+                        >
+                            Taxa da Plataforma (%)
+                        </label>
+                        <input
+                            id="platform_fee_percent"
+                            v-model.number="form.platform_fee_percent"
+                            type="number"
+                            min="0"
+                            max="100"
+                            step="0.1"
+                            class="w-full bg-surface border border-surface-elevated rounded-lg px-4 py-3 text-white focus:outline-none focus:border-primary transition-colors"
+                        />
+                        <p class="text-text-muted text-xs mt-1">
+                            Comissão retida pela plataforma sobre o valor do pedido.
+                        </p>
                     </div>
                 </div>
             </div>
@@ -493,11 +552,12 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from "vue";
+import { ref, reactive, onMounted, watch } from "vue";
 import { useRouter } from "vue-router";
 import { useEventsStore } from "@/stores/events";
 import { useToast } from "@/composables/useToast";
 import { BRAZILIAN_STATES } from "@/constants/brazilianStates";
+import { organizerPaymentAccountApi } from "@/api/organizer/paymentAccount";
 import MarkdownEditor from "@/components/MarkdownEditor.vue";
 import BaseDateInput from "@/components/ui/BaseDateInput.vue";
 
@@ -523,7 +583,12 @@ const form = reactive({
     date_end: "",
     max_participants: null,
     results_url: "",
+    payout_mode: "platform",
+    platform_fee_percent: 10,
 });
+
+// Status de conexão MP do organizador selecionado (habilita o Split).
+const organizerConnected = ref(false);
 
 const errors = reactive({
     organizer_id: "",
@@ -536,6 +601,7 @@ const errors = reactive({
     date_end: "",
     results_url: "",
     banner: "",
+    payout_mode: "",
 });
 
 // Methods
@@ -577,6 +643,28 @@ const loadOrganizers = async () => {
         organizers.value = result.data;
     }
 };
+
+// Ao trocar o organizador, verifica se ele tem o Mercado Pago conectado.
+// Se não, o Split fica desabilitado e o modo volta para centralizado.
+watch(
+    () => form.organizer_id,
+    async (organizerId) => {
+        organizerConnected.value = false;
+        if (!organizerId) return;
+
+        try {
+            const data =
+                await organizerPaymentAccountApi.statusForOrganizer(organizerId);
+            organizerConnected.value = data.account?.connected === true;
+        } catch {
+            organizerConnected.value = false;
+        }
+
+        if (!organizerConnected.value && form.payout_mode === "split") {
+            form.payout_mode = "platform";
+        }
+    },
+);
 
 // Validation
 const validate = () => {
@@ -656,6 +744,18 @@ const handleSubmit = async () => {
         }
         if (form.results_url) {
             formData.append("results_url", form.results_url);
+        }
+
+        // Recebimento: modo + taxa da plataforma (converte % → fração).
+        formData.append("payout_mode", form.payout_mode);
+        if (
+            form.platform_fee_percent !== null &&
+            form.platform_fee_percent !== ""
+        ) {
+            formData.append(
+                "platform_fee_rate",
+                (Number(form.platform_fee_percent) / 100).toString(),
+            );
         }
 
         if (bannerFile.value) {
