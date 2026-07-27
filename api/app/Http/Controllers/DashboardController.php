@@ -112,9 +112,9 @@ class DashboardController extends Controller
             $salesByDay = Order::join('events', 'orders.event_id', '=', 'events.id')
                 ->where('events.organizer_id', $organizerId)
                 ->where('orders.status', OrderStatus::PAID->value)
-                ->where('orders.updated_at', '>=', now()->subDays(7))
+                ->where('orders.created_at', '>=', Order::localDaysAgo(6))
                 ->select(
-                    DB::raw('DATE(orders.updated_at) as date'),
+                    Order::localDateExpression('orders.created_at'),
                     DB::raw('COUNT(*) as orders_count'),
                     DB::raw('SUM(orders.total_cents) / 100 as revenue')
                 )
@@ -255,9 +255,9 @@ class DashboardController extends Controller
             // Velocidade de vendas (últimos 7 dias)
             $salesVelocity = Order::where('event_id', $event->id)
                 ->where('status', OrderStatus::PAID->value)
-                ->where('updated_at', '>=', now()->subDays(7))
+                ->where('created_at', '>=', Order::localDaysAgo(6))
                 ->select(
-                    DB::raw('DATE(updated_at) as date'),
+                    Order::localDateExpression('created_at'),
                     DB::raw('COUNT(*) as orders'),
                     DB::raw('SUM(total_cents) / 100 as revenue')
                 )

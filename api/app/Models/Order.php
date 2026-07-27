@@ -3,8 +3,11 @@
 namespace App\Models;
 
 use App\Enums\OrderStatus;
+use Carbon\CarbonInterface;
+use Illuminate\Contracts\Database\Query\Expression;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class Order extends Model
@@ -219,5 +222,42 @@ class Order extends Model
             OrderStatus::PROCESSING->value,
             OrderStatus::FAILED->value,
         ])->where('reserved_until', '>', now());
+    }
+
+    /**
+     * Expressão SQL que extrai o dia de uma coluna datetime já no fuso de
+     * exibição (America/Sao_Paulo).
+     *
+     * As datas são gravadas em UTC (app.timezone). Aplicar DATE() direto na
+     * coluna agrupa pelo dia UTC, o que joga toda venda feita entre 21h e
+     * 23h59 (BRT) para o dia seguinte nos gráficos. O offset é derivado de
+     * app.display_timezone; usá-lo como valor fixo é seguro porque o Brasil
+     * não adota horário de verão desde 2019, e evita depender das tabelas de
+     * fuso do MySQL, que normalmente não estão populadas.
+     */
+    public static function localDateExpression(string $column, string $alias = 'date'): Expression
+    {
+        $now = now()->setTimezone(config('app.display_timezone'));
+
+        // SQLite (usado nos testes) não tem CONVERT_TZ; desloca por segundos.
+        if (DB::connection()->getDriverName() === 'sqlite') {
+            $seconds = $now->getOffset();
+
+            return DB::raw("DATE(DATETIME({$column}, '{$seconds} seconds')) as {$alias}");
+        }
+
+        return DB::raw("DATE(CONVERT_TZ({$column}, '+00:00', '{$now->format('P')}')) as {$alias}");
+    }
+
+    /**
+     * Início do dia local (convertido para UTC) de N dias atrás, para janelas
+     * de gráfico que devem começar num dia completo em vez de um instante.
+     */
+    public static function localDaysAgo(int $days): CarbonInterface
+    {
+        return now(config('app.display_timezone'))
+            ->subDays($days)
+            ->startOfDay()
+            ->utc();
     }
 }

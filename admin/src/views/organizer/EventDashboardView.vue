@@ -789,6 +789,10 @@ const salesVelocityOptions = computed(() => ({
     },
     yaxis: [
         {
+            // Sem min: 0 o Apex ancora o eixo no menor valor da série, e um dia
+            // com 1 pedido é desenhado na linha de base (barra invisível).
+            min: 0,
+            forceNiceScale: true,
             title: {
                 text: "Pedidos",
                 style: {
@@ -799,10 +803,14 @@ const salesVelocityOptions = computed(() => ({
                 style: {
                     colors: "#94A3B8",
                 },
+                // Pedidos são contagens: evita ticks fracionários (1,2 / 1,4).
+                formatter: (val) => `${Math.round(val)}`,
             },
         },
         {
             opposite: true,
+            min: 0,
+            forceNiceScale: true,
             title: {
                 text: "Receita (R$)",
                 style: {
