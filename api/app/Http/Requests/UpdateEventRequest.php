@@ -41,6 +41,7 @@ class UpdateEventRequest extends FormRequest
             'banner_url' => 'nullable|url',
             'results_url' => 'nullable|url',
             'status' => ['sometimes', Rule::in(EventStatus::values())],
+            'allows_late_refund_request' => ['boolean'],
             'meta' => 'nullable|array',
         ];
     }

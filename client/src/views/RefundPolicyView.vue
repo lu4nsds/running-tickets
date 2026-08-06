@@ -1,5 +1,5 @@
 <template>
-  <LegalPageLayout title="Política de Reembolso" last-updated="21 de junho de 2026">
+  <LegalPageLayout title="Política de Reembolso" last-updated="5 de agosto de 2026">
     <p>
       Esta Política de Reembolso descreve as condições para cancelamento de inscrições e
       devolução de valores adquiridos na Running Tickets, aplicável de forma uniforme a
@@ -24,7 +24,9 @@
       <ul class="list-disc space-y-2 pl-6">
         <li>Pedidos com pagamento pendente são reservados por 15 minutos a partir da criação. Se o pagamento não for concluído dentro desse prazo, o pedido é automaticamente cancelado e a vaga é liberada.</li>
         <li>Após a confirmação do pagamento, o cancelamento da inscrição pode ser solicitado em até 7 (sete) dias corridos contados da confirmação do pagamento, prazo alinhado ao direito de arrependimento previsto no Código de Defesa do Consumidor.</li>
-        <li>Após esse prazo de 7 dias, a opção de solicitar cancelamento não fica mais disponível na Plataforma, não sendo mais possível solicitar o cancelamento da inscrição.</li>
+        <li>Esse prazo de 7 (sete) dias é a regra geral da Plataforma e vale para a maioria dos eventos. Para eventos específicos, a Running Tickets pode aceitar solicitações de cancelamento após esse prazo, até a data de início do evento.</li>
+        <li>Encerrado o prazo aplicável ao seu pedido, a opção de solicitar cancelamento deixa de ficar disponível na Plataforma.</li>
+        <li>A forma de verificar o prazo aplicável ao seu pedido é a área "Meus Ingressos": o botão "Solicitar cancelamento" aparece enquanto o pedido estiver elegível.</li>
       </ul>
     </section>
 
@@ -32,8 +34,9 @@
       <h2 class="text-2xl font-bold text-white">3. Política única da plataforma</h2>
       <p>
         A política de cancelamento e reembolso descrita nesta página é definida pela
-        Running Tickets e se aplica de forma uniforme a todos os eventos e organizadores
-        da Plataforma. Os organizadores não definem prazos, percentuais ou condições
+        Running Tickets. O prazo padrão de 7 (sete) dias aplica-se à generalidade dos
+        eventos, podendo a Running Tickets ampliá-lo para eventos específicos, conforme
+        a Seção 2. Os organizadores não definem prazos, percentuais ou condições
         próprias de cancelamento ou reembolso.
       </p>
     </section>

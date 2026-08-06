@@ -380,6 +380,43 @@
                                 {{ errors.results_url }}
                             </p>
                         </div>
+
+                        <!-- Reembolso fora do prazo -->
+                        <div
+                            class="lg:col-span-2 flex items-center justify-between p-4 bg-surface/50 rounded-lg border border-surface-elevated"
+                        >
+                            <div class="flex items-center gap-3">
+                                <span
+                                    class="material-symbols-outlined text-primary"
+                                >
+                                    event_repeat
+                                </span>
+                                <div>
+                                    <p class="text-sm font-bold text-white">
+                                        Reembolso fora do prazo
+                                    </p>
+                                    <p class="text-xs text-text-muted">
+                                        Permite que o comprador solicite
+                                        cancelamento mesmo após os 7 dias do
+                                        pagamento, até a data de início do
+                                        evento.
+                                    </p>
+                                </div>
+                            </div>
+                            <label
+                                class="relative inline-flex items-center cursor-pointer"
+                            >
+                                <input
+                                    v-model="form.allows_late_refund_request"
+                                    type="checkbox"
+                                    class="sr-only peer"
+                                    :disabled="isSubmitting"
+                                />
+                                <div
+                                    class="w-11 h-6 bg-surface-elevated rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-text-muted after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary peer-checked:after:bg-background"
+                                ></div>
+                            </label>
+                        </div>
                     </div>
                 </div>
 
@@ -577,6 +614,7 @@ const form = reactive({
     max_participants: null,
     results_url: "",
     status: EVENT_STATUS.ACTIVE,
+    allows_late_refund_request: false,
 });
 
 const errors = reactive({
@@ -624,6 +662,7 @@ const populateForm = (data) => {
     form.max_participants = data.max_participants || null;
     form.results_url = data.results_url || "";
     form.status = data.status || EVENT_STATUS.ACTIVE;
+    form.allows_late_refund_request = data.allows_late_refund_request ?? false;
 };
 
 const generateSlug = () => {
@@ -730,6 +769,11 @@ const handleSubmit = async () => {
         }
         formData.append("results_url", form.results_url || "");
         formData.append("status", form.status);
+        // "1"/"0": em FormData um booleano vira string, e "false" é truthy no PHP.
+        formData.append(
+            "allows_late_refund_request",
+            form.allows_late_refund_request ? "1" : "0",
+        );
 
         if (bannerFile.value) {
             formData.append("banner", bannerFile.value);

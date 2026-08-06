@@ -102,6 +102,28 @@ class EventStatusResultsTest extends TestCase
             ->assertJsonPath('data.results_url', 'https://resultados.exemplo.com/prova');
     }
 
+    public function test_super_admin_can_toggle_allows_late_refund_request(): void
+    {
+        $admin = $this->makeSuperAdmin();
+        $event = Event::factory()->create(['status' => EventStatus::ACTIVE->value]);
+
+        $this->assertFalse($event->allows_late_refund_request);
+
+        $this->actingAs($admin, 'admin')
+            ->putJson("/api/admin/events/{$event->id}", [
+                'allows_late_refund_request' => '1',
+            ])
+            ->assertStatus(200)
+            ->assertJsonPath('data.allows_late_refund_request', true);
+
+        $this->actingAs($admin, 'admin')
+            ->putJson("/api/admin/events/{$event->id}", [
+                'allows_late_refund_request' => '0',
+            ])
+            ->assertStatus(200)
+            ->assertJsonPath('data.allows_late_refund_request', false);
+    }
+
     public function test_update_rejects_invalid_results_url(): void
     {
         $admin = $this->makeSuperAdmin();

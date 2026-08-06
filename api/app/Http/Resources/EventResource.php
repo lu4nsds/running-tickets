@@ -28,6 +28,7 @@ class EventResource extends JsonResource
             'banner_url' => $this->banner_full_url,
             'results_url' => $this->results_url,
             'status' => $this->status,
+            'allows_late_refund_request' => $this->allows_late_refund_request,
             'meta' => $this->meta,
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,

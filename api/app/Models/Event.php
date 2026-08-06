@@ -26,6 +26,7 @@ class Event extends Model
         'banner_url',
         'results_url',
         'status',
+        'allows_late_refund_request',
         'meta',
     ];
 
@@ -34,7 +35,18 @@ class Event extends Model
         'date_start' => 'datetime',
         'date_end' => 'datetime',
         'status' => EventStatus::class,
+        'allows_late_refund_request' => 'boolean',
     ];
+
+    /**
+     * Indica se o evento aceita solicitação de cancelamento fora da janela
+     * padrão de 7 dias. O corte passa a ser o início do evento: depois que a
+     * prova começa, ninguém mais solicita.
+     */
+    public function acceptsLateRefundRequests(): bool
+    {
+        return $this->allows_late_refund_request && now()->lt($this->date_start);
+    }
 
     /**
      * Accessor para URL completa do banner

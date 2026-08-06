@@ -36,6 +36,7 @@ class StoreEventRequest extends FormRequest
             'banner' => 'nullable|image|mimes:jpeg,png,webp|max:2048',
             'banner_url' => 'nullable|url',
             'results_url' => 'nullable|url|max:2048',
+            'allows_late_refund_request' => ['boolean'],
             'meta' => 'nullable|array',
         ];
     }
