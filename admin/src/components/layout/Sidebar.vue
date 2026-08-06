@@ -132,12 +132,17 @@ const menuItems = computed(() => {
                 label: "Validar Tickets",
             },
             { path: "/organizer/events", icon: "event", label: "Eventos" },
-            {
+        ];
+
+        // Recebimento (conexão com o Mercado Pago) é exclusivo do admin do
+        // organizador — staff não gerencia credenciais de pagamento.
+        if (authStore.isCurrentOrganizerAdmin) {
+            items.push({
                 path: "/organizer/payment-settings",
                 icon: "account_balance_wallet",
                 label: "Recebimento",
-            },
-        ];
+            });
+        }
 
         return items;
     }

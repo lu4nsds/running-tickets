@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\Admin;
 
 use App\Enums\OrderStatus;
+use App\Enums\PayoutMode;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreOrganizerRequest;
 use App\Http\Requests\UpdateOrganizerRequest;
@@ -46,8 +47,13 @@ class OrganizerController extends Controller
      */
     public function show(Organizer $organizer)
     {
-        $organizer->load(['users', 'events'])
-            ->loadCount('events');
+        $organizer->load(['users', 'events', 'paymentAccount'])
+            ->loadCount([
+                'events',
+                // Quantos eventos deste organizador recebem via split — o restante
+                // (events_count - split_events_count) é centralizado na plataforma.
+                'events as split_events_count' => fn ($query) => $query->where('payout_mode', PayoutMode::SPLIT->value),
+            ]);
 
         // Calcular total de vendas (apenas pedidos pagos)
         $paidOrders = $organizer->orders()

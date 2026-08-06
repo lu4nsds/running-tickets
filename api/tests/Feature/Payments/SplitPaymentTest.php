@@ -111,7 +111,7 @@ class SplitPaymentTest extends TestCase
         $this->assertSame(5.0, $captured['applicationFee']); // 10% de R$50,00
 
         $order->refresh();
-        $this->assertSame('split', $order->settlement_mode);
+        $this->assertSame(PayoutMode::SPLIT, $order->settlement_mode);
         $this->assertSame(500, $order->application_fee_cents);
         // fee_cents = retido pelo MP (600) menos application_fee (500) = 100
         $this->assertSame(100, $order->fee_cents);
@@ -152,7 +152,7 @@ class SplitPaymentTest extends TestCase
         $this->assertNull($captured['applicationFee']);
 
         $order->refresh();
-        $this->assertSame('platform', $order->settlement_mode);
+        $this->assertSame(PayoutMode::PLATFORM, $order->settlement_mode);
         $this->assertNull($order->application_fee_cents);
         $this->assertSame(150, $order->fee_cents); // (50 - 48.5) * 100
     }

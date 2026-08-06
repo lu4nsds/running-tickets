@@ -36,6 +36,16 @@ class OrganizerResource extends JsonResource
                 return EventResource::collection($this->events);
             }),
             'events_count' => $this->when(isset($this->events_count), $this->events_count),
+            'split_events_count' => $this->when(isset($this->split_events_count), $this->split_events_count),
+
+            // Conexão com o gateway (split). Null quando o organizador ainda não
+            // conectou. O resource abaixo mascara o ID e nunca expõe tokens.
+            'payment_account' => $this->whenLoaded(
+                'paymentAccount',
+                fn () => $this->paymentAccount
+                    ? new PaymentGatewayAccountResource($this->paymentAccount)
+                    : null
+            ),
 
             // Stats calculados
             'total_sales' => $this->when(isset($this->total_sales), $this->total_sales),

@@ -92,7 +92,7 @@ class MercadoPagoOAuthService
                     ? now()->addSeconds((int) $tokens['expires_in'])
                     : null,
                 'scopes' => $tokens['scopes'] ?? null,
-                'status' => PaymentGatewayAccount::STATUS_CONNECTED,
+                'status' => \App\Enums\PaymentAccountStatus::CONNECTED,
                 'connected_at' => now(),
             ]
         );

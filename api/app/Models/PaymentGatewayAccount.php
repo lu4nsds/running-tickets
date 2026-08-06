@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\PaymentAccountStatus;
 use App\Enums\PaymentGateway;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -15,12 +16,6 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class PaymentGatewayAccount extends Model
 {
     use HasFactory;
-
-    public const STATUS_CONNECTED = 'connected';
-
-    public const STATUS_EXPIRED = 'expired';
-
-    public const STATUS_REVOKED = 'revoked';
 
     protected $fillable = [
         'organizer_id',
@@ -37,6 +32,7 @@ class PaymentGatewayAccount extends Model
 
     protected $casts = [
         'gateway' => PaymentGateway::class,
+        'status' => PaymentAccountStatus::class,
         'access_token' => 'encrypted',
         'refresh_token' => 'encrypted',
         'expires_at' => 'datetime',
@@ -58,7 +54,7 @@ class PaymentGatewayAccount extends Model
      */
     public function isConnected(): bool
     {
-        return $this->status === self::STATUS_CONNECTED
+        return $this->status === PaymentAccountStatus::CONNECTED
             && ! empty($this->access_token);
     }
 

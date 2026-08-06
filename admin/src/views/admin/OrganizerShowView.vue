@@ -270,6 +270,122 @@
                 </div>
             </div>
 
+            <!-- Recebimento (somente leitura) -->
+            <div
+                class="bg-card-bg border border-surface-elevated rounded-xl p-6"
+            >
+                <h3
+                    class="flex items-center gap-2 text-white font-semibold mb-6"
+                >
+                    <span
+                        class="material-symbols-outlined text-primary text-[20px]"
+                        >account_balance_wallet</span
+                    >
+                    Recebimento
+                </h3>
+
+                <div
+                    class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+                >
+                    <!-- Status da conexão -->
+                    <div>
+                        <p
+                            class="text-text-muted text-xs uppercase tracking-wider mb-1"
+                        >
+                            Conexão Mercado Pago
+                        </p>
+                        <span
+                            class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium"
+                            :class="paymentStatusClass"
+                        >
+                            {{ paymentStatusLabel }}
+                        </span>
+                    </div>
+
+                    <!-- Dados da conexão (só quando existe) -->
+                    <template v-if="paymentAccount">
+                        <div>
+                            <p
+                                class="text-text-muted text-xs uppercase tracking-wider mb-1"
+                            >
+                                Conta no Mercado Pago
+                            </p>
+                            <p class="text-white font-mono">
+                                {{ paymentAccount.provider_account_id || "-" }}
+                            </p>
+                        </div>
+
+                        <div>
+                            <p
+                                class="text-text-muted text-xs uppercase tracking-wider mb-1"
+                            >
+                                Conectada em
+                            </p>
+                            <p class="text-white">
+                                {{ formatEventDate(paymentAccount.connected_at) || "-" }}
+                            </p>
+                        </div>
+
+                        <div v-if="paymentAccount.expires_at">
+                            <p
+                                class="text-text-muted text-xs uppercase tracking-wider mb-1"
+                            >
+                                Token expira em
+                            </p>
+                            <p class="text-white">
+                                {{ formatEventDate(paymentAccount.expires_at) }}
+                            </p>
+                        </div>
+                    </template>
+
+                    <!-- Forma de recebimento dos eventos -->
+                    <div>
+                        <p
+                            class="text-text-muted text-xs uppercase tracking-wider mb-1"
+                        >
+                            Eventos em Split
+                        </p>
+                        <p class="text-white">
+                            {{ organizer.split_events_count || 0 }}
+                        </p>
+                    </div>
+
+                    <div>
+                        <p
+                            class="text-text-muted text-xs uppercase tracking-wider mb-1"
+                        >
+                            Eventos Centralizados
+                        </p>
+                        <p class="text-white">{{ platformEventsCount }}</p>
+                    </div>
+                </div>
+
+                <!-- Explicação do modelo (modo/taxa são definidos no evento) -->
+                <div
+                    class="mt-6 pt-4 border-t border-surface-elevated flex items-start gap-2"
+                >
+                    <span
+                        class="material-symbols-outlined text-text-muted text-[18px] mt-0.5"
+                        >info</span
+                    >
+                    <p class="text-text-muted text-xs leading-relaxed">
+                        <template v-if="isPaymentConnected">
+                            O modo de recebimento e a taxa da plataforma são definidos
+                            <strong class="text-text-secondary">por evento</strong>, no
+                            formulário do evento. Como este organizador já conectou a
+                            conta, os eventos dele podem usar o modo Split.
+                        </template>
+                        <template v-else>
+                            O modo de recebimento e a taxa da plataforma são definidos
+                            <strong class="text-text-secondary">por evento</strong>, no
+                            formulário do evento. Enquanto este organizador não conectar
+                            a conta do Mercado Pago, os eventos dele só podem usar o modo
+                            Centralizado.
+                        </template>
+                    </p>
+                </div>
+            </div>
+
             <!-- Bottom Section -->
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <!-- Users Table -->
@@ -741,6 +857,31 @@ const unlinkUser = async () => {
 const viewAllEvents = () => {
     router.push({ path: "/admin/events", query: { organizer_id: organizer.value.id } });
 };
+
+// Recebimento (somente leitura) — dados vêm junto do organizador carregado
+const paymentAccount = computed(() => organizer.value?.payment_account ?? null);
+
+const isPaymentConnected = computed(
+    () => paymentAccount.value?.connected === true,
+);
+
+const paymentStatusLabel = computed(() => {
+    if (!paymentAccount.value) return "Não conectado";
+    // status_label vem do enum PaymentAccountStatus no backend
+    return paymentAccount.value.status_label || "Não conectado";
+});
+
+const paymentStatusClass = computed(() => {
+    if (isPaymentConnected.value) return "bg-primary/10 text-primary";
+    if (paymentAccount.value) return "bg-red-500/10 text-red-400";
+    return "bg-surface-elevated text-text-muted";
+});
+
+const platformEventsCount = computed(() => {
+    const total = organizer.value?.events_count || 0;
+    const split = organizer.value?.split_events_count || 0;
+    return Math.max(0, total - split);
+});
 
 // Formatters
 const formatMemberSince = (date) => {

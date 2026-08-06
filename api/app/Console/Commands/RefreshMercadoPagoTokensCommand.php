@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Enums\PaymentAccountStatus;
 use App\Models\PaymentGatewayAccount;
 use App\Services\Payment\MercadoPagoOAuthService;
 use Illuminate\Console\Command;
@@ -20,7 +21,7 @@ class RefreshMercadoPagoTokensCommand extends Command
 
         $accounts = PaymentGatewayAccount::query()
             ->where('gateway', \App\Enums\PaymentGateway::MERCADOPAGO->value)
-            ->where('status', PaymentGatewayAccount::STATUS_CONNECTED)
+            ->where('status', PaymentAccountStatus::CONNECTED->value)
             ->whereNotNull('refresh_token')
             ->whereNotNull('expires_at')
             ->where('expires_at', '<=', $limit)
@@ -34,7 +35,7 @@ class RefreshMercadoPagoTokensCommand extends Command
                 $oauth->storeAccount($account->organizer, $tokens);
                 $this->line("  ✓ organizador {$account->organizer_id} renovado");
             } catch (\Throwable $e) {
-                $account->update(['status' => PaymentGatewayAccount::STATUS_EXPIRED]);
+                $account->update(['status' => PaymentAccountStatus::EXPIRED]);
                 Log::error('Falha ao renovar token OAuth do Mercado Pago', [
                     'organizer_id' => $account->organizer_id,
                     'error' => $e->getMessage(),

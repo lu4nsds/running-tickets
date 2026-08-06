@@ -15,7 +15,8 @@ class PaymentGatewayAccountResource extends JsonResource
     {
         return [
             'gateway' => $this->gateway->value,
-            'status' => $this->status,
+            'status' => $this->status->value,
+            'status_label' => $this->status->label(),
             'connected' => $this->isConnected(),
             'provider_account_id' => $this->maskAccountId(),
             'has_public_key' => ! empty($this->public_key),

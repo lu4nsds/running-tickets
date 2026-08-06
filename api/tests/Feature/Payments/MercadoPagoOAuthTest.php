@@ -2,8 +2,8 @@
 
 namespace Tests\Feature\Payments;
 
+use App\Enums\PaymentAccountStatus;
 use App\Models\Organizer;
-use App\Models\PaymentGatewayAccount;
 use App\Services\Payment\MercadoPagoOAuthService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
@@ -47,7 +47,7 @@ class MercadoPagoOAuthTest extends TestCase
             'gateway' => 'mercadopago',
             'provider_account_id' => '987654',
             'public_key' => 'ORG-PK',
-            'status' => PaymentGatewayAccount::STATUS_CONNECTED,
+            'status' => PaymentAccountStatus::CONNECTED->value,
         ]);
 
         // Token guardado criptografado (não em texto puro na coluna).

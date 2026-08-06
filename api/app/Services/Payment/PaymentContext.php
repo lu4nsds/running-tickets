@@ -2,6 +2,8 @@
 
 namespace App\Services\Payment;
 
+use App\Enums\PayoutMode;
+
 /**
  * Contexto resolvido para criar/consultar um pagamento de um pedido: qual
  * credencial usar (conta da plataforma ou do organizador) e, no split, quanto
@@ -11,14 +13,14 @@ class PaymentContext
 {
     public function __construct(
         public readonly string $accessToken,
-        public readonly string $settlementMode,
+        public readonly PayoutMode $settlementMode,
         public readonly ?int $applicationFeeCents = null,
         public readonly ?string $publicKey = null,
     ) {}
 
     public function isSplit(): bool
     {
-        return $this->settlementMode === \App\Enums\PayoutMode::SPLIT->value;
+        return $this->settlementMode === PayoutMode::SPLIT;
     }
 
     /**

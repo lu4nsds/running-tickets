@@ -31,7 +31,8 @@ return [
     ],
 
     // Para onde o callback do OAuth redireciona o organizador de volta no admin.
-    'admin_url' => env('ADMIN_APP_URL', env('APP_FRONTEND_ADMIN_URL', 'http://localhost:5174')),
+    // Reaproveita a config existente do app (ADMIN_URL), não uma env própria.
+    'admin_url' => env('ADMIN_URL', 'http://localhost:5174'),
 
     // Segredo do webhook para validar a assinatura x-signature do MP (opcional
     // enquanto não configurado — a validação é pulada se estiver vazio).

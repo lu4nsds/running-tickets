@@ -31,7 +31,7 @@ class MercadoPagoCredentialResolver
     {
         return new PaymentContext(
             accessToken: (string) config('mercadopago.access_token'),
-            settlementMode: PayoutMode::PLATFORM->value,
+            settlementMode: PayoutMode::PLATFORM,
             applicationFeeCents: null,
             publicKey: (string) config('mercadopago.public_key'),
         );
@@ -54,7 +54,7 @@ class MercadoPagoCredentialResolver
 
         return new PaymentContext(
             accessToken: (string) $account->access_token,
-            settlementMode: PayoutMode::SPLIT->value,
+            settlementMode: PayoutMode::SPLIT,
             applicationFeeCents: $feeCents,
             publicKey: $account->public_key,
         );

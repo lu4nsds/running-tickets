@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Enums\PaymentAccountStatus;
 use App\Models\Organizer;
 use App\Models\PaymentGatewayAccount;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -21,7 +22,7 @@ class PaymentGatewayAccountFactory extends Factory
             'public_key' => 'ORG-PUBLIC-KEY',
             'expires_at' => now()->addMonths(6),
             'scopes' => 'read write',
-            'status' => PaymentGatewayAccount::STATUS_CONNECTED,
+            'status' => PaymentAccountStatus::CONNECTED,
             'connected_at' => now(),
         ];
     }
@@ -29,7 +30,7 @@ class PaymentGatewayAccountFactory extends Factory
     public function disconnected(): static
     {
         return $this->state(fn () => [
-            'status' => PaymentGatewayAccount::STATUS_REVOKED,
+            'status' => PaymentAccountStatus::REVOKED,
             'access_token' => null,
         ]);
     }
