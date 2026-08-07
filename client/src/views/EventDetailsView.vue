@@ -193,9 +193,12 @@
                                                 {{ ticket.description }}
                                             </p>
 
-                                            <!-- Barra de Progresso -->
+                                            <!-- Barra de Progresso (opt-in por evento) -->
                                             <div
-                                                v-if="ticket.quota"
+                                                v-if="
+                                                    event.shows_ticket_progress &&
+                                                    ticket.quota
+                                                "
                                                 class="space-y-1"
                                             >
                                                 <div

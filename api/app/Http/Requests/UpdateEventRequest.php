@@ -42,6 +42,7 @@ class UpdateEventRequest extends FormRequest
             'results_url' => 'nullable|url',
             'status' => ['sometimes', Rule::in(EventStatus::values())],
             'allows_late_refund_request' => ['boolean'],
+            'shows_ticket_progress' => ['boolean'],
             'meta' => 'nullable|array',
         ];
     }

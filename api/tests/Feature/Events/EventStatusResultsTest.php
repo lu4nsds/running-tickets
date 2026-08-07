@@ -124,6 +124,39 @@ class EventStatusResultsTest extends TestCase
             ->assertJsonPath('data.allows_late_refund_request', false);
     }
 
+    public function test_super_admin_can_toggle_shows_ticket_progress(): void
+    {
+        $admin = $this->makeSuperAdmin();
+        $event = Event::factory()->create(['status' => EventStatus::ACTIVE->value]);
+
+        $this->assertFalse($event->shows_ticket_progress);
+
+        $this->actingAs($admin, 'admin')
+            ->putJson("/api/admin/events/{$event->id}", [
+                'shows_ticket_progress' => '1',
+            ])
+            ->assertStatus(200)
+            ->assertJsonPath('data.shows_ticket_progress', true);
+
+        $this->actingAs($admin, 'admin')
+            ->putJson("/api/admin/events/{$event->id}", [
+                'shows_ticket_progress' => '0',
+            ])
+            ->assertStatus(200)
+            ->assertJsonPath('data.shows_ticket_progress', false);
+    }
+
+    public function test_public_show_exposes_shows_ticket_progress(): void
+    {
+        $event = Event::factory()->showsTicketProgress()->create([
+            'status' => EventStatus::ACTIVE->value,
+        ]);
+
+        $this->getJson("/api/events/{$event->slug}")
+            ->assertStatus(200)
+            ->assertJsonPath('data.shows_ticket_progress', true);
+    }
+
     public function test_update_rejects_invalid_results_url(): void
     {
         $admin = $this->makeSuperAdmin();

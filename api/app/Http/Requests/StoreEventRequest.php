@@ -37,6 +37,7 @@ class StoreEventRequest extends FormRequest
             'banner_url' => 'nullable|url',
             'results_url' => 'nullable|url|max:2048',
             'allows_late_refund_request' => ['boolean'],
+            'shows_ticket_progress' => ['boolean'],
             'meta' => 'nullable|array',
         ];
     }

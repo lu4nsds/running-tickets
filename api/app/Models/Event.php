@@ -27,6 +27,7 @@ class Event extends Model
         'results_url',
         'status',
         'allows_late_refund_request',
+        'shows_ticket_progress',
         'meta',
     ];
 
@@ -36,6 +37,7 @@ class Event extends Model
         'date_end' => 'datetime',
         'status' => EventStatus::class,
         'allows_late_refund_request' => 'boolean',
+        'shows_ticket_progress' => 'boolean',
     ];
 
     /**

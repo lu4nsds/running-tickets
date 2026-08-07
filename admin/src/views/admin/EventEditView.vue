@@ -304,8 +304,78 @@
                     </div>
                 </div>
 
-                <!-- Configurações -->
+                <!-- Banner -->
                 <div class="bg-card-bg border border-surface-elevated p-6">
+                    <div class="flex items-center gap-3 mb-6">
+                        <div
+                            class="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center"
+                        >
+                            <span
+                                class="material-symbols-outlined text-primary text-[18px]"
+                                >image</span
+                            >
+                        </div>
+                        <h3 class="text-white font-semibold">
+                            Banner do Evento
+                        </h3>
+                    </div>
+
+                    <div class="flex gap-6">
+                        <!-- Preview -->
+                        <div
+                            class="w-48 h-32 rounded-lg bg-surface-elevated overflow-hidden flex-shrink-0"
+                        >
+                            <img
+                                v-if="bannerPreview || event.banner_url"
+                                :src="bannerPreview || event.banner_url"
+                                alt="Preview do banner"
+                                class="w-full h-full object-cover"
+                            />
+                            <div
+                                v-else
+                                class="w-full h-full flex items-center justify-center"
+                            >
+                                <span
+                                    class="material-symbols-outlined text-text-muted text-4xl"
+                                >
+                                    add_photo_alternate
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- Upload -->
+                        <div class="flex-1">
+                            <label
+                                for="banner"
+                                class="block text-xs font-medium text-text-muted uppercase tracking-wider mb-2"
+                            >
+                                Imagem do Banner
+                            </label>
+                            <input
+                                id="banner"
+                                type="file"
+                                accept="image/jpeg,image/png,image/webp"
+                                @change="handleBannerChange"
+                                class="w-full bg-surface border border-surface-elevated rounded-lg px-4 py-3 text-white file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-black hover:file:brightness-110 cursor-pointer"
+                            />
+                            <p class="text-text-muted text-xs mt-1">
+                                Formatos aceitos: JPEG, PNG, WebP. Tamanho
+                                máximo: 2MB.
+                            </p>
+                            <p
+                                v-if="errors.banner"
+                                class="text-red-500 text-sm mt-1"
+                            >
+                                {{ errors.banner }}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Configurações -->
+                <div
+                    class="bg-card-bg border border-surface-elevated rounded-b-xl p-6"
+                >
                     <div class="flex items-center gap-3 mb-6">
                         <div
                             class="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center"
@@ -319,6 +389,56 @@
                     </div>
 
                     <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                        <!-- Situação do evento -->
+                        <div
+                            class="lg:col-span-2 flex flex-col gap-3 p-4 bg-surface/50 rounded-lg border border-surface-elevated sm:flex-row sm:items-center sm:justify-between"
+                        >
+                            <div class="flex items-center gap-3">
+                                <span
+                                    class="material-symbols-outlined text-primary"
+                                >
+                                    toggle_on
+                                </span>
+                                <div>
+                                    <label
+                                        for="status"
+                                        class="block text-sm font-bold text-white"
+                                    >
+                                        Situação do evento
+                                    </label>
+                                    <p class="text-xs text-text-muted">
+                                        <strong>Ativo:</strong> visível ao
+                                        público e recebe inscrições.
+                                        <strong>Inativo:</strong> oculto.
+                                        <strong>Encerrado:</strong> visível com
+                                        os resultados, sem novas inscrições.
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="sm:w-44 sm:flex-shrink-0">
+                                <select
+                                    id="status"
+                                    v-model="form.status"
+                                    :disabled="isSubmitting"
+                                    class="w-full bg-surface border border-surface-elevated rounded-lg px-4 py-3 text-white focus:outline-none focus:border-primary transition-colors"
+                                >
+                                    <option
+                                        v-for="option in EVENT_STATUS_FORM_OPTIONS"
+                                        :key="option.value"
+                                        :value="option.value"
+                                    >
+                                        {{ option.label }}
+                                    </option>
+                                </select>
+                                <p
+                                    v-if="errors.status"
+                                    class="text-red-500 text-sm mt-1"
+                                >
+                                    {{ errors.status }}
+                                </p>
+                            </div>
+                        </div>
+
                         <!-- Máximo de Participantes -->
                         <div>
                             <label
@@ -417,129 +537,42 @@
                                 ></div>
                             </label>
                         </div>
-                    </div>
-                </div>
 
-                <!-- Banner -->
-                <div class="bg-card-bg border border-surface-elevated p-6">
-                    <div class="flex items-center gap-3 mb-6">
+                        <!-- Barra de progresso dos lotes -->
                         <div
-                            class="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center"
+                            class="lg:col-span-2 flex items-center justify-between p-4 bg-surface/50 rounded-lg border border-surface-elevated"
                         >
-                            <span
-                                class="material-symbols-outlined text-primary text-[18px]"
-                                >image</span
-                            >
-                        </div>
-                        <h3 class="text-white font-semibold">
-                            Banner do Evento
-                        </h3>
-                    </div>
-
-                    <div class="flex gap-6">
-                        <!-- Preview -->
-                        <div
-                            class="w-48 h-32 rounded-lg bg-surface-elevated overflow-hidden flex-shrink-0"
-                        >
-                            <img
-                                v-if="bannerPreview || event.banner_url"
-                                :src="bannerPreview || event.banner_url"
-                                alt="Preview do banner"
-                                class="w-full h-full object-cover"
-                            />
-                            <div
-                                v-else
-                                class="w-full h-full flex items-center justify-center"
-                            >
+                            <div class="flex items-center gap-3">
                                 <span
-                                    class="material-symbols-outlined text-text-muted text-4xl"
+                                    class="material-symbols-outlined text-primary"
                                 >
-                                    add_photo_alternate
+                                    bar_chart
                                 </span>
+                                <div>
+                                    <p class="text-sm font-bold text-white">
+                                        Barra de progresso dos lotes
+                                    </p>
+                                    <p class="text-xs text-text-muted">
+                                        Exibe no portal a barra de vendas e a
+                                        contagem de vagas restantes de cada
+                                        lote.
+                                    </p>
+                                </div>
                             </div>
-                        </div>
-
-                        <!-- Upload -->
-                        <div class="flex-1">
                             <label
-                                for="banner"
-                                class="block text-xs font-medium text-text-muted uppercase tracking-wider mb-2"
+                                class="relative inline-flex items-center cursor-pointer"
                             >
-                                Imagem do Banner
+                                <input
+                                    v-model="form.shows_ticket_progress"
+                                    type="checkbox"
+                                    class="sr-only peer"
+                                    :disabled="isSubmitting"
+                                />
+                                <div
+                                    class="w-11 h-6 bg-surface-elevated rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-text-muted after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary peer-checked:after:bg-background"
+                                ></div>
                             </label>
-                            <input
-                                id="banner"
-                                type="file"
-                                accept="image/jpeg,image/png,image/webp"
-                                @change="handleBannerChange"
-                                class="w-full bg-surface border border-surface-elevated rounded-lg px-4 py-3 text-white file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-black hover:file:brightness-110 cursor-pointer"
-                            />
-                            <p class="text-text-muted text-xs mt-1">
-                                Formatos aceitos: JPEG, PNG, WebP. Tamanho
-                                máximo: 2MB.
-                            </p>
-                            <p
-                                v-if="errors.banner"
-                                class="text-red-500 text-sm mt-1"
-                            >
-                                {{ errors.banner }}
-                            </p>
                         </div>
-                    </div>
-                </div>
-
-                <!-- Status -->
-                <div
-                    class="bg-card-bg border border-surface-elevated rounded-b-xl p-6"
-                >
-                    <div class="flex items-center gap-3 mb-6">
-                        <div
-                            class="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center"
-                        >
-                            <span
-                                class="material-symbols-outlined text-primary text-[18px]"
-                                >toggle_on</span
-                            >
-                        </div>
-                        <h3 class="text-white font-semibold">
-                            Status do Evento
-                        </h3>
-                    </div>
-
-                    <div
-                        class="bg-surface-elevated rounded-lg p-5 border border-white/5"
-                    >
-                        <label
-                            for="status"
-                            class="block text-xs font-medium text-text-muted uppercase tracking-wider mb-2"
-                        >
-                            Situação do Evento
-                        </label>
-                        <select
-                            id="status"
-                            v-model="form.status"
-                            class="w-full bg-surface border border-surface-elevated rounded-lg px-4 py-3 text-white focus:outline-none focus:border-primary transition-colors"
-                        >
-                            <option
-                                v-for="option in EVENT_STATUS_FORM_OPTIONS"
-                                :key="option.value"
-                                :value="option.value"
-                            >
-                                {{ option.label }}
-                            </option>
-                        </select>
-                        <p class="text-text-muted text-sm mt-2">
-                            <strong>Ativo:</strong> visível ao público e recebe
-                            inscrições. <strong>Inativo:</strong> oculto.
-                            <strong>Encerrado:</strong> visível com os resultados,
-                            sem novas inscrições.
-                        </p>
-                        <p
-                            v-if="errors.status"
-                            class="text-red-500 text-sm mt-1"
-                        >
-                            {{ errors.status }}
-                        </p>
                     </div>
                 </div>
 
@@ -577,7 +610,7 @@
 
 <script setup>
 import { ref, reactive, onMounted } from "vue";
-import { useRoute, useRouter } from "vue-router";
+import { useRoute } from "vue-router";
 import { useEventsStore } from "@/stores/events";
 import { useToast } from "@/composables/useToast";
 import ErrorState from "@/components/ui/ErrorState.vue";
@@ -590,7 +623,6 @@ import MarkdownEditor from "@/components/MarkdownEditor.vue";
 import BaseDateInput from "@/components/ui/BaseDateInput.vue";
 
 const route = useRoute();
-const router = useRouter();
 const store = useEventsStore();
 const toast = useToast();
 
@@ -615,6 +647,7 @@ const form = reactive({
     results_url: "",
     status: EVENT_STATUS.ACTIVE,
     allows_late_refund_request: false,
+    shows_ticket_progress: false,
 });
 
 const errors = reactive({
@@ -663,6 +696,7 @@ const populateForm = (data) => {
     form.results_url = data.results_url || "";
     form.status = data.status || EVENT_STATUS.ACTIVE;
     form.allows_late_refund_request = data.allows_late_refund_request ?? false;
+    form.shows_ticket_progress = data.shows_ticket_progress ?? false;
 };
 
 const generateSlug = () => {
@@ -774,6 +808,10 @@ const handleSubmit = async () => {
             "allows_late_refund_request",
             form.allows_late_refund_request ? "1" : "0",
         );
+        formData.append(
+            "shows_ticket_progress",
+            form.shows_ticket_progress ? "1" : "0",
+        );
 
         if (bannerFile.value) {
             formData.append("banner", bannerFile.value);
@@ -783,7 +821,13 @@ const handleSubmit = async () => {
 
         if (result.success) {
             toast.success("Evento atualizado com sucesso!");
-            router.push(`/admin/events/${event.value.id}`);
+            // Permanece na edição: ressincroniza com o que o servidor devolveu
+            // (slug, banner) e descarta o arquivo já enviado, para que um novo
+            // "Salvar" não faça upload do mesmo banner de novo.
+            event.value = result.data;
+            populateForm(result.data);
+            bannerFile.value = null;
+            bannerPreview.value = null;
         } else {
             // Handle validation errors from API
             if (result.errors) {

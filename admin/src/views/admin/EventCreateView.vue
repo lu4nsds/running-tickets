@@ -288,8 +288,76 @@
                 </div>
             </div>
 
-            <!-- Configurações -->
+            <!-- Banner -->
             <div class="bg-card-bg border border-surface-elevated p-6">
+                <div class="flex items-center gap-3 mb-6">
+                    <div
+                        class="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center"
+                    >
+                        <span
+                            class="material-symbols-outlined text-primary text-[18px]"
+                            >image</span
+                        >
+                    </div>
+                    <h3 class="text-white font-semibold">Banner do Evento</h3>
+                </div>
+
+                <div class="flex gap-6">
+                    <!-- Preview -->
+                    <div
+                        class="w-48 h-32 rounded-lg bg-surface-elevated overflow-hidden flex-shrink-0"
+                    >
+                        <img
+                            v-if="bannerPreview"
+                            :src="bannerPreview"
+                            alt="Preview do banner"
+                            class="w-full h-full object-cover"
+                        />
+                        <div
+                            v-else
+                            class="w-full h-full flex items-center justify-center"
+                        >
+                            <span
+                                class="material-symbols-outlined text-text-muted text-4xl"
+                            >
+                                add_photo_alternate
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Upload -->
+                    <div class="flex-1">
+                        <label
+                            for="banner"
+                            class="block text-xs font-medium text-text-muted uppercase tracking-wider mb-2"
+                        >
+                            Imagem do Banner
+                        </label>
+                        <input
+                            id="banner"
+                            type="file"
+                            accept="image/jpeg,image/png,image/webp"
+                            @change="handleBannerChange"
+                            class="w-full bg-surface border border-surface-elevated rounded-lg px-4 py-3 text-white file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-black hover:file:brightness-110 cursor-pointer"
+                        />
+                        <p class="text-text-muted text-xs mt-1">
+                            Formatos aceitos: JPEG, PNG, WebP. Tamanho máximo:
+                            2MB.
+                        </p>
+                        <p
+                            v-if="errors.banner"
+                            class="text-red-500 text-sm mt-1"
+                        >
+                            {{ errors.banner }}
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Configurações -->
+            <div
+                class="bg-card-bg border border-surface-elevated rounded-b-xl p-6"
+            >
                 <div class="flex items-center gap-3 mb-6">
                     <div
                         class="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center"
@@ -426,73 +494,38 @@
                             ></div>
                         </label>
                     </div>
-                </div>
-            </div>
 
-            <!-- Banner -->
-            <div
-                class="bg-card-bg border border-surface-elevated rounded-b-xl p-6"
-            >
-                <div class="flex items-center gap-3 mb-6">
+                    <!-- Barra de progresso dos lotes -->
                     <div
-                        class="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center"
+                        class="lg:col-span-2 flex items-center justify-between p-4 bg-surface/50 rounded-lg border border-surface-elevated"
                     >
-                        <span
-                            class="material-symbols-outlined text-primary text-[18px]"
-                            >image</span
-                        >
-                    </div>
-                    <h3 class="text-white font-semibold">Banner do Evento</h3>
-                </div>
-
-                <div class="flex gap-6">
-                    <!-- Preview -->
-                    <div
-                        class="w-48 h-32 rounded-lg bg-surface-elevated overflow-hidden flex-shrink-0"
-                    >
-                        <img
-                            v-if="bannerPreview"
-                            :src="bannerPreview"
-                            alt="Preview do banner"
-                            class="w-full h-full object-cover"
-                        />
-                        <div
-                            v-else
-                            class="w-full h-full flex items-center justify-center"
-                        >
-                            <span
-                                class="material-symbols-outlined text-text-muted text-4xl"
-                            >
-                                add_photo_alternate
+                        <div class="flex items-center gap-3">
+                            <span class="material-symbols-outlined text-primary">
+                                bar_chart
                             </span>
+                            <div>
+                                <p class="text-sm font-bold text-white">
+                                    Barra de progresso dos lotes
+                                </p>
+                                <p class="text-xs text-text-muted">
+                                    Exibe no portal a barra de vendas e a
+                                    contagem de vagas restantes de cada lote.
+                                </p>
+                            </div>
                         </div>
-                    </div>
-
-                    <!-- Upload -->
-                    <div class="flex-1">
                         <label
-                            for="banner"
-                            class="block text-xs font-medium text-text-muted uppercase tracking-wider mb-2"
+                            class="relative inline-flex items-center cursor-pointer"
                         >
-                            Imagem do Banner
+                            <input
+                                v-model="form.shows_ticket_progress"
+                                type="checkbox"
+                                class="sr-only peer"
+                                :disabled="isSubmitting"
+                            />
+                            <div
+                                class="w-11 h-6 bg-surface-elevated rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-text-muted after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary peer-checked:after:bg-background"
+                            ></div>
                         </label>
-                        <input
-                            id="banner"
-                            type="file"
-                            accept="image/jpeg,image/png,image/webp"
-                            @change="handleBannerChange"
-                            class="w-full bg-surface border border-surface-elevated rounded-lg px-4 py-3 text-white file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-black hover:file:brightness-110 cursor-pointer"
-                        />
-                        <p class="text-text-muted text-xs mt-1">
-                            Formatos aceitos: JPEG, PNG, WebP. Tamanho máximo:
-                            2MB.
-                        </p>
-                        <p
-                            v-if="errors.banner"
-                            class="text-red-500 text-sm mt-1"
-                        >
-                            {{ errors.banner }}
-                        </p>
                     </div>
                 </div>
             </div>
@@ -558,6 +591,7 @@ const form = reactive({
     max_participants: null,
     results_url: "",
     allows_late_refund_request: false,
+    shows_ticket_progress: false,
 });
 
 const errors = reactive({
@@ -696,6 +730,10 @@ const handleSubmit = async () => {
         formData.append(
             "allows_late_refund_request",
             form.allows_late_refund_request ? "1" : "0",
+        );
+        formData.append(
+            "shows_ticket_progress",
+            form.shows_ticket_progress ? "1" : "0",
         );
 
         if (bannerFile.value) {
