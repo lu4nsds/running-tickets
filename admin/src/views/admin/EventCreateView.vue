@@ -650,13 +650,10 @@ const form = reactive({
     date_end: "",
     max_participants: null,
     results_url: "",
-<<<<<<< HEAD
     payout_mode: "platform",
     platform_fee_percent: 10,
-=======
     allows_late_refund_request: false,
     shows_ticket_progress: false,
->>>>>>> main
 });
 
 // Status de conexão MP do organizador selecionado (habilita o Split).

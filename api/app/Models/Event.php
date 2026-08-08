@@ -39,13 +39,10 @@ class Event extends Model
         'date_start' => 'datetime',
         'date_end' => 'datetime',
         'status' => EventStatus::class,
-<<<<<<< HEAD
         'payout_mode' => PayoutMode::class,
         'platform_fee_rate' => 'decimal:4',
-=======
         'allows_late_refund_request' => 'boolean',
         'shows_ticket_progress' => 'boolean',
->>>>>>> main
     ];
 
     /**
