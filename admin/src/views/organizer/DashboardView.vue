@@ -531,6 +531,8 @@ const chartOptions = ref({
         },
     },
     yaxis: {
+        min: 0,
+        forceNiceScale: true,
         labels: {
             style: {
                 colors: "#6B7280",
@@ -612,6 +614,8 @@ const ticketTypesChartOptions = ref({
     yaxis: [
         {
             seriesName: "Quantidade Vendida",
+            min: 0,
+            forceNiceScale: true,
             title: {
                 text: "Quantidade Vendida",
                 style: { color: "#6B7280" },
@@ -624,6 +628,8 @@ const ticketTypesChartOptions = ref({
         {
             seriesName: "Receita (R$)",
             opposite: true,
+            min: 0,
+            forceNiceScale: true,
             title: {
                 text: "Receita (R$)",
                 style: { color: "#6B7280" },

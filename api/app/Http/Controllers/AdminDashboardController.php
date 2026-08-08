@@ -19,22 +19,28 @@ class AdminDashboardController extends Controller
         $startDate = $request->input('start_date');
         $endDate = $request->input('end_date');
 
+        // As datas são gravadas em UTC, mas os limites do período precisam ser
+        // as bordas do dia/mês no fuso local — senão "mês atual" começa às 21h
+        // do último dia do mês anterior. Calcula em America/Sao_Paulo e só
+        // então converte para UTC, que é o fuso em que a coluna é comparada.
+        $timezone = config('app.display_timezone');
+
         if ($preset === 'custom' && $startDate && $endDate) {
             return [
-                Carbon::parse($startDate)->startOfDay(),
-                Carbon::parse($endDate)->endOfDay(),
+                Carbon::parse($startDate, $timezone)->startOfDay()->utc(),
+                Carbon::parse($endDate, $timezone)->endOfDay()->utc(),
                 'custom',
             ];
         }
 
-        $now = Carbon::now();
+        $now = Carbon::now($timezone);
 
         return match ($preset) {
-            'current_month' => [$now->copy()->startOfMonth(), $now->copy()->endOfDay(), 'current_month'],
-            'current_year' => [$now->copy()->startOfYear(), $now->copy()->endOfDay(), 'current_year'],
-            '7d' => [$now->copy()->subDays(7)->startOfDay(), $now->copy()->endOfDay(), '7d'],
-            '30d' => [$now->copy()->subDays(30)->startOfDay(), $now->copy()->endOfDay(), '30d'],
-            default => [$now->copy()->startOfMonth(), $now->copy()->endOfDay(), 'current_month'],
+            'current_month' => [$now->copy()->startOfMonth()->utc(), $now->copy()->endOfDay()->utc(), 'current_month'],
+            'current_year' => [$now->copy()->startOfYear()->utc(), $now->copy()->endOfDay()->utc(), 'current_year'],
+            '7d' => [$now->copy()->subDays(7)->startOfDay()->utc(), $now->copy()->endOfDay()->utc(), '7d'],
+            '30d' => [$now->copy()->subDays(30)->startOfDay()->utc(), $now->copy()->endOfDay()->utc(), '30d'],
+            default => [$now->copy()->startOfMonth()->utc(), $now->copy()->endOfDay()->utc(), 'current_month'],
         };
     }
 
@@ -110,9 +116,9 @@ class AdminDashboardController extends Controller
             ];
 
             $salesTrend = Order::where('status', 'paid')
-                ->whereBetween('updated_at', [$startDate, $endDate])
+                ->whereBetween('created_at', [$startDate, $endDate])
                 ->select(
-                    DB::raw('DATE(updated_at) as date'),
+                    Order::localDateExpression('created_at'),
                     DB::raw('COUNT(*) as orders'),
                     DB::raw('SUM(total_cents) as revenue')
                 )
@@ -275,9 +281,9 @@ class AdminDashboardController extends Controller
             $salesHistory = Order::join('events', 'orders.event_id', '=', 'events.id')
                 ->where('events.organizer_id', $organizer->id)
                 ->where('orders.status', 'paid')
-                ->where('orders.updated_at', '>=', now()->subDays(90))
+                ->where('orders.created_at', '>=', Order::localDaysAgo(89))
                 ->select(
-                    DB::raw('DATE(orders.updated_at) as date'),
+                    Order::localDateExpression('orders.created_at'),
                     DB::raw('COUNT(*) as orders'),
                     DB::raw('SUM(orders.total_cents) as revenue')
                 )

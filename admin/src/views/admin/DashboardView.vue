@@ -1124,6 +1124,8 @@ const chartOptions = computed(() => ({
         },
     },
     yaxis: {
+        min: 0,
+        forceNiceScale: true,
         labels: {
             style: {
                 colors: "#6B7280",
