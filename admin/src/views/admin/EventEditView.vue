@@ -304,6 +304,7 @@
                     </div>
                 </div>
 
+<<<<<<< HEAD
                 <!-- Configurações -->
                 <div class="bg-card-bg border border-surface-elevated p-6">
                     <div class="flex items-center gap-3 mb-6">
@@ -483,6 +484,8 @@
                     </div>
                 </div>
 
+=======
+>>>>>>> main
                 <!-- Banner -->
                 <div class="bg-card-bg border border-surface-elevated p-6">
                     <div class="flex items-center gap-3 mb-6">
@@ -551,7 +554,7 @@
                     </div>
                 </div>
 
-                <!-- Status -->
+                <!-- Configurações -->
                 <div
                     class="bg-card-bg border border-surface-elevated rounded-b-xl p-6"
                 >
@@ -561,48 +564,197 @@
                         >
                             <span
                                 class="material-symbols-outlined text-primary text-[18px]"
-                                >toggle_on</span
+                                >settings</span
                             >
                         </div>
-                        <h3 class="text-white font-semibold">
-                            Status do Evento
-                        </h3>
+                        <h3 class="text-white font-semibold">Configurações</h3>
                     </div>
 
-                    <div
-                        class="bg-surface-elevated rounded-lg p-5 border border-white/5"
-                    >
-                        <label
-                            for="status"
-                            class="block text-xs font-medium text-text-muted uppercase tracking-wider mb-2"
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                        <!-- Situação do evento -->
+                        <div
+                            class="lg:col-span-2 flex flex-col gap-3 p-4 bg-surface/50 rounded-lg border border-surface-elevated sm:flex-row sm:items-center sm:justify-between"
                         >
-                            Situação do Evento
-                        </label>
-                        <select
-                            id="status"
-                            v-model="form.status"
-                            class="w-full bg-surface border border-surface-elevated rounded-lg px-4 py-3 text-white focus:outline-none focus:border-primary transition-colors"
-                        >
-                            <option
-                                v-for="option in EVENT_STATUS_FORM_OPTIONS"
-                                :key="option.value"
-                                :value="option.value"
+                            <div class="flex items-center gap-3">
+                                <span
+                                    class="material-symbols-outlined text-primary"
+                                >
+                                    toggle_on
+                                </span>
+                                <div>
+                                    <label
+                                        for="status"
+                                        class="block text-sm font-bold text-white"
+                                    >
+                                        Situação do evento
+                                    </label>
+                                    <p class="text-xs text-text-muted">
+                                        <strong>Ativo:</strong> visível ao
+                                        público e recebe inscrições.
+                                        <strong>Inativo:</strong> oculto.
+                                        <strong>Encerrado:</strong> visível com
+                                        os resultados, sem novas inscrições.
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="sm:w-44 sm:flex-shrink-0">
+                                <select
+                                    id="status"
+                                    v-model="form.status"
+                                    :disabled="isSubmitting"
+                                    class="w-full bg-surface border border-surface-elevated rounded-lg px-4 py-3 text-white focus:outline-none focus:border-primary transition-colors"
+                                >
+                                    <option
+                                        v-for="option in EVENT_STATUS_FORM_OPTIONS"
+                                        :key="option.value"
+                                        :value="option.value"
+                                    >
+                                        {{ option.label }}
+                                    </option>
+                                </select>
+                                <p
+                                    v-if="errors.status"
+                                    class="text-red-500 text-sm mt-1"
+                                >
+                                    {{ errors.status }}
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Máximo de Participantes -->
+                        <div>
+                            <label
+                                for="max_participants"
+                                class="block text-xs font-medium text-text-muted uppercase tracking-wider mb-2"
                             >
-                                {{ option.label }}
-                            </option>
-                        </select>
-                        <p class="text-text-muted text-sm mt-2">
-                            <strong>Ativo:</strong> visível ao público e recebe
-                            inscrições. <strong>Inativo:</strong> oculto.
-                            <strong>Encerrado:</strong> visível com os resultados,
-                            sem novas inscrições.
-                        </p>
-                        <p
-                            v-if="errors.status"
-                            class="text-red-500 text-sm mt-1"
+                                Máximo de Participantes
+                            </label>
+                            <div class="relative">
+                                <span
+                                    class="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-text-muted text-[20px]"
+                                >
+                                    group
+                                </span>
+                                <input
+                                    id="max_participants"
+                                    v-model.number="form.max_participants"
+                                    type="number"
+                                    min="0"
+                                    placeholder="Deixe vazio para ilimitado"
+                                    class="w-full bg-surface border border-surface-elevated rounded-lg pl-10 pr-4 py-3 text-white placeholder-text-muted focus:outline-none focus:border-primary transition-colors"
+                                />
+                            </div>
+                            <p class="text-text-muted text-xs mt-1">
+                                Deixe em branco para não ter limite de vagas.
+                            </p>
+                        </div>
+
+                        <!-- Link dos Resultados -->
+                        <div>
+                            <label
+                                for="results_url"
+                                class="block text-xs font-medium text-text-muted uppercase tracking-wider mb-2"
+                            >
+                                Link dos Resultados
+                            </label>
+                            <div class="relative">
+                                <span
+                                    class="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-text-muted text-[20px]"
+                                >
+                                    leaderboard
+                                </span>
+                                <input
+                                    id="results_url"
+                                    v-model="form.results_url"
+                                    type="url"
+                                    placeholder="https://resultados.exemplo.com/evento"
+                                    class="w-full bg-surface border border-surface-elevated rounded-lg pl-10 pr-4 py-3 text-white placeholder-text-muted focus:outline-none focus:border-primary transition-colors"
+                                />
+                            </div>
+                            <p class="text-text-muted text-xs mt-1">
+                                Exibido aos participantes quando o evento estiver
+                                encerrado.
+                            </p>
+                            <p
+                                v-if="errors.results_url"
+                                class="text-red-500 text-sm mt-1"
+                            >
+                                {{ errors.results_url }}
+                            </p>
+                        </div>
+
+                        <!-- Reembolso fora do prazo -->
+                        <div
+                            class="lg:col-span-2 flex items-center justify-between p-4 bg-surface/50 rounded-lg border border-surface-elevated"
                         >
-                            {{ errors.status }}
-                        </p>
+                            <div class="flex items-center gap-3">
+                                <span
+                                    class="material-symbols-outlined text-primary"
+                                >
+                                    event_repeat
+                                </span>
+                                <div>
+                                    <p class="text-sm font-bold text-white">
+                                        Reembolso fora do prazo
+                                    </p>
+                                    <p class="text-xs text-text-muted">
+                                        Permite que o comprador solicite
+                                        cancelamento mesmo após os 7 dias do
+                                        pagamento, até a data de início do
+                                        evento.
+                                    </p>
+                                </div>
+                            </div>
+                            <label
+                                class="relative inline-flex items-center cursor-pointer"
+                            >
+                                <input
+                                    v-model="form.allows_late_refund_request"
+                                    type="checkbox"
+                                    class="sr-only peer"
+                                    :disabled="isSubmitting"
+                                />
+                                <div
+                                    class="w-11 h-6 bg-surface-elevated rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-text-muted after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary peer-checked:after:bg-background"
+                                ></div>
+                            </label>
+                        </div>
+
+                        <!-- Barra de progresso dos lotes -->
+                        <div
+                            class="lg:col-span-2 flex items-center justify-between p-4 bg-surface/50 rounded-lg border border-surface-elevated"
+                        >
+                            <div class="flex items-center gap-3">
+                                <span
+                                    class="material-symbols-outlined text-primary"
+                                >
+                                    bar_chart
+                                </span>
+                                <div>
+                                    <p class="text-sm font-bold text-white">
+                                        Barra de progresso dos lotes
+                                    </p>
+                                    <p class="text-xs text-text-muted">
+                                        Exibe no portal a barra de vendas e a
+                                        contagem de vagas restantes de cada
+                                        lote.
+                                    </p>
+                                </div>
+                            </div>
+                            <label
+                                class="relative inline-flex items-center cursor-pointer"
+                            >
+                                <input
+                                    v-model="form.shows_ticket_progress"
+                                    type="checkbox"
+                                    class="sr-only peer"
+                                    :disabled="isSubmitting"
+                                />
+                                <div
+                                    class="w-11 h-6 bg-surface-elevated rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-text-muted after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary peer-checked:after:bg-background"
+                                ></div>
+                            </label>
+                        </div>
                     </div>
                 </div>
 
@@ -640,7 +792,7 @@
 
 <script setup>
 import { ref, reactive, onMounted } from "vue";
-import { useRoute, useRouter } from "vue-router";
+import { useRoute } from "vue-router";
 import { useEventsStore } from "@/stores/events";
 import { useToast } from "@/composables/useToast";
 import ErrorState from "@/components/ui/ErrorState.vue";
@@ -654,7 +806,6 @@ import BaseDateInput from "@/components/ui/BaseDateInput.vue";
 import { organizerPaymentAccountApi } from "@/api/organizer/paymentAccount";
 
 const route = useRoute();
-const router = useRouter();
 const store = useEventsStore();
 const toast = useToast();
 
@@ -678,8 +829,13 @@ const form = reactive({
     max_participants: null,
     results_url: "",
     status: EVENT_STATUS.ACTIVE,
+<<<<<<< HEAD
     payout_mode: "platform",
     platform_fee_percent: 10,
+=======
+    allows_late_refund_request: false,
+    shows_ticket_progress: false,
+>>>>>>> main
 });
 
 // Status de conexão MP do organizador do evento (habilita o Split).
@@ -731,6 +887,7 @@ const populateForm = (data) => {
     form.max_participants = data.max_participants || null;
     form.results_url = data.results_url || "";
     form.status = data.status || EVENT_STATUS.ACTIVE;
+<<<<<<< HEAD
     form.payout_mode = data.payout_mode || "platform";
     // Taxa vem como fração (0.10); exibe em %. Fallback 10% para eventos antigos.
     form.platform_fee_percent =
@@ -757,6 +914,10 @@ const checkOrganizerConnection = async (organizerId) => {
     if (!organizerConnected.value && form.payout_mode === "split") {
         form.payout_mode = "platform";
     }
+=======
+    form.allows_late_refund_request = data.allows_late_refund_request ?? false;
+    form.shows_ticket_progress = data.shows_ticket_progress ?? false;
+>>>>>>> main
 };
 
 const generateSlug = () => {
@@ -863,6 +1024,15 @@ const handleSubmit = async () => {
         }
         formData.append("results_url", form.results_url || "");
         formData.append("status", form.status);
+        // "1"/"0": em FormData um booleano vira string, e "false" é truthy no PHP.
+        formData.append(
+            "allows_late_refund_request",
+            form.allows_late_refund_request ? "1" : "0",
+        );
+        formData.append(
+            "shows_ticket_progress",
+            form.shows_ticket_progress ? "1" : "0",
+        );
 
         // Recebimento: modo + taxa da plataforma (converte % → fração).
         formData.append("payout_mode", form.payout_mode);
@@ -884,7 +1054,13 @@ const handleSubmit = async () => {
 
         if (result.success) {
             toast.success("Evento atualizado com sucesso!");
-            router.push(`/admin/events/${event.value.id}`);
+            // Permanece na edição: ressincroniza com o que o servidor devolveu
+            // (slug, banner) e descarta o arquivo já enviado, para que um novo
+            // "Salvar" não faça upload do mesmo banner de novo.
+            event.value = result.data;
+            populateForm(result.data);
+            bannerFile.value = null;
+            bannerPreview.value = null;
         } else {
             // Handle validation errors from API
             if (result.errors) {

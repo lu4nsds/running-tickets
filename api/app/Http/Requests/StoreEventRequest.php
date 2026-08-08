@@ -43,6 +43,8 @@ class StoreEventRequest extends FormRequest
             // Modalidade de recebimento e taxa da plataforma (fração 0–1).
             'payout_mode' => ['nullable', Rule::in(PayoutMode::values())],
             'platform_fee_rate' => 'nullable|numeric|min:0|max:1',
+            'allows_late_refund_request' => ['boolean'],
+            'shows_ticket_progress' => ['boolean'],
             'meta' => 'nullable|array',
         ];
     }

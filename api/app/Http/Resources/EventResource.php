@@ -30,6 +30,8 @@ class EventResource extends JsonResource
             'status' => $this->status,
             'payout_mode' => $this->payout_mode,
             'platform_fee_rate' => $this->platform_fee_rate !== null ? (float) $this->platform_fee_rate : null,
+            'allows_late_refund_request' => $this->allows_late_refund_request,
+            'shows_ticket_progress' => $this->shows_ticket_progress,
             'meta' => $this->meta,
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,

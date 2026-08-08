@@ -31,7 +31,19 @@ class EventFactory extends Factory
             'date_end' => now()->addDays(31),
             'results_url' => null,
             'status' => EventStatus::ACTIVE->value,
+            'allows_late_refund_request' => false,
+            'shows_ticket_progress' => false,
         ];
+    }
+
+    public function allowsLateRefundRequest(): static
+    {
+        return $this->state(fn () => ['allows_late_refund_request' => true]);
+    }
+
+    public function showsTicketProgress(): static
+    {
+        return $this->state(fn () => ['shows_ticket_progress' => true]);
     }
 
     public function inactive(): static

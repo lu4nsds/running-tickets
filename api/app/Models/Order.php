@@ -156,12 +156,22 @@ class Order extends Model
      * Regra de negócio (fonte única) para solicitação de cancelamento/estorno:
      * pedido pago, dentro da janela de 7 dias da confirmação do pagamento, com
      * ao menos um ingresso ativo e sem solicitação pendente/aprovada.
+     *
+     * Eventos com `allows_late_refund_request` dispensam a janela de 7 dias e
+     * aceitam solicitações até o início do evento — as demais condições valem
+     * igualmente nos dois casos.
+     *
+     * `paid_at` só é exigido no ramo da janela, onde é a âncora do cálculo.
+     * Pedidos anteriores à criação da coluna (migration de 2026-06-23, sem
+     * backfill) têm `paid_at` nulo e continuam elegíveis pela flag do evento.
      */
     public function canRequestCancellation(): bool
     {
+        $withinWindow = $this->paid_at !== null
+            && $this->paid_at->gt(now()->subDays(7));
+
         return $this->isPaid()
-            && $this->paid_at !== null
-            && $this->paid_at->gt(now()->subDays(7))
+            && ($withinWindow || $this->event->acceptsLateRefundRequests())
             && ! $this->hasPendingCancellation()
             && ! $this->cancellations()
                 ->where('status', \App\Enums\OrderCancellationStatus::APPROVED)

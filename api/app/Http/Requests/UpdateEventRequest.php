@@ -46,6 +46,8 @@ class UpdateEventRequest extends FormRequest
             'status' => ['sometimes', Rule::in(EventStatus::values())],
             'payout_mode' => ['sometimes', Rule::in(PayoutMode::values())],
             'platform_fee_rate' => 'sometimes|nullable|numeric|min:0|max:1',
+            'allows_late_refund_request' => ['boolean'],
+            'shows_ticket_progress' => ['boolean'],
             'meta' => 'nullable|array',
         ];
     }

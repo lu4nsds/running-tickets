@@ -66,7 +66,11 @@ class OrderCancellationController extends Controller
      */
     public function storeBatch(StoreBatchOrderCancellationRequest $request): JsonResponse
     {
-        $orders = Order::whereIn('reference', $request->validated('references'))->get();
+        // `event` é necessário porque a regra de elegibilidade consulta a flag
+        // de reembolso fora do prazo — sem eager load, N+1 dentro do map().
+        $orders = Order::whereIn('reference', $request->validated('references'))
+            ->with('event')
+            ->get();
 
         $cancellations = DB::transaction(function () use ($orders, $request) {
             return $orders->map(function (Order $order) use ($request) {
