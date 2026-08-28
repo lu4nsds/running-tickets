@@ -44,6 +44,8 @@ class UpdateTicketTypeRequest extends FormRequest
             'attributes' => ['nullable', 'array'],
             'active' => ['boolean'],
             'allows_shirt_size' => ['boolean'],
+            'requires_senior_age' => ['boolean'],
+            'senior_min_age' => ['nullable', 'integer', 'min:1', 'max:120', 'required_if:requires_senior_age,true'],
             'category_ids' => ['nullable', 'array'],
             'category_ids.*' => ['integer', Rule::exists('categories', 'id')->where('event_id', $eventId)],
         ];
@@ -68,6 +70,10 @@ class UpdateTicketTypeRequest extends FormRequest
             'end_sale.date' => 'A data de fim das vendas deve ser uma data válida.',
             'end_sale.after_or_equal' => 'A data de fim das vendas deve ser posterior ou igual à data de início.',
             'attributes.array' => 'Os atributos devem ser um objeto JSON.',
+            'senior_min_age.required_if' => 'A idade mínima é obrigatória para um ingresso de idoso.',
+            'senior_min_age.integer' => 'A idade mínima deve ser um número inteiro.',
+            'senior_min_age.min' => 'A idade mínima deve ser no mínimo 1 ano.',
+            'senior_min_age.max' => 'A idade mínima deve ser no máximo 120 anos.',
             'category_ids.array' => 'As categorias devem ser uma lista.',
             'category_ids.*.exists' => 'Uma das categorias selecionadas não pertence a este evento.',
         ];

@@ -186,11 +186,36 @@
                                                 >
                                                     Esgotado
                                                 </span>
+                                                <span
+                                                    v-if="
+                                                        ticket.requires_senior_age
+                                                    "
+                                                    class="bg-primary/20 text-[10px] text-primary border border-primary/30 px-1.5 py-0.5 rounded font-bold uppercase"
+                                                >
+                                                    Exclusivo
+                                                    {{ ticket.senior_min_age }}+
+                                                </span>
                                             </div>
                                             <p
                                                 class="text-xs text-slate-400 mb-2"
                                             >
                                                 {{ ticket.description }}
+                                            </p>
+                                            <p
+                                                v-if="ticket.requires_senior_age"
+                                                class="flex items-start gap-1.5 text-xs text-primary mb-2"
+                                            >
+                                                <span
+                                                    class="material-symbols-outlined text-sm leading-none"
+                                                    >elderly</span
+                                                >
+                                                <span>
+                                                    Cada ingresso deste lote
+                                                    exige um participante com
+                                                    {{ ticket.senior_min_age }}
+                                                    anos ou mais na data do
+                                                    evento.
+                                                </span>
                                             </p>
 
                                             <!-- Barra de Progresso (opt-in por evento) -->
@@ -703,6 +728,8 @@ const selectedTickets = computed(() => {
             quantity: quantities.value[ticket.id] || 0,
             category_ids: ticket.category_ids || [],
             allows_shirt_size: ticket.allows_shirt_size ?? false,
+            requires_senior_age: ticket.requires_senior_age ?? false,
+            senior_min_age: ticket.senior_min_age ?? null,
         }));
 });
 
@@ -765,6 +792,8 @@ async function addToCart() {
             id: event.value.id,
             title: event.value.title,
             slug: event.value.slug,
+            // Data-base da verificação de idade dos lotes de idoso no checkout.
+            date_start: event.value.date_start,
         },
         tickets: selectedTickets.value,
     };

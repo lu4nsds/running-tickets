@@ -452,7 +452,20 @@
                                         class="border-t border-surface-elevated h-[65px]"
                                     >
                                         <td class="py-3 text-white">
-                                            {{ ticket.name }}
+                                            <div
+                                                class="flex items-center gap-2"
+                                            >
+                                                <span>{{ ticket.name }}</span>
+                                                <span
+                                                    v-if="
+                                                        ticket.requires_senior_age
+                                                    "
+                                                    class="px-2 py-0.5 text-xs font-medium rounded-full bg-primary/10 text-primary whitespace-nowrap"
+                                                    :title="`Exclusivo para participantes com ${ticket.senior_min_age} anos ou mais na data do evento`"
+                                                >
+                                                    {{ ticket.senior_min_age }}+
+                                                </span>
+                                            </div>
                                         </td>
                                         <td
                                             class="py-3 text-primary font-medium"

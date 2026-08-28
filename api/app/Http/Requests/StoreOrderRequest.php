@@ -145,10 +145,16 @@ class StoreOrderRequest extends FormRequest
         $validator->after(function ($validator) {
             // Valida que todos os ticket_types pertencem ao evento
             $eventId = $this->input('event_id');
-            $ticketTypeIds = collect($this->input('items'))->pluck('ticket_type_id')->unique();
+            $ticketTypeIds = collect($this->input('items'))->pluck('ticket_type_id')->filter()->unique();
+
+            // Carregados uma única vez e reaproveitados nos dois loops abaixo —
+            // o loop por item roda uma vez por participante do pedido.
+            $ticketTypesById = \App\Models\TicketType::with('categories:id')
+                ->find($ticketTypeIds)
+                ->keyBy('id');
 
             foreach ($ticketTypeIds as $ticketTypeId) {
-                $ticketType = \App\Models\TicketType::find($ticketTypeId);
+                $ticketType = $ticketTypesById->get((int) $ticketTypeId);
                 if (! $ticketType) {
                     continue;
                 }
@@ -204,13 +210,16 @@ class StoreOrderRequest extends FormRequest
             //    vinculadas, a categoria escolhida precisa estar entre elas
             //    (lotes sem vínculo aceitam qualquer categoria ativa do evento).
             //  - Tamanho de camiseta: só é aceito se o lote o oferecer.
+            //  - Idade: lotes de idoso exigem a idade mínima na data do evento.
+            $event = \App\Models\Event::find($eventId);
+
             foreach (collect($this->input('items')) as $index => $item) {
                 $ticketTypeId = $item['ticket_type_id'] ?? null;
                 if (! $ticketTypeId) {
                     continue;
                 }
 
-                $ticketType = \App\Models\TicketType::with('categories:id')->find($ticketTypeId);
+                $ticketType = $ticketTypesById->get((int) $ticketTypeId);
                 if (! $ticketType) {
                     continue;
                 }
@@ -240,6 +249,17 @@ class StoreOrderRequest extends FormRequest
                         "items.{$index}.participant_data.shirt_size",
                         'O tamanho da camisa é obrigatório para este tipo de ingresso.'
                     );
+                }
+
+                if ($ticketType->requires_senior_age) {
+                    $birthdate = $item['participant_data']['birthdate'] ?? null;
+
+                    if (! $ticketType->acceptsParticipantBornOn($birthdate, $event?->date_start)) {
+                        $validator->errors()->add(
+                            "items.{$index}.participant_data.birthdate",
+                            "O ingresso \"{$ticketType->name}\" é exclusivo para participantes com {$ticketType->senior_min_age} anos ou mais na data do evento."
+                        );
+                    }
                 }
             }
         });

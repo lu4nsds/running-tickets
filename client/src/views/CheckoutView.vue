@@ -280,6 +280,21 @@
                                     "
                                 />
 
+                                <p
+                                    v-if="seniorMinAgeFor(participant)"
+                                    class="-mt-2 flex items-start gap-1.5 text-xs text-slate-400"
+                                >
+                                    <span
+                                        class="material-symbols-outlined text-sm leading-none text-primary"
+                                        >elderly</span
+                                    >
+                                    <span>
+                                        Ingresso exclusivo para participantes com
+                                        {{ seniorMinAgeFor(participant) }} anos ou
+                                        mais na data do evento.
+                                    </span>
+                                </p>
+
                                 <div>
                                     <label
                                         class="block text-sm font-medium text-slate-300 mb-2"
@@ -555,12 +570,54 @@ function isValidBirthdate(dateStr) {
     return year >= currentYear - 120 && year <= currentYear;
 }
 
+// Idade completa que o participante terá na data do evento.
+// Espelha TicketType::acceptsParticipantBornOn no backend: a data-base é o
+// início do evento, não a data da compra.
+function ageOnEventDate(birthdate) {
+    if (!birthdate) return null;
+
+    const born = new Date(birthdate);
+    const reference = eventData.value?.date_start
+        ? new Date(eventData.value.date_start)
+        : new Date();
+
+    if (Number.isNaN(born.getTime()) || reference < born) return null;
+
+    let age = reference.getFullYear() - born.getFullYear();
+    const monthDiff = reference.getMonth() - born.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && reference.getDate() < born.getDate())) {
+        age--;
+    }
+    return age;
+}
+
+// Idade mínima exigida pelo lote do participante (null = lote sem exigência).
+function seniorMinAgeFor(participant) {
+    const ticket = selectedTickets.value.find(
+        (t) => t.id === participant.ticket_type_id,
+    );
+    return ticket?.requires_senior_age ? ticket.senior_min_age : null;
+}
+
+function meetsSeniorRequirement(participant) {
+    const minAge = seniorMinAgeFor(participant);
+    if (minAge === null) return true;
+
+    const age = ageOnEventDate(participant.birthdate);
+    return age !== null && age >= minAge;
+}
+
 function validateBirthdateField(participant, index) {
     const key = `participants.${index}.birthdate`;
+    const minAge = seniorMinAgeFor(participant);
+
     if (!participant.birthdate) {
         errors.value[key] = "Data de nascimento é obrigatória";
     } else if (!isValidBirthdate(participant.birthdate)) {
         errors.value[key] = "Ano inválido. Informe uma data de nascimento real";
+    } else if (!meetsSeniorRequirement(participant)) {
+        errors.value[key] =
+            `Este ingresso é exclusivo para participantes com ${minAge} anos ou mais na data do evento`;
     } else {
         delete errors.value[key];
     }
@@ -606,6 +663,7 @@ function isParticipantComplete(participant) {
         participant.phone &&
         participant.cpf &&
         isValidBirthdate(participant.birthdate) &&
+        meetsSeniorRequirement(participant) &&
         participant.gender &&
         participant.category_id &&
         (!allowsShirtSize(participant) || participant.shirt_size)
@@ -713,6 +771,50 @@ function initializeParticipants() {
     });
 }
 
+// Traduz os erros 422 do backend para o dicionário local de erros.
+// O Laravel devolve `items.{N}.participant_data.{campo}` (e `items.{N}.category_id`),
+// enquanto o formulário indexa por `participants.{N}.{campo}` — sem essa ponte
+// qualquer rejeição do servidor viraria um toast solto, sem apontar o participante.
+// Retorna o índice do primeiro participante com erro, ou null se nada foi mapeado.
+function applyServerValidationErrors(serverErrors) {
+    if (!serverErrors) return null;
+
+    const pattern = /^items\.(\d+)\.(?:participant_data\.)?([a-z_]+)$/;
+    // Só campos que o formulário realmente renderiza — mapear um campo sem input
+    // destacaria "corrija os dados" sem nada visível para corrigir.
+    const mappableFields = [
+        "category_id",
+        "name",
+        "email",
+        "phone",
+        "cpf",
+        "birthdate",
+        "gender",
+        "shirt_size",
+        "city",
+        "team",
+    ];
+    let firstIndex = null;
+
+    Object.entries(serverErrors).forEach(([key, messages]) => {
+        const match = key.match(pattern);
+        if (!match) return;
+
+        const index = Number(match[1]);
+        const field = match[2];
+
+        if (!mappableFields.includes(field)) return;
+
+        errors.value[`participants.${index}.${field}`] = Array.isArray(messages)
+            ? messages[0]
+            : messages;
+
+        if (firstIndex === null || index < firstIndex) firstIndex = index;
+    });
+
+    return firstIndex;
+}
+
 function validateForm() {
     errors.value = {};
     let hasErrors = false;
@@ -768,6 +870,11 @@ function validateForm() {
             errors.value[`participants.${index}.birthdate`] = !participant.birthdate
                 ? "Data de nascimento é obrigatória"
                 : "Ano inválido. Informe uma data de nascimento real";
+            hasErrors = true;
+        } else if (!meetsSeniorRequirement(participant)) {
+            // Lote de idoso: a idade é contada na data do evento.
+            errors.value[`participants.${index}.birthdate`] =
+                `Este ingresso é exclusivo para participantes com ${seniorMinAgeFor(participant)} anos ou mais na data do evento`;
             hasErrors = true;
         }
 
@@ -844,16 +951,27 @@ async function proceedToPayment() {
     } catch (error) {
         console.error("Erro ao criar pedido:", error);
 
-        let errorMessage = "Erro ao processar pedido. Tente novamente.";
+        const serverErrors = error.response?.data?.errors;
+        const mappedIndex = applyServerValidationErrors(serverErrors);
 
-        if (error.response?.data?.message) {
-            errorMessage = error.response.data.message;
-        } else if (error.response?.data?.errors) {
-            const errors = Object.values(error.response.data.errors).flat();
-            errorMessage = errors.join("\n");
+        if (mappedIndex !== null) {
+            // Abre o participante que causou a rejeição — sem isso o erro fica
+            // escondido dentro de um accordion fechado.
+            expandedParticipant.value = mappedIndex;
+            toast.error(
+                "Corrija os dados destacados do participante e tente novamente.",
+            );
+        } else {
+            let errorMessage = "Erro ao processar pedido. Tente novamente.";
+
+            if (serverErrors) {
+                errorMessage = Object.values(serverErrors).flat().join("\n");
+            } else if (error.response?.data?.message) {
+                errorMessage = error.response.data.message;
+            }
+
+            toast.error(errorMessage);
         }
-
-        toast.error(errorMessage);
     } finally {
         isSubmitting.value = false;
     }

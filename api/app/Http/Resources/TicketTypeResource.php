@@ -31,6 +31,8 @@ class TicketTypeResource extends JsonResource
             'attributes' => $this->attributes,
             'active' => $this->active,
             'allows_shirt_size' => $this->allows_shirt_size,
+            'requires_senior_age' => $this->requires_senior_age,
+            'senior_min_age' => $this->senior_min_age,
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
 

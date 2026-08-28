@@ -259,6 +259,73 @@
           </label>
         </div>
 
+        <!-- Ingresso para Idoso -->
+        <div
+          class="p-4 bg-surface/50 rounded-lg border border-surface-elevated space-y-4"
+        >
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <span class="material-symbols-outlined text-primary">
+                elderly
+              </span>
+              <div>
+                <p class="text-sm font-bold text-white">Ingresso para Idoso</p>
+                <p class="text-xs text-text-muted">
+                  Restringe a compra a participantes que tenham a idade mínima
+                  na data do evento. Quem não atender é bloqueado no checkout.
+                </p>
+              </div>
+            </div>
+            <label class="relative inline-flex items-center cursor-pointer">
+              <input
+                v-model="form.requires_senior_age"
+                type="checkbox"
+                class="sr-only peer"
+                :disabled="isSubmitting"
+              />
+              <div
+                class="w-11 h-6 bg-surface-elevated rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-text-muted after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary peer-checked:after:bg-background"
+              ></div>
+            </label>
+          </div>
+
+          <div v-if="form.requires_senior_age" class="space-y-2">
+            <label
+              for="senior_min_age"
+              class="block text-sm font-medium text-text-muted"
+            >
+              Idade mínima (anos)
+            </label>
+            <div class="relative">
+              <div
+                class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"
+              >
+                <span class="material-symbols-outlined text-text-muted"
+                  >cake</span
+                >
+              </div>
+              <input
+                id="senior_min_age"
+                v-model.number="form.senior_min_age"
+                type="number"
+                min="1"
+                max="120"
+                placeholder="Ex: 60"
+                class="block w-full pl-10 pr-3 py-3 bg-surface border border-surface-elevated rounded-lg text-white placeholder-text-muted focus:outline-none focus:border-primary transition-all"
+                :class="{ 'border-red-500': errors.senior_min_age }"
+                :disabled="isSubmitting"
+              />
+            </div>
+            <p v-if="errors.senior_min_age" class="text-xs text-red-500">
+              {{ errors.senior_min_age[0] }}
+            </p>
+            <p class="text-xs text-text-muted">
+              O Estatuto do Idoso considera idoso a partir de 60 anos. Ajuste se
+              o regulamento da prova exigir outra idade.
+            </p>
+          </div>
+        </div>
+
         <!-- Status -->
         <div
           class="flex items-center justify-between p-4 bg-surface/50 rounded-lg border border-surface-elevated"
@@ -392,6 +459,8 @@ const form = ref({
   end_sale: "",
   active: true,
   allows_shirt_size: false,
+  requires_senior_age: false,
+  senior_min_age: 60,
   category_ids: [],
 });
 
@@ -453,6 +522,8 @@ const fetchTicketType = async () => {
       end_sale: ticketType.end_sale || "",
       active: ticketType.active ?? true,
       allows_shirt_size: ticketType.allows_shirt_size ?? false,
+      requires_senior_age: ticketType.requires_senior_age ?? false,
+      senior_min_age: ticketType.senior_min_age ?? 60,
       category_ids: ticketType.category_ids || [],
     };
     priceInReais.value = centsToReais(ticketType.price_cents || 0);
@@ -478,6 +549,10 @@ const handleSubmit = async () => {
       end_sale: form.value.end_sale || undefined,
       active: form.value.active,
       allows_shirt_size: form.value.allows_shirt_size,
+      requires_senior_age: form.value.requires_senior_age,
+      senior_min_age: form.value.requires_senior_age
+        ? form.value.senior_min_age
+        : undefined,
       category_ids: form.value.category_ids,
     };
 

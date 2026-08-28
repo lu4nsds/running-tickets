@@ -21,6 +21,7 @@ class ShirtSizeOptionTest extends TestCase
             'cpf' => '52998224725',
             'phone' => '11999990000',
             'birthdate' => '1990-01-01',
+            'gender' => 'M',
         ];
 
         if ($shirtSize !== null) {

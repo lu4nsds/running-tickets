@@ -3,6 +3,8 @@
 namespace App\Models;
 
 use App\Enums\OrderStatus;
+use Carbon\Carbon;
+use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -23,6 +25,8 @@ class TicketType extends Model
         'attributes',
         'active',
         'allows_shirt_size',
+        'requires_senior_age',
+        'senior_min_age',
     ];
 
     protected $casts = [
@@ -31,6 +35,8 @@ class TicketType extends Model
         'end_sale' => 'datetime',
         'active' => 'boolean',
         'allows_shirt_size' => 'boolean',
+        'requires_senior_age' => 'boolean',
+        'senior_min_age' => 'integer',
     ];
 
     /**
@@ -57,6 +63,37 @@ class TicketType extends Model
     public function categories(): BelongsToMany
     {
         return $this->belongsToMany(Category::class, 'ticket_type_categories');
+    }
+
+    /**
+     * Verifica se um participante nascido em `$birthdate` atende à exigência
+     * etária deste lote.
+     *
+     * A idade é contada em anos completos na data de referência — por padrão a
+     * data de início do evento, e não a data da compra, para não barrar quem
+     * completa a idade entre a inscrição e a prova.
+     *
+     * Lotes sem exigência etária sempre aceitam.
+     */
+    public function acceptsParticipantBornOn(?string $birthdate, CarbonInterface|string|null $referenceDate = null): bool
+    {
+        if (! $this->requires_senior_age) {
+            return true;
+        }
+
+        if (! $birthdate) {
+            return false;
+        }
+
+        $born = Carbon::parse($birthdate)->startOfDay();
+        $reference = Carbon::parse($referenceDate ?? $this->event?->date_start ?? now())->startOfDay();
+
+        if ($reference->lt($born)) {
+            return false;
+        }
+
+        // diffInYears devolve float no Carbon 3; o cast trunca para anos completos.
+        return (int) $born->diffInYears($reference) >= $this->senior_min_age;
     }
 
     /**
