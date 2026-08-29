@@ -9,10 +9,17 @@
     html,
     body {
         @apply font-body antialiased min-h-screen bg-background-dark text-white m-0 p-0;
+        color-scheme: dark;
     }
 
     #app {
         @apply min-h-screen bg-background-dark;
+    }
+
+    /* Foco explícito — evita -webkit-focus-ring-color, que é cor de sistema */
+    :focus-visible {
+        outline: 2px solid theme("colors.primary");
+        outline-offset: 2px;
     }
 }
 
@@ -25,25 +32,4 @@
 .no-scrollbar {
     -ms-overflow-style: none;
     scrollbar-width: none;
-}
-button:focus,
-button:focus-visible {
-    outline: 4px auto -webkit-focus-ring-color;
-}
-
-.card {
-    padding: 2em;
-}
-
-@media (prefers-color-scheme: light) {
-    :root {
-        color: #213547;
-        background-color: #ffffff;
-    }
-    a:hover {
-        color: #747bff;
-    }
-    button {
-        background-color: #f9f9f9;
-    }
 }
