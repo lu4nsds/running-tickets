@@ -3,11 +3,12 @@ interface MockSocket {
   handlers: Record<string, (arg: unknown) => void>;
   ev: { on: jest.Mock; removeAllListeners: jest.Mock };
   end: jest.Mock;
+  logout: jest.Mock;
   onWhatsApp: jest.Mock;
   sendMessage: jest.Mock;
 }
 
-jest.mock('@whiskeysockets/baileys', () => {
+jest.mock('@src/utils/baileys.import', () => {
   const sockets: MockSocket[] = [];
   const make = jest.fn((config: Record<string, unknown>): MockSocket => {
     const handlers: Record<string, (arg: unknown) => void> = {};
@@ -21,6 +22,7 @@ jest.mock('@whiskeysockets/baileys', () => {
         removeAllListeners: jest.fn(),
       },
       end: jest.fn(),
+      logout: jest.fn().mockResolvedValue(undefined),
       onWhatsApp: jest
         .fn()
         .mockResolvedValue([{ exists: true, jid: '5511999@s.whatsapp.net' }]),
@@ -34,15 +36,20 @@ jest.mock('@whiskeysockets/baileys', () => {
   });
 
   return {
-    __esModule: true,
-    default: make,
-    __sockets: sockets,
-    fetchLatestBaileysVersion: jest
-      .fn()
-      .mockResolvedValue({ version: [2, 3, 0] }),
-    DisconnectReason: { loggedOut: 401, connectionReplaced: 440 },
-    BufferJSON: { replacer: jest.fn(), reviver: jest.fn() },
-    proto: { Message: { fromObject: jest.fn(() => ({ conversation: '' })) } },
+    importBaileys: jest.fn().mockResolvedValue({
+      default: make,
+      __sockets: sockets,
+      fetchLatestBaileysVersion: jest
+        .fn()
+        .mockResolvedValue({ version: [2, 3, 0] }),
+      DisconnectReason: { loggedOut: 401, connectionReplaced: 440 },
+      BufferJSON: { replacer: jest.fn(), reviver: jest.fn() },
+      proto: {
+        Message: {
+          AppStateSyncKeyData: { create: jest.fn((o: object) => o) },
+        },
+      },
+    }),
   };
 });
 
@@ -53,13 +60,15 @@ jest.mock('@src/states/redis-auth.state', () => {
   return {
     useRedisAuthState: jest.fn().mockResolvedValue({
       state: { creds: {}, keys: { get: jest.fn(), set: jest.fn() } },
-      saveCreds: jest.fn(),
+      saveCreds: jest.fn().mockResolvedValue(undefined),
     }),
     authPattern: (uuid: string) => `${redisPrefix()}:auth:${uuid}:*`,
   };
 });
 
-const mockCacheMessage = jest.fn();
+// Resolve como a função real (async): os callbacks de evento passam o retorno
+// para `fireAndForget`, então um mock síncrono não representaria o caminho real.
+const mockCacheMessage = jest.fn().mockResolvedValue(undefined);
 const mockLoadCachedMessage = jest
   .fn()
   .mockResolvedValue({ conversation: 'cached' });
@@ -78,16 +87,16 @@ import {
   BadRequestException,
   InternalServerErrorException,
 } from '@nestjs/common';
-import * as baileys from '@whiskeysockets/baileys';
 import { GatewayConfig } from '@src/config/gateway.config';
 import { redisPrefix, sessionSetKey } from '@src/config/redis-keys';
 import { TenantConnection } from '@src/session/tenant-connection.service';
 import type { TenantConnectionHooks } from '@src/session/tenant-connection.service';
 import { useRedisAuthState } from '@src/states/redis-auth.state';
+import { fakeScanSupport } from '@test/helpers/fake-redis-scan';
+import { importBaileys } from '@src/utils/baileys.import';
 
-const mockMakeWASocket = baileys.default as unknown as jest.Mock;
-const mockSockets = (baileys as unknown as { __sockets: MockSocket[] })
-  .__sockets;
+let mockMakeWASocket: jest.Mock;
+let mockSockets: MockSocket[];
 const mockUseRedisAuthState = useRedisAuthState as jest.Mock;
 
 const INSTANCE = 'inst-self';
@@ -135,9 +144,14 @@ class FakeRedis {
     this.sets.get(key)?.delete(member);
     return Promise.resolve(1);
   });
-  keys = jest.fn((pattern: string) =>
-    Promise.resolve([pattern.replace('*', 'creds')]),
-  );
+  // Presente só para provar que a limpeza NUNCA usa o KEYS bloqueante.
+  keys = jest.fn();
+
+  private readonly scan = fakeScanSupport();
+  scans = this.scan.scans;
+  unlinked = this.scan.unlinked;
+  scanStream = this.scan.scanStream;
+  pipeline = this.scan.pipeline;
 }
 
 const CONFIG: Record<string, string> = {
@@ -149,6 +163,8 @@ const CONFIG: Record<string, string> = {
   WHATSAPP_OWNERSHIP_TTL_MS: '30000',
   WHATSAPP_HEARTBEAT_INTERVAL_MS: '10000',
   WHATSAPP_RECONCILE_INTERVAL_MS: '20000',
+  WHATSAPP_RPC_TIMEOUT_MS: '45000',
+  WHATSAPP_API_KEY: 'test-api-key',
   WHATSAPP_DEVICE_NAME: 'Test Device',
 };
 
@@ -175,7 +191,14 @@ describe('TenantConnection', () => {
   let redis: FakeRedis;
   let hooks: { isActive: jest.Mock; reopen: jest.Mock; deregister: jest.Mock };
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    const mod = (await importBaileys()) as unknown as {
+      default: jest.Mock;
+      __sockets: MockSocket[];
+    };
+    mockMakeWASocket = mod.default;
+    mockSockets = mod.__sockets;
+
     redis = new FakeRedis();
     conn = new TenantConnection(redis as never, INSTANCE, buildConfig());
     hooks = {
@@ -192,7 +215,7 @@ describe('TenantConnection', () => {
     mockSockets.length = 0;
     mockUseRedisAuthState.mockResolvedValue({
       state: { creds: {}, keys: { get: jest.fn(), set: jest.fn() } },
-      saveCreds: jest.fn(),
+      saveCreds: jest.fn().mockResolvedValue(undefined),
     });
   });
 
@@ -210,6 +233,16 @@ describe('TenantConnection', () => {
       expect(lastSocket().ev.on).toHaveBeenCalledWith(
         'connection.update',
         expect.any(Function),
+      );
+    });
+
+    it('builds the auth state fenced by this instance identity', async () => {
+      await conn.open();
+
+      expect(mockUseRedisAuthState).toHaveBeenCalledWith(
+        redis,
+        TENANT,
+        INSTANCE,
       );
     });
 
@@ -341,8 +374,11 @@ describe('TenantConnection', () => {
       await flushPromises();
 
       // auth keys wiped and ownership released
-      expect(redis.keys).toHaveBeenCalledWith(`${redisPrefix()}:auth:t1:*`);
-      expect(redis.del).toHaveBeenCalled();
+      expect(redis.scans.map((scan) => scan.match)).toEqual([
+        `${redisPrefix()}:auth:t1:*`,
+      ]);
+      expect(redis.unlinked).toHaveLength(1);
+      expect(redis.keys).not.toHaveBeenCalled();
       expect(redis.owners.get(ownerKey)).toBeUndefined();
       expect(redis.hashes.get(stateKey)).toBeUndefined();
     });
@@ -374,15 +410,53 @@ describe('TenantConnection', () => {
       expect(hooks.reopen).toHaveBeenCalledTimes(1);
     });
 
-    it('clears credentials once the max reconnect attempts are exceeded', async () => {
+    // Uma queda transiente longa não pode custar um repareamento por QR: o
+    // gateway entra em modo degradado (backoff no teto) e segue tentando com as
+    // credenciais intactas.
+    it('keeps credentials and keeps retrying past the max reconnect attempts', async () => {
+      jest.useFakeTimers();
       redis.hashes.set(stateKey, { reconnectAttempts: '3' });
       await conn.open();
 
       fireClose(lastSocket(), 500); // attempt 4 > max (3)
       await flushPromises();
 
-      expect(redis.keys).toHaveBeenCalledWith(`${redisPrefix()}:auth:t1:*`);
-      expect(redis.owners.get(ownerKey)).toBeUndefined();
+      // credenciais preservadas e lock mantido
+      expect(redis.unlinked).toEqual([]);
+      expect(redis.owners.get(ownerKey)).toBe(INSTANCE);
+      expect(redis.hashes.get(stateKey)?.status).toBe('closed');
+      expect(redis.hashes.get(stateKey)?.reconnectAttempts).toBe('4');
+
+      // e a próxima tentativa acontece no teto do backoff
+      await jest.advanceTimersByTimeAsync(60000);
+      expect(hooks.reopen).toHaveBeenCalledTimes(1);
+    });
+
+    it('caps the backoff at the configured max delay when degraded', async () => {
+      jest.useFakeTimers();
+      redis.hashes.set(stateKey, { reconnectAttempts: '20' });
+      await conn.open();
+
+      fireClose(lastSocket(), 500);
+      await flushPromises();
+
+      // 2^20 * 1000ms estouraria em muito o teto; o delay tem de ser exatamente
+      // WHATSAPP_RECONNECT_MAX_DELAY_MS
+      await jest.advanceTimersByTimeAsync(59999);
+      expect(hooks.reopen).not.toHaveBeenCalled();
+      await jest.advanceTimersByTimeAsync(1);
+      expect(hooks.reopen).toHaveBeenCalledTimes(1);
+    });
+
+    it('only wipes credentials when WhatsApp itself logged the device out', async () => {
+      await conn.open();
+
+      // qualquer motivo transiente não pode apagar nada
+      for (const statusCode of [408, 428, 500, 515]) {
+        fireClose(lastSocket(), statusCode);
+        await flushPromises();
+        expect(redis.unlinked).toEqual([]);
+      }
     });
   });
 

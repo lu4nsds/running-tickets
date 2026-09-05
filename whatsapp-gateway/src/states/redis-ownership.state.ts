@@ -1,7 +1,7 @@
 import type Redis from 'ioredis';
 import { redisPrefix } from '@src/config/redis-keys';
 
-function ownerKey(tenantUuid: string): string {
+export function ownerKey(tenantUuid: string): string {
   return `${redisPrefix()}:owner:${tenantUuid}`;
 }
 

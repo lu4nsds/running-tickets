@@ -6,13 +6,14 @@ import {
   OnModuleDestroy,
   OnModuleInit,
 } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import type Redis from 'ioredis';
+import { GatewayConfig } from '@src/config/gateway.config';
 import { redisPrefix } from '@src/config/redis-keys';
 import { REDIS_CLIENT, REDIS_SUBSCRIBER } from '@src/providers/redis.provider';
 import { INSTANCE_ID } from '@src/providers/instance.provider';
+import { fireAndForget } from '@src/utils/fire-and-forget.util';
 
-export type BusAction = 'send' | 'remove';
+export type BusAction = 'send' | 'remove' | 'connect';
 
 export type BusHandler = (
   action: BusAction,
@@ -61,15 +62,22 @@ export class SessionBusService implements OnModuleInit, OnModuleDestroy {
     @Inject(REDIS_CLIENT) private readonly redis: Redis,
     @Inject(REDIS_SUBSCRIBER) private readonly subscriber: Redis,
     @Inject(INSTANCE_ID) private readonly instanceId: string,
-    config: ConfigService,
+    config: GatewayConfig,
   ) {
-    this.timeoutMs = Number(config.get<string>('WHATSAPP_RPC_TIMEOUT_MS'));
+    // Via GatewayConfig (e não ConfigService cru) para que uma env ausente falhe
+    // no boot em vez de virar NaN — `setTimeout(fn, NaN)` dispara em ~1ms e faria
+    // todo RPC entre instâncias falhar instantaneamente.
+    this.timeoutMs = config.rpcTimeoutMs;
   }
 
   async onModuleInit(): Promise<void> {
     this.subscriber.on('message', (channel, message) => {
       if (channel !== inboxChannel(this.instanceId)) return;
-      void this.onMessage(message);
+      fireAndForget(
+        this.onMessage(message),
+        this.logger,
+        'Failed to process bus message',
+      );
     });
     await this.subscriber.subscribe(inboxChannel(this.instanceId));
   }
@@ -123,10 +131,30 @@ export class SessionBusService implements OnModuleInit, OnModuleDestroy {
         timer,
       });
 
-      void this.redis.publish(inboxChannel(ownerId), JSON.stringify(message));
+      // Uma falha no publish não pode escapar como unhandled rejection: resolve-se
+      // rejeitando o pending imediatamente, em vez de deixar o chamador esperando
+      // o timeout inteiro por um request que nunca saiu.
+      this.redis
+        .publish(inboxChannel(ownerId), JSON.stringify(message))
+        .catch((error: unknown) => {
+          const pendingRequest = this.pending.get(id);
+          if (!pendingRequest) return;
+
+          clearTimeout(pendingRequest.timer);
+          this.pending.delete(id);
+
+          const detail = error instanceof Error ? error.message : String(error);
+          pendingRequest.reject(
+            new Error(
+              `RPC ${action} for tenant ${tenantUuid} to ${ownerId} could not be published: ${detail}`,
+            ),
+          );
+        });
     });
   }
 
+  // Entrypoint do listener de pub/sub. Nunca lança: é invocado por um event
+  // handler, então uma rejeição escaparia como unhandled e mataria o processo.
   private async onMessage(raw: string): Promise<void> {
     let message: BusRequest | BusReply;
     try {
@@ -177,9 +205,18 @@ export class SessionBusService implements OnModuleInit, OnModuleDestroy {
       }
     }
 
-    await this.redis.publish(
-      inboxChannel(request.replyTo),
-      JSON.stringify(reply),
-    );
+    try {
+      await this.redis.publish(
+        inboxChannel(request.replyTo),
+        JSON.stringify(reply),
+      );
+    } catch (error: unknown) {
+      // O trabalho já foi executado; só a resposta se perdeu. O chamador cai no
+      // timeout do RPC — melhor que derrubar o processo.
+      const message = error instanceof Error ? error.message : String(error);
+      this.logger.error(
+        `Failed to publish reply for ${request.action} (tenant ${request.tenantUuid}): ${message}`,
+      );
+    }
   }
 }

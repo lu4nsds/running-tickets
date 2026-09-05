@@ -2,11 +2,12 @@ interface MockSocket {
   handlers: Record<string, (arg: unknown) => void>;
   ev: { on: jest.Mock; removeAllListeners: jest.Mock };
   end: jest.Mock;
+  logout: jest.Mock;
   onWhatsApp: jest.Mock;
   sendMessage: jest.Mock;
 }
 
-jest.mock('@whiskeysockets/baileys', () => {
+jest.mock('@src/utils/baileys.import', () => {
   const sockets: MockSocket[] = [];
   const make = jest.fn((): MockSocket => {
     const handlers: Record<string, (arg: unknown) => void> = {};
@@ -19,6 +20,7 @@ jest.mock('@whiskeysockets/baileys', () => {
         removeAllListeners: jest.fn(),
       },
       end: jest.fn(),
+      logout: jest.fn().mockResolvedValue(undefined),
       onWhatsApp: jest
         .fn()
         .mockResolvedValue([{ exists: true, jid: '5511999@s.whatsapp.net' }]),
@@ -29,15 +31,20 @@ jest.mock('@whiskeysockets/baileys', () => {
   });
 
   return {
-    __esModule: true,
-    default: make,
-    __sockets: sockets,
-    fetchLatestBaileysVersion: jest
-      .fn()
-      .mockResolvedValue({ version: [2, 3, 0] }),
-    DisconnectReason: { loggedOut: 401 },
-    BufferJSON: { replacer: jest.fn(), reviver: jest.fn() },
-    proto: { Message: { fromObject: jest.fn(() => ({})) } },
+    importBaileys: jest.fn().mockResolvedValue({
+      default: make,
+      __sockets: sockets,
+      fetchLatestBaileysVersion: jest
+        .fn()
+        .mockResolvedValue({ version: [2, 3, 0] }),
+      DisconnectReason: { loggedOut: 401 },
+      BufferJSON: { replacer: jest.fn(), reviver: jest.fn() },
+      proto: {
+        Message: {
+          AppStateSyncKeyData: { create: jest.fn((o: object) => o) },
+        },
+      },
+    }),
   };
 });
 
@@ -48,7 +55,7 @@ jest.mock('@src/states/redis-auth.state', () => {
   return {
     useRedisAuthState: jest.fn().mockResolvedValue({
       state: { creds: {}, keys: { get: jest.fn(), set: jest.fn() } },
-      saveCreds: jest.fn(),
+      saveCreds: jest.fn().mockResolvedValue(undefined),
     }),
     authPattern: (uuid: string) => `${redisPrefix()}:auth:${uuid}:*`,
   };
@@ -60,14 +67,13 @@ jest.mock('@src/states/redis-message.state', () => {
   >('@src/config/redis-keys');
   return {
     messagesPattern: (uuid: string) => `${redisPrefix()}:msgs:${uuid}:*`,
-    cacheMessage: jest.fn(),
+    cacheMessage: jest.fn().mockResolvedValue(undefined),
     loadCachedMessage: jest.fn(),
   };
 });
 
 import { Test, TestingModule } from '@nestjs/testing';
 import { ConfigService } from '@nestjs/config';
-import * as baileys from '@whiskeysockets/baileys';
 import { GatewayConfig } from '@src/config/gateway.config';
 import { redisPrefix, sessionSetKey } from '@src/config/redis-keys';
 import { REDIS_CLIENT } from '@src/providers/redis.provider';
@@ -75,10 +81,11 @@ import { INSTANCE_ID } from '@src/providers/instance.provider';
 import { SessionManager } from '@src/session/session-manager.service';
 import { TenantConnection } from '@src/session/tenant-connection.service';
 import { setSessionState } from '@src/states/redis-session.state';
+import { fakeScanSupport } from '@test/helpers/fake-redis-scan';
+import { importBaileys } from '@src/utils/baileys.import';
 
-const mockMakeWASocket = baileys.default as unknown as jest.Mock;
-const mockSockets = (baileys as unknown as { __sockets: MockSocket[] })
-  .__sockets;
+let mockMakeWASocket: jest.Mock;
+let mockSockets: MockSocket[];
 
 const INSTANCE = 'inst-self';
 const SESSION_SET = sessionSetKey();
@@ -159,11 +166,14 @@ class FakeRedis {
     return Promise.resolve(1);
   });
 
-  // Return one synthetic key per pattern so del() is exercised by cleanup paths.
-  keys = jest.fn(
-    (pattern: string): Promise<string[]> =>
-      Promise.resolve([pattern.replace('*', 'k')]),
-  );
+  // Presente só para provar que a limpeza NUNCA usa o KEYS bloqueante.
+  keys = jest.fn();
+
+  private readonly scan = fakeScanSupport();
+  scans = this.scan.scans;
+  unlinked = this.scan.unlinked;
+  scanStream = this.scan.scanStream;
+  pipeline = this.scan.pipeline;
 }
 
 const CONFIG: Record<string, string> = {
@@ -175,6 +185,8 @@ const CONFIG: Record<string, string> = {
   WHATSAPP_OWNERSHIP_TTL_MS: '30000',
   WHATSAPP_HEARTBEAT_INTERVAL_MS: '10000',
   WHATSAPP_RECONCILE_INTERVAL_MS: '20000',
+  WHATSAPP_RPC_TIMEOUT_MS: '45000',
+  WHATSAPP_API_KEY: 'test-api-key',
   WHATSAPP_DEVICE_NAME: 'Test Device',
 };
 
@@ -197,6 +209,13 @@ describe('SessionManager', () => {
   let redis: FakeRedis;
 
   beforeEach(async () => {
+    const mod = (await importBaileys()) as unknown as {
+      default: jest.Mock;
+      __sockets: MockSocket[];
+    };
+    mockMakeWASocket = mod.default;
+    mockSockets = mod.__sockets;
+
     redis = new FakeRedis();
 
     const module: TestingModule = await Test.createTestingModule({
@@ -238,6 +257,56 @@ describe('SessionManager', () => {
       expect(mockMakeWASocket).toHaveBeenCalledTimes(2);
       expect(manager.getConnection('t1')).not.toBe(first);
     });
+
+    it('ends the previous socket instead of leaking it', async () => {
+      await manager.open('t1');
+      const firstSocket = lastSocket();
+
+      await manager.open('t1');
+
+      expect(firstSocket.end).toHaveBeenCalled();
+    });
+
+    // Deixar a conexão morta no registro criaria um zumbi: `has()` seguiria true,
+    // o heartbeat renovaria o lock indefinidamente, o reconcile pularia o tenant
+    // e os envios falhariam para sempre.
+    it('leaves no dead connection registered when the open fails', async () => {
+      await manager.open('t1');
+      redis.owners.set(ownerKey('t1'), INSTANCE);
+      mockMakeWASocket.mockImplementationOnce(() => {
+        throw new Error('socket build failed');
+      });
+
+      await expect(manager.open('t1')).rejects.toThrow();
+
+      expect(manager.has('t1')).toBe(false);
+      expect(manager.getConnection('t1')).toBeUndefined();
+    });
+
+    it('releases ownership when the open fails, so reconcile can retry', async () => {
+      redis.owners.set(ownerKey('t1'), INSTANCE);
+      mockMakeWASocket.mockImplementationOnce(() => {
+        throw new Error('socket build failed');
+      });
+
+      await expect(manager.open('t1')).rejects.toThrow();
+
+      expect(await redis.get(ownerKey('t1'))).toBeNull();
+    });
+
+    it('lets reconcile recover a tenant whose open previously failed', async () => {
+      redis.sets.set(SESSION_SET, new Set(['t1']));
+      redis.owners.set(ownerKey('t1'), INSTANCE);
+      mockMakeWASocket.mockImplementationOnce(() => {
+        throw new Error('socket build failed');
+      });
+      await expect(manager.open('t1')).rejects.toThrow();
+
+      await internals(manager).reconcile();
+
+      expect(manager.has('t1')).toBe(true);
+      expect(await redis.get(ownerKey('t1'))).toBe(INSTANCE);
+    });
   });
 
   describe('removeLocal', () => {
@@ -253,10 +322,41 @@ describe('SessionManager', () => {
       // ownership released (eval del) and state hash cleared
       expect(redis.eval).toHaveBeenCalled();
       expect(await redis.get(ownerKey('t1'))).toBeNull();
-      // auth + message keys deleted via pattern scan
-      expect(redis.keys).toHaveBeenCalledWith(`${redisPrefix()}:auth:t1:*`);
-      expect(redis.keys).toHaveBeenCalledWith(`${redisPrefix()}:msgs:t1:*`);
-      expect(redis.del).toHaveBeenCalled();
+      // auth + message keys removed via SCAN + UNLINK (nunca KEYS, que bloqueia
+      // o Redis compartilhado com o cache e as filas do Laravel)
+      expect(redis.scans.map((scan) => scan.match)).toEqual([
+        `${redisPrefix()}:auth:t1:*`,
+        `${redisPrefix()}:msgs:t1:*`,
+      ]);
+      expect(redis.unlinked).toHaveLength(2);
+      expect(redis.keys).not.toHaveBeenCalled();
+    });
+
+    // Sem o logout o aparelho continua listado em "Aparelhos conectados" do
+    // tenant; cada desconectar/reconectar somaria um fantasma até bater no limite
+    // de dispositivos vinculados do WhatsApp e impedir novo pareamento.
+    it('unlinks the device on WhatsApp before wiping the local session', async () => {
+      await manager.open('t1');
+      redis.owners.set(ownerKey('t1'), INSTANCE);
+      const socket = lastSocket();
+
+      await manager.removeLocal('t1');
+
+      expect(socket.logout).toHaveBeenCalled();
+      expect(socket.end).toHaveBeenCalled();
+      expect(manager.has('t1')).toBe(false);
+    });
+
+    it('still wipes the session when the logout fails', async () => {
+      await manager.open('t1');
+      redis.owners.set(ownerKey('t1'), INSTANCE);
+      lastSocket().logout.mockRejectedValue(new Error('socket already closed'));
+
+      await expect(manager.removeLocal('t1')).resolves.toBeUndefined();
+
+      expect(manager.has('t1')).toBe(false);
+      expect(redis.unlinked).toHaveLength(2);
+      expect(await redis.get(ownerKey('t1'))).toBeNull();
     });
   });
 
@@ -284,6 +384,25 @@ describe('SessionManager', () => {
 
       expect(manager.has('t1')).toBe(false);
       expect(socket.end).toHaveBeenCalled();
+    });
+
+    it('keeps renewing the remaining tenants when one renewal throws', async () => {
+      await manager.open('t1');
+      await manager.open('t2');
+      redis.owners.set(ownerKey('t1'), INSTANCE);
+      redis.owners.set(ownerKey('t2'), INSTANCE);
+      jest.clearAllMocks();
+
+      // first renewal (t1) blows up with a Redis blip; t2 must still renew
+      redis.eval.mockRejectedValueOnce(new Error('redis blip'));
+
+      await expect(internals(manager).heartbeat()).resolves.toBeUndefined();
+
+      expect(manager.has('t1')).toBe(true);
+      expect(manager.has('t2')).toBe(true);
+      // t2's renewal went through and its state TTL was refreshed
+      expect(redis.eval).toHaveBeenCalledTimes(2);
+      expect(redis.pexpire).toHaveBeenCalledTimes(1);
     });
   });
 
@@ -326,6 +445,29 @@ describe('SessionManager', () => {
 
       await expect(internals(manager).reconcile()).resolves.toBeUndefined();
       expect(manager.has('boom')).toBe(false);
+    });
+
+    // Escaping here would reject onModuleInit at boot and, on the interval tick,
+    // surface as an unhandled rejection — which kills the whole process.
+    it('never lets a failed session listing escape', async () => {
+      redis.smembers.mockRejectedValueOnce(new Error('redis down'));
+
+      await expect(internals(manager).reconcile()).resolves.toBeUndefined();
+      expect(mockMakeWASocket).not.toHaveBeenCalled();
+    });
+
+    it('keeps reconciling the remaining tenants when one owner lookup throws', async () => {
+      redis.sets.set(SESSION_SET, new Set(['bad', 'good']));
+
+      // owner lookup for the first tenant blows up; the second must still be
+      // claimed and opened
+      redis.get.mockRejectedValueOnce(new Error('redis blip'));
+
+      await expect(internals(manager).reconcile()).resolves.toBeUndefined();
+
+      const claimed = [...redis.owners.values()];
+      expect(claimed).toContain(INSTANCE);
+      expect(mockMakeWASocket).toHaveBeenCalledTimes(1);
     });
   });
 

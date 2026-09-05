@@ -1,4 +1,4 @@
-import { ConfigService } from '@nestjs/config';
+import { GatewayConfig } from '@src/config/gateway.config';
 import type Redis from 'ioredis';
 import { SessionBusService } from '@src/bus/session-bus.service';
 import { redisPrefix } from '@src/config/redis-keys';
@@ -31,9 +31,7 @@ const makeBus = (): Harness => {
     unsubscribe: jest.fn().mockResolvedValue(undefined),
   } as unknown as Redis;
 
-  const config = {
-    get: jest.fn().mockReturnValue('15000'),
-  } as unknown as ConfigService;
+  const config = { rpcTimeoutMs: 15000 } as GatewayConfig;
 
   const bus = new SessionBusService(redis, subscriber, SELF, config);
 

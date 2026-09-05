@@ -6,11 +6,7 @@ import {
   Logger,
   Scope,
 } from '@nestjs/common';
-import makeWASocket, {
-  DisconnectReason,
-  fetchLatestBaileysVersion,
-} from '@whiskeysockets/baileys';
-import type { AnyMessageContent, WASocket } from '@whiskeysockets/baileys';
+import type { AnyMessageContent, WASocket } from 'baileys';
 import type Redis from 'ioredis';
 import { BaileysLoggerAdapter } from '@src/adapters/baileys-logger.adapter';
 import { GatewayConfig } from '@src/config/gateway.config';
@@ -28,6 +24,9 @@ import {
   getSessionState,
   setSessionState,
 } from '@src/states/redis-session.state';
+import { importBaileys } from '@src/utils/baileys.import';
+import { fireAndForget } from '@src/utils/fire-and-forget.util';
+import { scanDelete } from '@src/utils/redis-scan.util';
 
 // Lets a connection coordinate with its owning SessionManager without holding a
 // back-reference to it (no circular import). The connection passes itself so the
@@ -42,6 +41,10 @@ import {
 export type SendContent =
   | { text: string }
   | { data: string; mimetype: string; filename: string; caption?: string };
+
+// O logout é best-effort: se o WhatsApp não responder nesse prazo, a remoção da
+// sessão segue mesmo assim.
+const LOGOUT_TIMEOUT_MS = 5_000;
 
 export interface TenantConnectionHooks {
   isActive(connection: TenantConnection): boolean;
@@ -88,8 +91,11 @@ export class TenantConnection {
     await this.setState({ status: 'connecting', qr: null });
 
     try {
+      const { default: makeWASocket, fetchLatestBaileysVersion } =
+        await importBaileys();
+
       const [{ state, saveCreds }, { version }] = await Promise.all([
-        useRedisAuthState(this.redis, this.tenantUuid),
+        useRedisAuthState(this.redis, this.tenantUuid, this.instanceId),
         fetchLatestBaileysVersion(),
       ]);
 
@@ -110,15 +116,25 @@ export class TenantConnection {
           loadCachedMessage(this.redis, this.tenantUuid, key.remoteJid, key.id),
       });
 
-      this.socket.ev.on('creds.update', () => void saveCreds());
+      this.socket.ev.on('creds.update', () => {
+        fireAndForget(
+          saveCreds(),
+          this.logger,
+          'Failed to persist credentials',
+        );
+      });
       this.socket.ev.on('messages.upsert', ({ messages }) => {
         for (const msg of messages) {
-          void cacheMessage(
-            this.redis,
-            this.tenantUuid,
-            msg.key?.remoteJid,
-            msg.key?.id,
-            msg.message,
+          fireAndForget(
+            cacheMessage(
+              this.redis,
+              this.tenantUuid,
+              msg.key?.remoteJid,
+              msg.key?.id,
+              msg.message,
+            ),
+            this.logger,
+            'Failed to cache inbound message',
           );
         }
       });
@@ -170,6 +186,32 @@ export class TenantConnection {
     return { jid: result.jid };
   }
 
+  // Desvincula o aparelho do lado do WhatsApp antes de derrubar o socket. Sem
+  // isto, cada "desconectar" pelo painel deixa um aparelho fantasma na lista de
+  // dispositivos vinculados do tenant — e o WhatsApp tem limite de aparelhos, de
+  // modo que os fantasmas acabam impedindo um novo pareamento.
+  //
+  // Best-effort com timeout: a sessão está sendo removida de qualquer forma, e um
+  // logout que não responde não pode segurar a limpeza do Redis.
+  async logout(): Promise<void> {
+    try {
+      await Promise.race([
+        this.socket.logout(),
+        new Promise((_, reject) =>
+          setTimeout(
+            () => reject(new Error('logout timed out')),
+            LOGOUT_TIMEOUT_MS,
+          ).unref(),
+        ),
+      ]);
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
+      this.logger.warn(`Logout failed, tearing down anyway: ${message}`);
+    }
+
+    this.teardown();
+  }
+
   // Drop the socket and stop the reconnect loop. Guarded so a stale connection
   // that has already been replaced cannot remove the active one.
   teardown(): void {
@@ -177,7 +219,7 @@ export class TenantConnection {
     this.clearReconnectTimer();
     try {
       this.removeListeners();
-      this.socket.end(new Error('teardown'));
+      void this.socket.end(new Error('teardown'));
     } catch {
       // best-effort
     }
@@ -196,7 +238,7 @@ export class TenantConnection {
   end(): void {
     this.clearReconnectTimer();
     try {
-      this.socket.end(new Error('shutting down'));
+      void this.socket.end(new Error('shutting down'));
     } catch {
       // best-effort during shutdown
     }
@@ -215,10 +257,12 @@ export class TenantConnection {
 
     const { connection, qr, lastDisconnect } = update;
 
-    if (qr) void this.onQr(qr);
+    if (qr) {
+      fireAndForget(this.onQr(qr), this.logger, 'Failed to persist QR code');
+    }
 
     if (connection === 'open') {
-      void this.onOpen();
+      fireAndForget(this.onOpen(), this.logger, 'Failed to handle open');
       return;
     }
 
@@ -228,7 +272,11 @@ export class TenantConnection {
           | { output?: { statusCode?: number } }
           | undefined
       )?.output?.statusCode;
-      void this.onClose(statusCode);
+      fireAndForget(
+        this.onClose(statusCode),
+        this.logger,
+        'Failed to handle close',
+      );
     }
   }
 
@@ -245,9 +293,11 @@ export class TenantConnection {
   }
 
   private async onClose(statusCode: number | undefined): Promise<void> {
+    const { DisconnectReason } = await importBaileys();
+
     if (statusCode === DisconnectReason.loggedOut) {
       this.logger.warn(`WhatsApp logged out; clearing credentials`);
-      await this.releaseAndCleanup(true);
+      await this.releaseAndCleanup();
       return;
     }
 
@@ -270,28 +320,39 @@ export class TenantConnection {
 
   // --- reconnect / cleanup --------------------------------------------------
 
+  // Uma queda transiente NUNCA apaga credenciais. Antes, `reconnectMaxAttempts`
+  // tentativas (≈1 min de backoff) disparavam o wipe e obrigavam o tenant a
+  // escanear o QR de novo — qualquer instabilidade do WhatsApp, do Redis ou do
+  // container maior que um minuto custava um repareamento manual. E os motivos
+  // mais comuns (connectionLost, restartRequired=515, timedOut=408) são rotina.
+  //
+  // Hoje o limite só marca a entrada em modo degradado: as tentativas continuam
+  // para sempre, com o backoff no teto de `reconnectMaxDelayMs`. As credenciais
+  // só são apagadas em `loggedOut`, quando o WhatsApp já invalidou a sessão.
   private async scheduleReconnect(): Promise<void> {
     const state = await getSessionState(this.redis, this.tenantUuid);
     const attempts = state.reconnectAttempts + 1;
-
-    if (attempts > this.config.reconnectMaxAttempts) {
-      this.logger.error(
-        `Max reconnect attempts (${this.config.reconnectMaxAttempts}) reached; clearing credentials, re-pair required`,
-      );
-      await this.releaseAndCleanup(true);
-      return;
-    }
+    const degraded = attempts > this.config.reconnectMaxAttempts;
 
     await this.setState({ status: 'closed', reconnectAttempts: attempts });
 
-    const delay = Math.min(
-      this.config.reconnectBaseDelayMs * 2 ** (attempts - 1),
-      this.config.reconnectMaxDelayMs,
-    );
+    const delay = degraded
+      ? this.config.reconnectMaxDelayMs
+      : Math.min(
+          this.config.reconnectBaseDelayMs * 2 ** (attempts - 1),
+          this.config.reconnectMaxDelayMs,
+        );
 
-    this.logger.warn(
-      `WhatsApp disconnected; reconnect attempt ${attempts} in ${delay}ms`,
-    );
+    if (degraded) {
+      this.logger.error(
+        `WhatsApp still disconnected after ${this.config.reconnectMaxAttempts} attempts; ` +
+          `retrying every ${delay}ms with credentials intact (attempt ${attempts})`,
+      );
+    } else {
+      this.logger.warn(
+        `WhatsApp disconnected; reconnect attempt ${attempts} in ${delay}ms`,
+      );
+    }
 
     this.reconnectTimer = setTimeout(() => {
       this.reconnect().catch((err: unknown) => {
@@ -306,18 +367,20 @@ export class TenantConnection {
     if (!this.hooks.isActive(this)) return;
 
     this.removeListeners();
-    this.socket.end(new Error('reconnecting'));
+    void this.socket.end(new Error('reconnecting'));
 
     // reconnectAttempts persists in Redis; reopen builds a fresh connection.
     // A successful 'open' resets the counter.
     await this.hooks.reopen();
   }
 
-  // Terminal failure (loggedOut / max attempts): drop the socket, release the
-  // lock and clear state. Optionally wipe credentials so a re-pair is required.
-  private async releaseAndCleanup(clearCreds: boolean): Promise<void> {
+  // Único caminho terminal: o WhatsApp desvinculou o aparelho (`loggedOut`), então
+  // as credenciais já não valem mais nada. Derruba o socket, apaga as chaves de
+  // auth, solta o lock e limpa o estado — um novo pareamento por QR é inevitável.
+  // Nenhuma falha transiente chega aqui (ver `scheduleReconnect`).
+  private async releaseAndCleanup(): Promise<void> {
     this.teardown();
-    if (clearCreds) await this.clearAuthKeys();
+    await this.clearAuthKeys();
     await releaseOwnership(this.redis, this.tenantUuid, this.instanceId);
     await clearSessionState(this.redis, this.tenantUuid);
   }
@@ -333,10 +396,7 @@ export class TenantConnection {
 
   private async clearAuthKeys(): Promise<void> {
     await this.redis.srem(sessionSetKey(), this.tenantUuid);
-    const authKeys = await this.redis.keys(authPattern(this.tenantUuid));
-    if (authKeys.length > 0) {
-      await this.redis.del(...authKeys);
-    }
+    await scanDelete(this.redis, authPattern(this.tenantUuid));
   }
 
   private removeListeners(): void {

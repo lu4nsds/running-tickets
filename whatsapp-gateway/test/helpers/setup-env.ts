@@ -4,3 +4,4 @@
 // para que um valor já definido (ex.: um spec que testa a ausência) prevaleça.
 process.env.REDIS_PREFIX ??= 'test';
 process.env.WHATSAPP_DEVICE_NAME ??= 'Test Device';
+process.env.WHATSAPP_API_KEY ??= 'test-api-key';

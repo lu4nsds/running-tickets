@@ -21,7 +21,7 @@
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/jest/bin/jest --runInBand",
-    "test:e2e": "jest --config ./test/jest-e2e.json"
+    "test:e2e": "jest --config ./test/e2e/jest-e2e.json"
   },
   "engines": {
     "npm": ">=10.0.0",
@@ -32,7 +32,7 @@
     "@nestjs/config": "^4.0.0",
     "@nestjs/core": "^11.0.1",
     "@nestjs/platform-express": "^11.1.11",
-    "@whiskeysockets/baileys": "^6.7.18",
+    "baileys": "7.0.0-rc14",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.1",
     "ioredis": "^5.6.0",
@@ -73,21 +73,31 @@
       "json",
       "ts"
     ],
-    "rootDir": "src",
-    "setupFiles": [
-      "<rootDir>/test/setup-env.ts"
+    "rootDir": ".",
+    "roots": [
+      "<rootDir>/src",
+      "<rootDir>/test"
     ],
-    "testRegex": ".*\\.spec\\.ts$",
+    "modulePathIgnorePatterns": [
+      "<rootDir>/dist/"
+    ],
+    "setupFiles": [
+      "<rootDir>/test/helpers/setup-env.ts"
+    ],
+    "testMatch": [
+      "<rootDir>/test/unit/**/*.spec.ts"
+    ],
     "transform": {
       "^.+\\.(t|j)s$": "ts-jest"
     },
     "collectCoverageFrom": [
-      "**/*.(t|j)s"
+      "src/**/*.(t|j)s"
     ],
-    "coverageDirectory": "../coverage",
+    "coverageDirectory": "./coverage",
     "testEnvironment": "node",
     "moduleNameMapper": {
-      "^@src/(.*)$": "<rootDir>/$1"
+      "^@src/(.*)$": "<rootDir>/src/$1",
+      "^@test/(.*)$": "<rootDir>/test/$1"
     }
   },
   "pnpm": {

@@ -14,7 +14,9 @@ export class GatewayConfig {
   readonly ownershipTtlMs: number;
   readonly heartbeatIntervalMs: number;
   readonly reconcileIntervalMs: number;
+  readonly rpcTimeoutMs: number;
   readonly deviceName: string;
+  readonly apiKey: string;
   readonly baileysLogLevel?: string;
 
   constructor(config: ConfigService) {
@@ -40,7 +42,11 @@ export class GatewayConfig {
       config,
       'WHATSAPP_RECONCILE_INTERVAL_MS',
     );
+    this.rpcTimeoutMs = this.number(config, 'WHATSAPP_RPC_TIMEOUT_MS');
     this.deviceName = this.requiredString(config, 'WHATSAPP_DEVICE_NAME');
+    // Sem default: o guard é fail-closed, então uma chave ausente tem de derrubar
+    // o boot em vez de liberar o gateway inteiro sem autenticação.
+    this.apiKey = this.requiredString(config, 'WHATSAPP_API_KEY');
     this.baileysLogLevel = config
       .get<string>('WHATSAPP_BAILEYS_LOG_LEVEL')
       ?.trim();
@@ -51,8 +57,17 @@ export class GatewayConfig {
     redisPrefix();
   }
 
+  // `Number(undefined)` é `NaN`, e um NaN escapando daqui degrada em silêncio e de
+  // um jeito diferente em cada consumidor: `attempts > NaN` nunca é verdade (loop
+  // de reconexão infinito), `pexpire NaN` falha em toda escrita de estado e
+  // `setTimeout(fn, NaN)` dispara na hora (todo RPC falha instantaneamente).
+  // Melhor falhar alto no boot do que descobrir isso em produção.
   private number(config: ConfigService, key: string): number {
-    return Number(config.get<string>(key));
+    const value = Number(config.get<string>(key));
+    if (!Number.isFinite(value) || value <= 0) {
+      throw new Error(`Missing or invalid env var: ${key}`);
+    }
+    return value;
   }
 
   private requiredString(config: ConfigService, key: string): string {
