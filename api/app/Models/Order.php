@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\OrderStatus;
 use Carbon\CarbonInterface;
 use Illuminate\Contracts\Database\Query\Expression;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
@@ -32,6 +33,7 @@ class Order extends Model
         'metadata',
         'reserved_until',
         'paid_at',
+        'feedback_sent_at',
     ];
 
     protected $casts = [
@@ -42,6 +44,7 @@ class Order extends Model
         'net_amount_cents' => 'integer',
         'reserved_until' => 'datetime',
         'paid_at' => 'datetime',
+        'feedback_sent_at' => 'datetime',
     ];
 
     /**
@@ -86,6 +89,21 @@ class Order extends Model
     }
 
     /**
+     * Ingressos emitidos para este pedido (através dos itens/participantes)
+     */
+    public function tickets()
+    {
+        return $this->hasManyThrough(
+            Ticket::class,
+            OrderItem::class,
+            'order_id',       // FK em order_items -> orders
+            'order_item_id',  // FK em tickets -> order_items
+            'id',
+            'id',
+        );
+    }
+
+    /**
      * Solicitações de cancelamento/estorno deste pedido
      */
     public function cancellations()
@@ -99,6 +117,29 @@ class Order extends Model
     public function latestCancellation()
     {
         return $this->hasOne(OrderCancellation::class)->latestOfMany();
+    }
+
+    /**
+     * Pedidos elegíveis ao convite de feedback: ainda não notificados, com
+     * algum contato do comprador e com ao menos um ingresso validado há mais
+     * de `$hours` horas.
+     *
+     * `$lookbackDays` limita o alcance retroativo: se o link do formulário for
+     * configurado (ou reconfigurado) muito depois, eventos antigos não viram
+     * um disparo em massa.
+     */
+    public function scopeAwaitingFeedback(Builder $query, int $hours, int $lookbackDays): void
+    {
+        $query->whereNull('feedback_sent_at')
+            ->where(function (Builder $contact) {
+                $contact->where('buyer_email', '!=', '')
+                    ->orWhere('buyer_phone', '!=', '');
+            })
+            ->whereHas('tickets', function ($tickets) use ($hours, $lookbackDays) {
+                $tickets->whereNotNull('validated_at')
+                    ->where('validated_at', '<=', now()->subHours($hours))
+                    ->where('validated_at', '>=', now()->subDays($lookbackDays));
+            });
     }
 
     /**

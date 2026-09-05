@@ -18,10 +18,12 @@ class Ticket extends Model
         'qr_path',
         'status',
         'issued_at',
+        'validated_at',
     ];
 
     protected $casts = [
         'issued_at' => 'datetime',
+        'validated_at' => 'datetime',
         'status' => TicketStatus::class,
     ];
 
@@ -90,10 +92,16 @@ class Ticket extends Model
     }
 
     /**
-     * Marca o ticket como utilizado
+     * Marca o ticket como utilizado, registrando o momento do check-in.
+     *
+     * `validated_at` é a âncora do envio de feedback pós-evento — não confie
+     * em `updated_at` para isso, qualquer outra escrita no ticket o altera.
      */
     public function markAsUsed(): void
     {
-        $this->update(['status' => TicketStatus::USED]);
+        $this->update([
+            'status' => TicketStatus::USED,
+            'validated_at' => now(),
+        ]);
     }
 }

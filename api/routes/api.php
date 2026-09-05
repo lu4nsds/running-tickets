@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\Admin\OrderController as AdminOrderController;
 use App\Http\Controllers\Api\Admin\OrganizerController as AdminOrganizerController;
 use App\Http\Controllers\Api\Admin\OrganizerUserController as AdminOrganizerUserController;
 use App\Http\Controllers\Api\Admin\PasswordController as AdminPasswordController;
+use App\Http\Controllers\Api\Admin\PlatformSettingController;
 use App\Http\Controllers\Api\Admin\ReportController as AdminReportController;
 use App\Http\Controllers\Api\Admin\TicketTypeController as AdminTicketTypeController;
 use App\Http\Controllers\Api\AuthController;
@@ -141,6 +142,10 @@ Route::middleware('auth:admin')->group(function () {
         Route::get('/events/{event}/cancellations', [OrderCancellationController::class, 'index']);
         Route::post('/cancellations/{orderCancellation}/approve', [OrderCancellationController::class, 'approve']);
         Route::post('/cancellations/{orderCancellation}/reject', [OrderCancellationController::class, 'reject']);
+
+        // Configurações globais da plataforma
+        Route::get('/settings', [PlatformSettingController::class, 'index']);
+        Route::put('/settings', [PlatformSettingController::class, 'update']);
 
         // WhatsApp Gateway
         Route::prefix('whatsapp')->group(function () {

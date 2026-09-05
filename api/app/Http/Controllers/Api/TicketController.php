@@ -158,8 +158,10 @@ class TicketController extends Controller
                     'id' => $ticket->orderItem->category->id,
                     'name' => $ticket->orderItem->category->name,
                 ] : null,
+                // `updated_at` é fallback para tickets validados antes da
+                // criação da coluna `validated_at`.
                 'used_at' => $ticket->status->value === 'used'
-                    ? $ticket->updated_at->toIso8601String()
+                    ? ($ticket->validated_at ?? $ticket->updated_at)->toIso8601String()
                     : null,
             ], 422);
         }

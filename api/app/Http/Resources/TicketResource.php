@@ -22,6 +22,7 @@ class TicketResource extends JsonResource
             'status_label' => $this->status->label(),
             'status_color' => $this->status->color(),
             'issued_at' => $this->issued_at?->toISOString(),
+            'validated_at' => $this->validated_at?->toISOString(),
             'created_at' => $this->created_at?->toISOString(),
         ];
     }

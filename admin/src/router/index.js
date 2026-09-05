@@ -193,6 +193,13 @@ const router = createRouter({
                     component: () => import("@/views/admin/ComunicacaoView.vue"),
                     meta: { title: "Comunicação" },
                 },
+                {
+                    path: "configuracoes",
+                    name: "admin-configuracoes",
+                    component: () =>
+                        import("@/views/admin/ConfiguracoesView.vue"),
+                    meta: { title: "Configurações" },
+                },
             ],
         },
     ],

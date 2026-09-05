@@ -118,6 +118,11 @@ const menuItems = computed(() => {
                 icon: "campaign",
                 label: "Comunicação",
             },
+            {
+                path: "/admin/configuracoes",
+                icon: "settings",
+                label: "Configurações",
+            },
         ];
     } else {
         const items = [

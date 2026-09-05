@@ -20,6 +20,12 @@ Schedule::command('payments:reconcile-pending --minutes=30')
     ->withoutOverlapping(10)
     ->everyFiveMinutes();
 
+// Convida o comprador a responder o formulário de feedback 24h após a
+// validação do ingresso. Idempotente: `orders.feedback_sent_at` evita reenvio.
+Schedule::command('tickets:send-feedback')
+    ->withoutOverlapping(10)
+    ->everyFifteenMinutes();
+
 // Remover tokens Sanctum expirados do banco diariamente
 Schedule::command('sanctum:prune-expired --hours=8')
     ->dailyAt('03:00');
